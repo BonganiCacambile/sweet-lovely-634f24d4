@@ -14,7 +14,8 @@ type DealVariant =
  * breakpoint and ignores `variant`.
  */
 function Offer({ name }: { name: DealVariant }) {
-  return <OfferCardFramerComponent variant={name} />;
+  const v = { base: name, sm: name, md: name, lg: name, xl: name, "2xl": name } as never;
+  return <OfferCardFramerComponent.Responsive variants={v} />;
 }
 
 /** Matches the design: 2-up row, full-width Meat Feast hero, then 2-up row. */
