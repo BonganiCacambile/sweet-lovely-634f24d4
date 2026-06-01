@@ -43,12 +43,12 @@ function Index() {
               to="/menu/full-menu"
               className="inline-flex items-center rounded-full bg-[#ff003c] px-8 py-3.5 text-base font-medium text-white shadow-[0_0_10px_rgba(255,0,60,0)] transition-shadow hover:shadow-[0_8px_20px_rgba(255,0,60,0.25)]"
             >
-              Order Now
+              View Our Menu
             </Link>
           </div>
           <div className="relative z-10 mt-12 w-full max-w-3xl">
             <img
-              src="https://framerusercontent.com/images/Z9VcwtU158fAagyyaANuYIUtgoo.jpg?scale-down-to=1024"
+              src="https://framerusercontent.com/images/TselH8OEkb2YNE35eIM1vVAfb6s.png?scale-down-to=1024"
               alt="Pizza Margheritta"
               className="h-auto w-full select-none"
             />
@@ -67,7 +67,7 @@ function Index() {
               From classic combinations to bold flavors, these pizzas top our list for a reason.
             </p>
           </div>
-          <ProductGrid products={FEATURED_PRODUCTS} imageOnly />
+          <ProductGrid products={FEATURED_PRODUCTS} />
           <div className="mt-12 flex justify-center">
             <Link
               to="/menu/full-menu"
