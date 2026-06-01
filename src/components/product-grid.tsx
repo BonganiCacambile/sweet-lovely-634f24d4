@@ -7,6 +7,7 @@ export interface Product {
   allergens?: string;
   nutrition?: string;
   content?: string;
+  image?: string;
 }
 
 interface ProductGridProps {
@@ -41,6 +42,17 @@ export function ProductGrid({ products, imageOnly = false }: ProductGridProps) {
           JV7xTZLzb={`<p>${p.nutrition ?? "Nutritional Info"}</p>`}
           ZaUVK_Zrs={`<p>${p.content ?? ""}</p>`}
           GTORt8VJU={""}
+          {...(p.image
+            ? {
+                EKtkBiqHP: {
+                  src: p.image,
+                  srcSet: `${p.image} 1024w`,
+                  pixelWidth: 1024,
+                  pixelHeight: 1024,
+                  alt: p.title,
+                },
+              }
+            : {})}
         />
       ))}
     </div>
