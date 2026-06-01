@@ -1,4 +1,8 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
+import { SiteHeader } from "@/components/site-header";
+import { Section } from "@/components/section";
+import { ProductGrid } from "@/components/product-grid";
+import { FULL_MENU } from "@/data/menu";
 
 export const Route = createFileRoute("/menu/full-menu")({
   head: () => ({
@@ -14,16 +18,11 @@ export const Route = createFileRoute("/menu/full-menu")({
 
 function FullMenuPage() {
   return (
-    <main className="min-h-screen bg-white px-6 py-16">
-      <div className="mx-auto max-w-3xl">
-        <h1 className="text-3xl font-semibold tracking-tight">Full Menu</h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Menu items will appear here once connected to the backend.
-        </p>
-        <Link to="/" className="mt-6 inline-block text-sm underline">
-          ← Back to home
-        </Link>
-      </div>
-    </main>
+    <div className="min-h-screen bg-white text-neutral-900">
+      <SiteHeader />
+      <Section title="Full menu" subtitle="Every Pepper pizza, in one place.">
+        <ProductGrid products={FULL_MENU} />
+      </Section>
+    </div>
   );
 }
