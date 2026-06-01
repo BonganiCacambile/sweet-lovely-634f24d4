@@ -3,6 +3,7 @@ import { SiteHeader } from "@/components/site-header";
 import { Section } from "@/components/section";
 import { CityGrid } from "@/components/city-grid";
 import { DeliveryFaqList } from "@/components/delivery-faq-list";
+import { SiteFooter } from "@/components/site-footer";
 import { CITIES } from "@/data/menu";
 
 export const Route = createFileRoute("/locations")({
@@ -27,6 +28,7 @@ function LocationsPage() {
       <Section title="Delivery & pickup">
         <DeliveryFaqList />
       </Section>
+      <SiteFooter />
     </div>
   );
 }

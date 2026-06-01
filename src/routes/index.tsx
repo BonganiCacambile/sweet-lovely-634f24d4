@@ -6,13 +6,10 @@ import { ProductGrid } from "@/components/product-grid";
 import { CityGrid } from "@/components/city-grid";
 import { DeliveryFaqList } from "@/components/delivery-faq-list";
 import { OfferGrid } from "@/components/offer-grid";
-import { Testimonials } from "@/components/testimonials";
-import {
-  FEATURED_PRODUCTS,
-  CITIES,
-  DESSERTS,
-  TESTIMONIALS,
-} from "@/data/menu";
+import { SiteFooter } from "@/components/site-footer";
+import NewsletterFramerComponent from "@/framer/newsletter/newsletter";
+import ReviewsFramerComponent from "@/framer/reviews/reviews";
+import { FEATURED_PRODUCTS, CITIES, DESSERTS } from "@/data/menu";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -133,15 +130,16 @@ function Index() {
       </Section>
 
       {/* Testimonials */}
-      <section className="w-full px-4 pb-16 md:pb-24">
-        <div className="mx-auto max-w-7xl">
-          <Testimonials items={TESTIMONIALS} />
-        </div>
+      <section className="w-full">
+        <ReviewsFramerComponent.Responsive />
       </section>
 
-      <footer className="border-t border-neutral-200 px-4 py-8 text-center text-xs text-neutral-500">
-        © {new Date().getFullYear()} Pepper. All rights reserved.
-      </footer>
+      {/* Newsletter */}
+      <section className="w-full">
+        <NewsletterFramerComponent.Responsive />
+      </section>
+
+      <SiteFooter />
     </div>
   );
 }
