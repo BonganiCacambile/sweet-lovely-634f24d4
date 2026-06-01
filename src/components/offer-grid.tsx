@@ -8,18 +8,23 @@ type DealVariant =
   | "Sweet & Savory Combo";
 
 function DealCard({ variant, big = false }: { variant: DealVariant; big?: boolean }) {
-  const variants = big
-    ? {
-        base: "Meat Feast Combo - Mobile",
-        tablet: "Meat Feast Combo - Mobile - Tablet",
-        xl: "Meat Feast Combo - Big",
-      }
-    : {
-        base: `${variant} - Mobile`,
-        xl: variant,
-      };
+  const mobileVariant = big ? "Meat Feast Combo - Mobile" : `${variant} - Mobile`;
+  const tabletVariant = big ? "Meat Feast Combo - Mobile - Tablet" : mobileVariant;
+  const desktopVariant = big ? "Meat Feast Combo - Big" : variant;
 
-  return <OfferCradFramerComponent.Responsive variants={variants as never} />;
+  return (
+    <>
+      <div className="block md:hidden">
+        <OfferCradFramerComponent variant={mobileVariant} />
+      </div>
+      <div className="hidden md:block xl:hidden">
+        <OfferCradFramerComponent variant={tabletVariant} />
+      </div>
+      <div className="hidden xl:block">
+        <OfferCradFramerComponent variant={desktopVariant} />
+      </div>
+    </>
+  );
 }
 
 export function OfferGrid() {
