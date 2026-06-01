@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
 import { SiteHeader } from "@/components/site-header";
 import { Section } from "@/components/section";
 import { ProductGrid } from "@/components/product-grid";
@@ -9,11 +10,9 @@ import { Testimonials } from "@/components/testimonials";
 import {
   FEATURED_PRODUCTS,
   CITIES,
-  DEALS,
   DESSERTS,
   TESTIMONIALS,
 } from "@/data/menu";
-import ButtonFramerComponent from "@/framer/button";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -42,11 +41,12 @@ function Index() {
             Freshly made and delivered hot!
           </p>
           <div className="mt-10">
-            <ButtonFramerComponent.Responsive
-              variant="Default - Big"
-              O5tlPGRu3="View Our Menu"
-              lJNtxFrg5="/menu/full-menu"
-            />
+            <Link
+              to="/menu/full-menu"
+              className="inline-flex items-center rounded-full bg-[#ff003c] px-8 py-4 text-base font-semibold text-white transition hover:bg-[#e60036]"
+            >
+              View Our Menu
+            </Link>
           </div>
         </div>
       </Section>
@@ -64,11 +64,12 @@ function Index() {
           </div>
           <ProductGrid products={FEATURED_PRODUCTS} imageOnly />
           <div className="mt-12 flex justify-center">
-            <ButtonFramerComponent.Responsive
-              variant="Secondary - Big"
-              O5tlPGRu3="View Pizza Menu"
-              lJNtxFrg5="/menu/full-menu"
-            />
+            <Link
+              to="/menu/full-menu"
+              className="inline-flex items-center rounded-full bg-neutral-900 px-8 py-4 text-base font-semibold text-white transition hover:bg-neutral-800"
+            >
+              View Pizza Menu
+            </Link>
           </div>
         </div>
       </section>
@@ -101,11 +102,12 @@ function Index() {
           </div>
           <ProductGrid products={DESSERTS} />
           <div className="mt-12 flex justify-center">
-            <ButtonFramerComponent.Responsive
-              variant="Secondary - Big"
-              O5tlPGRu3="View Deserts Menu"
-              lJNtxFrg5="/menu/full-menu"
-            />
+            <Link
+              to="/menu/full-menu"
+              className="inline-flex items-center rounded-full bg-neutral-900 px-8 py-4 text-base font-semibold text-white transition hover:bg-neutral-800"
+            >
+              View Deserts Menu
+            </Link>
           </div>
         </div>
       </section>
