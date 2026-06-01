@@ -1,136 +1,38 @@
-/**
- * Hand-built deal cards (the Framer offer-card variant system doesn't
- * propagate the variant prop through unframer's Responsive wrapper, so we
- * recreate the visual design here with Tailwind to match the screenshots
- * exactly).
- */
+import OfferCradFramerComponent from "@/framer/menu-products/offer-crad";
 
-interface DealCardProps {
-  title: string;
-  items: string[];
-  price: string;
-  save: string;
-  bg: string;
-  textColor?: string;
-  buttonText?: string;
-  big?: boolean;
-  images: [string, string];
+type DealVariant =
+  | "Spicy Duo Deal"
+  | "Cheese Lovers Pair"
+  | "Meat Feast Combo"
+  | "Veggie Delight Duo"
+  | "Sweet & Savory Combo";
+
+function DealCard({ variant, big = false }: { variant: DealVariant; big?: boolean }) {
+  const variants = big
+    ? {
+        base: "Meat Feast Combo - Mobile",
+        tablet: "Meat Feast Combo - Mobile - Tablet",
+        xl: "Meat Feast Combo - Big",
+      }
+    : {
+        base: `${variant} - Mobile`,
+        xl: variant,
+      };
+
+  return <OfferCradFramerComponent.Responsive variants={variants as never} />;
 }
-
-function DealCard({
-  title,
-  items,
-  price,
-  save,
-  bg,
-  textColor = "text-white",
-  big = false,
-  images,
-}: DealCardProps) {
-  return (
-    <div
-      className={`relative w-full overflow-hidden rounded-3xl ${bg} ${textColor} ${
-        big ? "min-h-[520px] md:min-h-[560px]" : "min-h-[480px]"
-      } flex flex-col p-8 md:p-10`}
-    >
-      <div className="relative z-10 flex flex-col">
-      <h3 className="text-2xl font-extrabold md:text-3xl">{title}</h3>
-      <ul className="mt-4 space-y-2 text-base md:text-lg">
-        {items.map((it) => (
-          <li key={it} className="flex items-start gap-2">
-            <span className="mt-2 inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-current" />
-            <span>{it}</span>
-          </li>
-        ))}
-      </ul>
-      <div className="mt-6 flex flex-wrap items-center justify-between gap-4">
-        <button
-          type="button"
-          className="rounded-full bg-white px-6 py-2 text-sm font-medium text-neutral-900 transition hover:bg-neutral-100"
-        >
-          Order Now
-        </button>
-        <p className="text-lg font-bold md:text-xl">
-          {price} <span className="font-normal opacity-80">- Save {save}</span>
-        </p>
-      </div>
-      </div>
-      <div
-        className={`pointer-events-none relative z-0 mt-6 flex flex-1 items-end justify-center gap-2 ${
-          big ? "-mb-16 md:-mb-24" : "-mb-12 md:-mb-16"
-        }`}
-        aria-hidden
-      >
-        <img
-          src={images[0]}
-          alt=""
-          className={`select-none object-contain drop-shadow-2xl ${
-            big ? "h-56 w-1/2 md:h-72" : "h-44 w-1/2 md:h-56"
-          }`}
-        />
-        <img
-          src={images[1]}
-          alt=""
-          className={`select-none object-contain drop-shadow-2xl ${
-            big ? "h-56 w-1/2 md:h-72" : "h-44 w-1/2 md:h-56"
-          }`}
-        />
-      </div>
-    </div>
-  );
-}
-
-const fr = (h: string) =>
-  `https://framerusercontent.com/images/${h}?scale-down-to=512`;
 
 export function OfferGrid() {
   return (
-    <div className="flex flex-col gap-6">
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-        <DealCard
-          title="Spicy Duo Deal"
-          items={["1 Medium Firecracker Inferno", "1 Medium Buffalo Bliss"]}
-          price="$21.99"
-          save="$4"
-          bg="bg-[#ff003c]"
-          images={[fr("lp6wNgrYu7ClOrMG4ibaVQNDWLo.png"), fr("fOcW4cqVIKe7O6jovEeqZ46Cg.png")]}
-        />
-        <DealCard
-          title="Cheese Lovers Pair"
-          items={["1 Medium Cheese Avalanche", "1 Medium Truffle Temptation"]}
-          price="$22.99"
-          save="$5"
-          bg="bg-[#ffc91a]"
-          textColor="text-neutral-900"
-          images={[fr("Q4djsExkm2dVJLND8pnRkbmHKy8.png"), fr("EvzWDEqJkdunx7f5YzmUVnArM4.png")]}
-        />
+    <div className="mx-auto flex max-w-[1200px] flex-col items-center gap-6">
+      <div className="grid w-full grid-cols-1 justify-items-center gap-6 lg:grid-cols-2">
+        <DealCard variant="Spicy Duo Deal" />
+        <DealCard variant="Cheese Lovers Pair" />
       </div>
-      <DealCard
-        title="Meat Feast Combo"
-        items={["1 Medium Meat Lover's Feast", "1 Medium BBQ Blaze"]}
-        price="$23.99"
-        save="$6"
-        bg="bg-neutral-900"
-        big
-        images={[fr("ilD3FzfskejkXM7jRyVgKSBEE5I.png"), fr("dQKnVrygQTPBTqZDioB8akNs.png")]}
-      />
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-        <DealCard
-          title="Veggie Delight Duo"
-          items={["1 Medium Mediterranean Marvel", "1 Medium Garlic Supreme"]}
-          price="$21.99"
-          save="$4"
-          bg="bg-[#1aaa1a]"
-          images={[fr("vtNegrYfppnZJV5SpQd607Hls8.png"), fr("Q2rEr3IGpX893CKsEuhm5IGMKk.png")]}
-        />
-        <DealCard
-          title="Sweet & Savory Combo"
-          items={["1 Medium Hawaiian Heatwave", "1 Medium Pepperoni Popper"]}
-          price="$22.99"
-          save="$5"
-          bg="bg-[#ff8a1a]"
-          images={[fr("z0tpcmuGY42myUTNyLF9LCXg.png"), fr("bo5PFGtg1mLU0lWO3J9CWKVAcM.png")]}
-        />
+      <DealCard variant="Meat Feast Combo" big />
+      <div className="grid w-full grid-cols-1 justify-items-center gap-6 lg:grid-cols-2">
+        <DealCard variant="Veggie Delight Duo" />
+        <DealCard variant="Sweet & Savory Combo" />
       </div>
     </div>
   );
