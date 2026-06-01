@@ -84,7 +84,7 @@ function Index() {
               From family-sized deals to solo slices, find the perfect offer for your pizza cravings.
             </p>
           </div>
-          <OfferGrid deals={DEALS} />
+          <OfferGrid />
         </div>
       </section>
 
