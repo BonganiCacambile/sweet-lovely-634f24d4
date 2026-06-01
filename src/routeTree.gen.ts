@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as LocationsRouteImport } from './routes/locations'
+import { Route as ContactRouteImport } from './routes/contact'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as MenuFullMenuRouteImport } from './routes/menu.full-menu'
 
@@ -22,6 +23,11 @@ const LoginRoute = LoginRouteImport.update({
 const LocationsRoute = LocationsRouteImport.update({
   id: '/locations',
   path: '/locations',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ContactRoute = ContactRouteImport.update({
+  id: '/contact',
+  path: '/contact',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -37,12 +43,14 @@ const MenuFullMenuRoute = MenuFullMenuRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/contact': typeof ContactRoute
   '/locations': typeof LocationsRoute
   '/login': typeof LoginRoute
   '/menu/full-menu': typeof MenuFullMenuRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/contact': typeof ContactRoute
   '/locations': typeof LocationsRoute
   '/login': typeof LoginRoute
   '/menu/full-menu': typeof MenuFullMenuRoute
@@ -50,20 +58,28 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/contact': typeof ContactRoute
   '/locations': typeof LocationsRoute
   '/login': typeof LoginRoute
   '/menu/full-menu': typeof MenuFullMenuRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/locations' | '/login' | '/menu/full-menu'
+  fullPaths: '/' | '/contact' | '/locations' | '/login' | '/menu/full-menu'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/locations' | '/login' | '/menu/full-menu'
-  id: '__root__' | '/' | '/locations' | '/login' | '/menu/full-menu'
+  to: '/' | '/contact' | '/locations' | '/login' | '/menu/full-menu'
+  id:
+    | '__root__'
+    | '/'
+    | '/contact'
+    | '/locations'
+    | '/login'
+    | '/menu/full-menu'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ContactRoute: typeof ContactRoute
   LocationsRoute: typeof LocationsRoute
   LoginRoute: typeof LoginRoute
   MenuFullMenuRoute: typeof MenuFullMenuRoute
@@ -85,6 +101,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocationsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/contact': {
+      id: '/contact'
+      path: '/contact'
+      fullPath: '/contact'
+      preLoaderRoute: typeof ContactRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -104,6 +127,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ContactRoute: ContactRoute,
   LocationsRoute: LocationsRoute,
   LoginRoute: LoginRoute,
   MenuFullMenuRoute: MenuFullMenuRoute,
@@ -111,3 +135,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
