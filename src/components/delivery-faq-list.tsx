@@ -6,9 +6,9 @@ export function DeliveryFaqList() {
   const Faq = DeliveryFaqFramerComponent as unknown as React.ComponentType<{ variant: string }>;
   return (
     <div className="mx-auto flex max-w-3xl flex-col items-center gap-4">
-      <Faq variant="Delivery Zones - Default - Desktop" />
-      <Faq variant="Delivery Methods and Fees - Default - Desktop" />
-      <Faq variant="Pickup Info - Default - Desktop" />
+      <Faq variant="QNL_KFUfD" />
+      <Faq variant="epXno8iVq" />
+      <Faq variant="L7hWoHrsn" />
     </div>
   );
 }
