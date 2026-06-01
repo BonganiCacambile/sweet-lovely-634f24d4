@@ -48,7 +48,7 @@ function Index() {
               View Our Menu
             </Link>
           </div>
-          <div className="pointer-events-none absolute bottom-[-280px] left-1/2 z-0 w-[520px] max-w-none -translate-x-1/2 md:bottom-[-690px] md:w-[820px]">
+          <div className="pointer-events-none absolute bottom-[-360px] left-1/2 z-0 w-[620px] max-w-none -translate-x-1/2 md:bottom-[-820px] md:w-[1000px]">
             <img
               src="https://framerusercontent.com/images/TselH8OEkb2YNE35eIM1vVAfb6s.png?scale-down-to=1024"
               alt="Pizza Margheritta"
@@ -150,12 +150,11 @@ function FanFavoritesSection() {
         </div>
         <button className="mb-10" type="button" onClick={() => setShowPopular(true)}>
           <MenuTabFramerComponent
-            variant="Selected - With Photo"
+            variant="Selected"
             title="Popular"
-            image={{ src: FEATURED_PRODUCTS[0].image ?? "", alt: "Popular pizza" }}
           />
         </button>
-        {showPopular && <ProductGrid products={FEATURED_PRODUCTS} imageOnly />}
+        {showPopular && <ProductGrid products={FEATURED_PRODUCTS} />}
         <div className="mt-12 flex justify-center">
           <Link
             to="/menu/full-menu"
