@@ -62,7 +62,7 @@ function Index() {
               From classic combinations to bold flavors, these pizzas top our list for a reason.
             </p>
           </div>
-          <ProductGrid products={FEATURED_PRODUCTS} />
+          <ProductGrid products={FEATURED_PRODUCTS} imageOnly />
           <div className="mt-12 flex justify-center">
             <ButtonFramerComponent.Responsive
               variant="Secondary - Big"
