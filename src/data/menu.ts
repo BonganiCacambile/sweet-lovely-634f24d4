@@ -110,28 +110,31 @@ export const MENU_ITEMS: MenuItem[] = [
 /** Static demo menu — replace with a backend query when Lovable Cloud is enabled. */
 export const FEATURED_PRODUCTS: Product[] = [
   {
-    id: "nutella-pizza",
-    title: "Nutella Pizza",
-    price: "$7.99",
+    id: "pepperoni-popper-fav",
+    title: "Pepperoni Popper",
+    price: "$14.99",
     allergens: "Dairy, Gluten",
-    nutrition: "Nutritional Info",
-    content: "Sweet dessert pizza with a generous Nutella spread.",
+    nutrition: "from",
+    content:
+      "Double pepperoni, mozzarella, spicy marinara sauce, crushed red pepper, black olives",
   },
   {
-    id: "margherita",
-    title: "Margherita",
-    price: "$9.99",
+    id: "garlic-supreme-fav",
+    title: "Garlic Supreme",
+    price: "$13.99",
     allergens: "Dairy, Gluten",
-    nutrition: "Nutritional Info",
-    content: "Classic tomato, mozzarella and fresh basil.",
+    nutrition: "from",
+    content:
+      "Roasted garlic cloves, caramelized onions, mozzarella, Parmesan, Alfredo sauce, fresh parsley",
   },
   {
-    id: "pepperoni",
-    title: "Pepperoni",
-    price: "$11.49",
+    id: "margarita-muse-fav",
+    title: "Margarita Muse",
+    price: "$12.99",
     allergens: "Dairy, Gluten",
-    nutrition: "Nutritional Info",
-    content: "Spicy pepperoni over melted mozzarella.",
+    nutrition: "from",
+    content:
+      "Fresh mozzarella, ripe tomatoes, basil leaves, extra virgin olive oil, sea salt, marinara sauce",
   },
 ];
 
