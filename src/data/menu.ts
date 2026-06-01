@@ -117,6 +117,7 @@ export const FEATURED_PRODUCTS: Product[] = [
     nutrition: "from",
     content:
       "Mozzarella, cheddar, Parmesan, gouda, ricotta, marinara sauce, oregano",
+    image: fr("Q4djsExkm2dVJLND8pnRkbmHKy8.png"),
   },
   {
     id: "buffalo-bliss-fav",
@@ -126,6 +127,7 @@ export const FEATURED_PRODUCTS: Product[] = [
     nutrition: "from",
     content:
       "Buffalo chicken, blue cheese crumbles, mozzarella, ranch dressing, red onions",
+    image: fr("fOcW4cqVIKe7O6jovEeqZ46Cg.png"),
   },
   {
     id: "mediterranean-marvel-fav",
@@ -135,6 +137,7 @@ export const FEATURED_PRODUCTS: Product[] = [
     nutrition: "from",
     content:
       "Feta cheese, Kalamata olives, red onions, sun-dried tomatoes, spinach, mozzarella, olive oil, oregano",
+    image: fr("vtNegrYfppnZJV5SpQd607Hls8.png"),
   },
 ];
 
@@ -187,6 +190,7 @@ export const DESSERTS: Product[] = [
     allergens: "Dairy, Gluten, Nuts",
     content:
       "Pizza dough, Nutella spread, powdered sugar, strawberries (optional), whipped cream.",
+    image: fr("pRzalLce4KvcQSggYuXBvUC174.png"),
   },
   {
     id: "cannoli",
@@ -195,6 +199,7 @@ export const DESSERTS: Product[] = [
     allergens: "Dairy, Gluten",
     content:
       "Cannoli shells (flour, sugar, eggs), ricotta cheese, powdered sugar, chocolate chips, vanilla extract.",
+    image: fr("Ru7hW8Qi1bQ8fHES0Gh6mmxA.png"),
   },
   {
     id: "tiramisu",
@@ -203,6 +208,7 @@ export const DESSERTS: Product[] = [
     allergens: "Dairy, Gluten, Eggs",
     content:
       "Ladyfingers (flour, sugar, eggs), mascarpone cheese, espresso, cocoa powder, sugar, heavy cream.",
+    image: fr("h1Hhi9tTURbTtNpS1UYhUefZ2o.png"),
   },
 ];
 
