@@ -1,3 +1,4 @@
+import type * as React from "react";
 import DeliveryFaqFramerComponent from "@/framer/locations-and-delivery/delivery-faq";
 
 /** Stack of the Framer delivery FAQ accordion blocks. */
