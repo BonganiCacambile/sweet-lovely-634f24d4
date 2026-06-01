@@ -10,12 +10,18 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as LocationsRouteImport } from './routes/locations'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as MenuFullMenuRouteImport } from './routes/menu.full-menu'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LocationsRoute = LocationsRouteImport.update({
+  id: '/locations',
+  path: '/locations',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -31,30 +37,34 @@ const MenuFullMenuRoute = MenuFullMenuRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/locations': typeof LocationsRoute
   '/login': typeof LoginRoute
   '/menu/full-menu': typeof MenuFullMenuRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/locations': typeof LocationsRoute
   '/login': typeof LoginRoute
   '/menu/full-menu': typeof MenuFullMenuRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/locations': typeof LocationsRoute
   '/login': typeof LoginRoute
   '/menu/full-menu': typeof MenuFullMenuRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/login' | '/menu/full-menu'
+  fullPaths: '/' | '/locations' | '/login' | '/menu/full-menu'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/menu/full-menu'
-  id: '__root__' | '/' | '/login' | '/menu/full-menu'
+  to: '/' | '/locations' | '/login' | '/menu/full-menu'
+  id: '__root__' | '/' | '/locations' | '/login' | '/menu/full-menu'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  LocationsRoute: typeof LocationsRoute
   LoginRoute: typeof LoginRoute
   MenuFullMenuRoute: typeof MenuFullMenuRoute
 }
@@ -66,6 +76,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/locations': {
+      id: '/locations'
+      path: '/locations'
+      fullPath: '/locations'
+      preLoaderRoute: typeof LocationsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -87,6 +104,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  LocationsRoute: LocationsRoute,
   LoginRoute: LoginRoute,
   MenuFullMenuRoute: MenuFullMenuRoute,
 }
