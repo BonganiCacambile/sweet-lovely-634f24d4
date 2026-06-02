@@ -148,13 +148,18 @@ function FanFavoritesSection() {
             From classic combinations to bold flavors, these pizzas top our list for a reason.
           </p>
         </div>
-        <button className="mb-10" type="button" onClick={() => setShowPopular(true)}>
+        <button
+          className="mb-10"
+          type="button"
+          onClick={() => setShowPopular((v) => !v)}
+          aria-pressed={showPopular}
+        >
           <MenuTabFramerComponent
-            variant="Selected"
+            variant={showPopular ? "Selected" : "Without Photo"}
             title="Popular"
           />
         </button>
-        {showPopular && <ProductGrid products={FEATURED_PRODUCTS} />}
+        {showPopular && <ProductGrid products={FEATURED_PRODUCTS} imageOnly />}
         <div className="mt-12 flex justify-center">
           <Link
             to="/menu/full-menu"
