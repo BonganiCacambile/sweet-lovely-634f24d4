@@ -16,10 +16,10 @@ import { FEATURED_PRODUCTS, CITIES, DESSERTS } from "@/data/menu";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Pepper — Pizza & Delivery" },
-      { name: "description", content: "Fresh pizza, fast delivery. Browse the menu and find a Pepper near you." },
-      { property: "og:title", content: "Pepper — Pizza & Delivery" },
-      { property: "og:description", content: "Fresh pizza, fast delivery. Browse the menu and find a Pepper near you." },
+      { title: "Sweet & Lovely — Pizza & Delivery" },
+      { name: "description", content: "Fresh pizza, fast delivery. Browse the menu and find a Sweet & Lovely near you." },
+      { property: "og:title", content: "Sweet & Lovely — Pizza & Delivery" },
+      { property: "og:description", content: "Fresh pizza, fast delivery. Browse the menu and find a Sweet & Lovely near you." },
     ],
   }),
   component: Index,

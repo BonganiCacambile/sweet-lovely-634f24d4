@@ -184,20 +184,20 @@ var Component = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 										kBZLZdILh: {
 											children: (
 												<React.Fragment>
-													<motion.p
-														dir={"auto"}
-														style={{
-															"--font-selector":
-																"R0Y7Q2hlcnJ5IEJvbWIgT25lLXJlZ3VsYXI=",
-															"--framer-font-family":
-																'"Cherry Bomb One", sans-serif',
-															"--framer-font-size": "36px",
-															"--framer-text-color":
-																"var(--extracted-r6o4lv, var(--token-c53bc032-a445-44bf-b542-b566e1c9486a, rgb(255, 255, 255)))",
-														}}
-													>
-														{"Pepper"}
-													</motion.p>
+											<motion.p
+												dir={"auto"}
+												style={{
+													"--font-selector":
+														"R0Y7Q2hlcnJ5IEJvbWIgT25lLXJlZ3VsYXI=",
+													"--framer-font-family":
+														'"Cherry Bomb One", sans-serif',
+													"--framer-font-size": "36px",
+													"--framer-text-color":
+														"var(--extracted-r6o4lv, var(--token-c53bc032-a445-44bf-b542-b566e1c9486a, rgb(255, 255, 255)))",
+												}}
+											>
+												{"Sweet & Lovely"}
+											</motion.p>
 												</React.Fragment>
 											),
 										},
@@ -217,7 +217,7 @@ var Component = /* @__PURE__ */ React.forwardRef(function (props, ref) {
 												"var(--extracted-r6o4lv, var(--token-1460a2d2-639e-48c8-aee5-96e4ffb1e8ff, rgb(255, 153, 0)))",
 										}}
 									>
-										{"Pepper"}
+										{"Sweet & Lovely"}
 									</motion.p>
 								</React.Fragment>
 							</RichText>
