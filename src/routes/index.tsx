@@ -135,7 +135,7 @@ function Index() {
 
 function NewsletterSection() {
   return (
-    <section className="relative w-full overflow-hidden bg-[#fff5f7] px-4 py-20 md:py-28">
+    <section className="relative w-full overflow-hidden bg-[#fff5f7] px-4 py-20 sm:px-6 md:px-8 md:py-28">
       <div className="mx-auto grid max-w-7xl items-center gap-12 md:grid-cols-2">
         <div className="relative flex justify-center md:justify-start">
           <img
