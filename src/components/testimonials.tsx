@@ -7,59 +7,73 @@ interface TestimonialsProps {
 }
 
 /**
- * Hand-built testimonials carousel matching the "Pizza Perfection, Expertly Rated"
- * dark section from the design reference.
+ * Pepper-style testimonials carousel: full-bleed dark band with large
+ * portrait cards that peek at adjacent slides on the left/right edges.
  */
 export function Testimonials({ items }: TestimonialsProps) {
   const [index, setIndex] = useState(0);
-  const active = items[index];
   const prev = () => setIndex((i) => (i - 1 + items.length) % items.length);
   const next = () => setIndex((i) => (i + 1) % items.length);
 
-  return (
-    <div className="relative w-full overflow-hidden rounded-3xl bg-neutral-950 px-6 py-12 text-white md:px-16 md:py-20">
-      <div className="grid items-center gap-10 md:grid-cols-2">
-        <div>
-          <div className="mb-6 flex gap-1 text-yellow-400">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <Star key={i} className="h-5 w-5 fill-current" />
-            ))}
-          </div>
-          <h2 className="text-3xl font-semibold leading-tight md:text-5xl">
-            Pizza Perfection,
-            <br />
-            Expertly Rated
-          </h2>
-          <p className="mt-6 max-w-md text-sm text-neutral-300 md:text-base">
-            Top foodies and chefs share their thoughts on why our pizzas stand out
-            from the crowd.
-          </p>
-        </div>
+  // Build [intro, ...items] track. The "intro" slide holds the heading.
+  const slides = items.length;
 
-        <div className="relative min-h-[220px]">
-          <blockquote className="text-base italic text-neutral-200 md:text-lg">
-            &ldquo;{active.quote}&rdquo;
-          </blockquote>
-          <div className="mt-6 flex items-center gap-4">
-            {active.avatar && (
-              <img
-                src={active.avatar}
-                alt={active.name}
-                className="h-14 w-14 flex-none rounded-full object-cover ring-2 ring-white/20"
-              />
-            )}
+  return (
+    <section className="relative w-full overflow-hidden bg-neutral-950 py-16 md:py-24">
+      <div className="relative mx-auto w-full max-w-[1400px] px-4 sm:px-6 md:px-8">
+        {/* Two-card viewport: heading card + portrait card */}
+        <div className="relative grid gap-5 md:grid-cols-2">
+          {/* Heading card */}
+          <div className="relative flex flex-col justify-between overflow-hidden rounded-3xl bg-neutral-900 p-8 text-white md:p-12 lg:p-14 min-h-[420px] md:min-h-[520px]">
             <div>
-              <p className="text-lg font-semibold">{active.name}</p>
-              <p className="text-sm text-neutral-400">{active.title}</p>
+              <div className="mb-6 flex gap-1 text-yellow-400">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <Star key={i} className="h-5 w-5 fill-current" />
+                ))}
+              </div>
+              <h2 className="text-4xl font-extrabold leading-[1.05] tracking-tight md:text-5xl lg:text-6xl">
+                Pizza Perfection,
+                <br />
+                Expertly Rated
+              </h2>
+              <p className="mt-6 max-w-md text-base text-neutral-300 md:text-lg">
+                Top foodies and chefs share their thoughts on
+                <br className="hidden md:block" />
+                why our pizzas stand out from the crowd.
+              </p>
+            </div>
+            {/* Faded preview of previous testimonial */}
+            <div className="mt-8 max-w-md text-neutral-500">
+              <p className="text-sm italic line-clamp-3 md:text-base">
+                &ldquo;{items[(index - 1 + slides) % slides].quote}&rdquo;
+              </p>
+              <p className="mt-4 text-lg font-semibold text-neutral-600">
+                {items[(index - 1 + slides) % slides].name}
+              </p>
+              <p className="text-sm text-neutral-700">
+                {items[(index - 1 + slides) % slides].title}
+              </p>
             </div>
           </div>
 
-          <div className="mt-8 flex gap-3">
+          {/* Active portrait card */}
+          <article className="relative overflow-hidden rounded-3xl bg-neutral-800 min-h-[420px] md:min-h-[520px]">
+            {items[index].avatar && (
+              <img
+                src={items[index].avatar}
+                alt={items[index].name}
+                className="absolute inset-0 h-full w-full object-cover"
+              />
+            )}
+            {/* Gradient for legibility */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+
+            {/* Nav arrows */}
             <button
               type="button"
               aria-label="Previous testimonial"
               onClick={prev}
-              className="flex h-10 w-10 items-center justify-center rounded-full border border-white/20 transition hover:bg-white/10"
+              className="absolute left-4 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur transition hover:bg-black/70"
             >
               <ChevronLeft className="h-5 w-5" />
             </button>
@@ -67,13 +81,26 @@ export function Testimonials({ items }: TestimonialsProps) {
               type="button"
               aria-label="Next testimonial"
               onClick={next}
-              className="flex h-10 w-10 items-center justify-center rounded-full border border-white/20 transition hover:bg-white/10"
+              className="absolute right-4 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur transition hover:bg-black/70"
             >
               <ChevronRight className="h-5 w-5" />
             </button>
-          </div>
+
+            {/* Quote + name pinned to bottom */}
+            <div className="absolute inset-x-0 bottom-0 p-6 text-white md:p-10">
+              <blockquote className="max-w-xl text-base italic leading-relaxed md:text-lg">
+                &ldquo;{items[index].quote}&rdquo;
+              </blockquote>
+              <p className="mt-6 text-xl font-semibold md:text-2xl">
+                {items[index].name}
+              </p>
+              <p className="text-sm text-neutral-300 md:text-base">
+                {items[index].title}
+              </p>
+            </div>
+          </article>
         </div>
       </div>
-    </div>
+    </section>
   );
 }
