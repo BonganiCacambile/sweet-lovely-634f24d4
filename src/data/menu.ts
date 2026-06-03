@@ -219,6 +219,7 @@ export const TESTIMONIALS: Testimonial[] = [
       "Few places combine traditional pizza-making techniques with modern creativity so effortlessly. The Garlic Supreme is a prime example of innovation in comfort food.",
     name: "Sophie Jensen",
     title: "Head of Culinary Arts, Gourmet Institute",
+    avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&h=200&fit=crop&crop=faces",
   },
   {
     id: "max",
@@ -226,6 +227,7 @@ export const TESTIMONIALS: Testimonial[] = [
       "The Meat Lover's Feast is everything a carnivore dreams of, loaded with perfectly cooked meats and balanced with just the right amount of sauce. This is pizza at its finest.",
     name: "Maximilian Schneider",
     title: "Food Blogger, Berlin Bites",
+    avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&h=200&fit=crop&crop=faces",
   },
   {
     id: "andrea",
@@ -233,5 +235,6 @@ export const TESTIMONIALS: Testimonial[] = [
       "In a city full of pizza, the Firecracker Inferno brings real heat with real flavor. It's a true gem on the menu.",
     name: "Andrea D'Amico",
     title: "Chef & Restaurateur",
+    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop&crop=faces",
   },
 ];
