@@ -50,7 +50,7 @@ function DealCard({ variant, items, price, save, bg, images, darkText = false, b
 
       <div
         className={`pointer-events-none absolute inset-x-0 bottom-0 z-[1] flex items-start justify-center overflow-visible ${
-          big ? "h-[220px] md:h-[456px]" : "h-[180px] md:h-[216px]"
+          big ? "h-[260px] md:h-[456px]" : "h-[200px] md:h-[216px]"
         }`}
         aria-hidden
       >
@@ -60,8 +60,8 @@ function DealCard({ variant, items, price, save, bg, images, darkText = false, b
           loading="eager"
           className={`absolute top-0 select-none object-contain ${
             big
-              ? "left-[-60px] h-[340px] w-[340px] md:left-[-120px] md:h-[720px] md:w-[720px]"
-              : "left-[-50px] h-[260px] w-[260px] md:left-[-48px] md:h-[400px] md:w-[400px]"
+              ? "left-[-40px] h-[360px] w-[360px] sm:left-[-80px] sm:h-[460px] sm:w-[460px] md:left-[-120px] md:h-[720px] md:w-[720px]"
+              : "left-[-30px] h-[240px] w-[240px] sm:left-[-40px] sm:h-[300px] sm:w-[300px] md:left-[-48px] md:h-[400px] md:w-[400px]"
           }`}
         />
         <img
@@ -70,8 +70,8 @@ function DealCard({ variant, items, price, save, bg, images, darkText = false, b
           loading="eager"
           className={`absolute top-0 select-none object-contain ${
             big
-              ? "right-[-60px] h-[340px] w-[340px] md:right-[-120px] md:h-[720px] md:w-[720px]"
-              : "right-[-50px] h-[260px] w-[260px] md:right-[-48px] md:h-[400px] md:w-[400px]"
+              ? "right-[-40px] h-[360px] w-[360px] sm:right-[-80px] sm:h-[460px] sm:w-[460px] md:right-[-120px] md:h-[720px] md:w-[720px]"
+              : "right-[-30px] h-[240px] w-[240px] sm:right-[-40px] sm:h-[300px] sm:w-[300px] md:right-[-48px] md:h-[400px] md:w-[400px]"
           }`}
         />
       </div>
