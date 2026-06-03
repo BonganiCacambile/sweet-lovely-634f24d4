@@ -119,7 +119,11 @@ function Index() {
       </Section>
 
       {/* Testimonials */}
-      <Testimonials items={TESTIMONIALS} />
+      <section className="w-full px-4 py-16 sm:px-6 md:px-8 md:py-24">
+        <div className="mx-auto max-w-7xl">
+          <Testimonials items={TESTIMONIALS} />
+        </div>
+      </section>
 
       {/* Newsletter */}
       <NewsletterSection />
@@ -131,8 +135,8 @@ function Index() {
 
 function NewsletterSection() {
   return (
-    <section className="relative w-full overflow-hidden bg-white px-4 pt-20 pb-0 sm:px-6 md:px-8 md:pt-28">
-      <div className="mx-auto grid max-w-7xl items-center gap-12 pb-20 md:grid-cols-2 md:pb-28">
+    <section className="relative w-full overflow-hidden bg-[#fff5f7] px-4 py-20 sm:px-6 md:px-8 md:py-28">
+      <div className="mx-auto grid max-w-7xl items-center gap-12 md:grid-cols-2">
         <div className="relative flex justify-center md:justify-start">
           <img
             src="https://framerusercontent.com/images/TselH8OEkb2YNE35eIM1vVAfb6s.png?scale-down-to=1024"
@@ -168,8 +172,6 @@ function NewsletterSection() {
           </form>
         </div>
       </div>
-      {/* Red bottom band that transitions into the footer */}
-      <div aria-hidden className="h-12 w-full bg-[#ff003c] md:h-16" />
     </section>
   );
 }
