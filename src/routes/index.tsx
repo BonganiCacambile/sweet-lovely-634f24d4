@@ -76,7 +76,7 @@ function Index() {
       </section>
 
       {/* Desserts */}
-      <section id="desserts" className="w-full bg-[#fdebec] px-4 py-16 sm:px-6 md:py-24 lg:px-8">
+      <section id="desserts" className="w-full bg-white px-4 py-16 sm:px-6 md:py-24 lg:px-8">
         <div className="mx-auto max-w-7xl">
           <div className="mb-12 text-center">
             <h2 className="text-4xl font-extrabold tracking-tight md:text-5xl">
