@@ -29,7 +29,7 @@ function Index() {
     <div className="min-h-screen bg-white text-neutral-900">
       <SiteHeader />
 
-      <section className="relative h-[calc(100vh-88px)] max-h-[640px] min-h-[560px] w-full overflow-hidden px-4 pt-12 md:pt-20">
+      <section className="relative h-[calc(100vh-88px)] max-h-[640px] min-h-[560px] w-full overflow-hidden px-4 pt-12 sm:px-6 md:pt-20 lg:px-8">
         <HeroIngredients />
         <div className="relative z-10 mx-auto flex h-full max-w-5xl flex-col items-center text-center">
           <h1 className="max-w-4xl text-5xl font-extrabold tracking-tight md:text-7xl">
@@ -61,7 +61,7 @@ function Index() {
       <FanFavoritesSection />
 
       {/* Hot Pizza, Hotter Deals */}
-      <section id="deals" className="w-full px-4 py-16 md:py-24">
+      <section id="deals" className="w-full px-4 py-16 sm:px-6 md:py-24 lg:px-8">
         <div className="mx-auto max-w-7xl">
           <div className="mb-12 text-center">
             <h2 className="text-4xl font-extrabold tracking-tight md:text-5xl">
@@ -76,7 +76,7 @@ function Index() {
       </section>
 
       {/* Desserts */}
-      <section id="desserts" className="w-full bg-[#fdebec] px-4 py-16 md:py-24">
+      <section id="desserts" className="w-full bg-[#fdebec] px-4 py-16 sm:px-6 md:py-24 lg:px-8">
         <div className="mx-auto max-w-7xl">
           <div className="mb-12 text-center">
             <h2 className="text-4xl font-extrabold tracking-tight md:text-5xl">
@@ -99,7 +99,7 @@ function Index() {
       </section>
 
       {/* Find Your Nearest Pizza Spot */}
-      <section id="locations" className="w-full bg-neutral-50 px-4 py-16 sm:px-6 md:px-8 md:py-24">
+      <section id="locations" className="w-full bg-neutral-50 px-4 py-16 sm:px-6 md:py-24 lg:px-8">
         <div className="mx-auto max-w-7xl">
           <div className="mb-12 text-center">
             <h2 className="text-4xl font-extrabold tracking-tight md:text-5xl">
@@ -119,7 +119,7 @@ function Index() {
       </Section>
 
       {/* Testimonials */}
-      <section className="w-full px-4 py-16 sm:px-6 md:px-8 md:py-24">
+      <section className="w-full px-4 py-16 sm:px-6 md:py-24 lg:px-8">
         <div className="mx-auto max-w-7xl">
           <Testimonials items={TESTIMONIALS} />
         </div>
@@ -135,7 +135,7 @@ function Index() {
 
 function NewsletterSection() {
   return (
-    <section className="relative w-full overflow-hidden bg-[#fff5f7] px-4 py-20 sm:px-6 md:px-8 md:py-28">
+    <section className="relative w-full overflow-hidden bg-[#fff5f7] px-4 py-20 sm:px-6 md:py-28 lg:px-8">
       <div className="mx-auto grid max-w-7xl items-center gap-12 md:grid-cols-2">
         <div className="relative flex justify-center md:justify-start">
           <img
@@ -180,7 +180,7 @@ function FanFavoritesSection() {
   const [showPopular, setShowPopular] = useState(true);
 
   return (
-    <section className="w-full bg-[#fff5f7] px-4 py-20 md:py-24">
+    <section className="w-full bg-[#fff5f7] px-4 py-20 sm:px-6 md:py-24 lg:px-8">
       <div className="mx-auto flex max-w-7xl flex-col items-center">
         <div className="mb-11 text-center">
           <h2 className="text-4xl font-extrabold tracking-tight md:text-5xl">
