@@ -8,10 +8,9 @@ import { CityGrid } from "@/components/city-grid";
 import { DeliveryFaqList } from "@/components/delivery-faq-list";
 import { OfferGrid } from "@/components/offer-grid";
 import { SiteFooter } from "@/components/site-footer";
+import { Testimonials } from "@/components/testimonials";
 import MenuTabFramerComponent from "@/framer/menu-products/menu-tab";
-import NewsletterFramerComponent from "@/framer/newsletter/newsletter";
-import ReviewsFramerComponent from "@/framer/reviews/reviews";
-import { FEATURED_PRODUCTS, CITIES, DESSERTS } from "@/data/menu";
+import { FEATURED_PRODUCTS, CITIES, DESSERTS, TESTIMONIALS } from "@/data/menu";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -120,17 +119,60 @@ function Index() {
       </Section>
 
       {/* Testimonials */}
-      <section className="w-full">
-        <ReviewsFramerComponent.Responsive />
+      <section className="w-full px-4 py-16 md:py-24">
+        <div className="mx-auto max-w-7xl">
+          <Testimonials items={TESTIMONIALS} />
+        </div>
       </section>
 
       {/* Newsletter */}
-      <section className="w-full">
-        <NewsletterFramerComponent.Responsive />
-      </section>
+      <NewsletterSection />
 
       <SiteFooter />
     </div>
+  );
+}
+
+function NewsletterSection() {
+  return (
+    <section className="relative w-full overflow-hidden bg-[#fff5f7] px-4 py-20 md:py-28">
+      <div className="mx-auto grid max-w-7xl items-center gap-12 md:grid-cols-2">
+        <div className="relative flex justify-center md:justify-start">
+          <img
+            src="https://framerusercontent.com/images/TselH8OEkb2YNE35eIM1vVAfb6s.png?scale-down-to=1024"
+            alt="Pizza Margheritta"
+            className="h-auto w-[320px] select-none md:w-[460px]"
+          />
+        </div>
+        <div className="text-center md:text-left">
+          <h2 className="text-4xl font-extrabold tracking-tight md:text-5xl">
+            Delicious Deals,
+            <br />
+            Just for You
+          </h2>
+          <p className="mt-4 text-base text-neutral-700 md:text-lg">
+            Sign up for our newsletter and receive exclusive offers on new pizzas!
+          </p>
+          <form
+            className="mx-auto mt-8 flex w-full max-w-md flex-col gap-3 sm:flex-row md:mx-0"
+            onSubmit={(e) => e.preventDefault()}
+          >
+            <input
+              type="email"
+              required
+              placeholder="your-email@example.com"
+              className="h-12 flex-1 rounded-full border border-neutral-200 bg-white px-5 text-sm text-neutral-900 outline-none transition focus:border-[#ff003c]"
+            />
+            <button
+              type="submit"
+              className="h-12 rounded-full bg-[#ff003c] px-8 text-sm font-semibold text-white transition hover:bg-[#e6003a]"
+            >
+              Submit
+            </button>
+          </form>
+        </div>
+      </div>
+    </section>
   );
 }
 
