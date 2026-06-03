@@ -197,8 +197,11 @@ function FanFavoritesSection() {
           aria-pressed={showPopular}
         >
           <MenuTabFramerComponent
-            variant={showPopular ? "Selected" : "Without Photo"}
+            variant={showPopular ? "Selected - With Photo" : "With photo"}
             title="Popular"
+            image={{
+              src: "https://framerusercontent.com/images/bo5PFGtg1mLU0lWO3J9CWKVAcM.png?scale-down-to=512",
+            }}
           />
         </button>
         {showPopular && <ProductGrid products={FEATURED_PRODUCTS} imageOnly />}
