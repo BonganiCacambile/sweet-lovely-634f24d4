@@ -40,9 +40,18 @@ export function Testimonials({ items }: TestimonialsProps) {
           <blockquote className="text-base italic text-neutral-200 md:text-lg">
             &ldquo;{active.quote}&rdquo;
           </blockquote>
-          <div className="mt-6">
-            <p className="text-lg font-semibold">{active.name}</p>
-            <p className="text-sm text-neutral-400">{active.title}</p>
+          <div className="mt-6 flex items-center gap-4">
+            {active.avatar && (
+              <img
+                src={active.avatar}
+                alt={active.name}
+                className="h-14 w-14 flex-none rounded-full object-cover ring-2 ring-white/20"
+              />
+            )}
+            <div>
+              <p className="text-lg font-semibold">{active.name}</p>
+              <p className="text-sm text-neutral-400">{active.title}</p>
+            </div>
           </div>
 
           <div className="mt-8 flex gap-3">
