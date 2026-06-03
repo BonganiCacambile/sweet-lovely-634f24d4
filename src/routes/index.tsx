@@ -99,7 +99,7 @@ function Index() {
       </section>
 
       {/* Find Your Nearest Pizza Spot */}
-      <section id="locations" className="w-full bg-neutral-50 px-4 py-16 md:py-24">
+      <section id="locations" className="w-full bg-neutral-50 px-4 py-16 sm:px-6 md:px-8 md:py-24">
         <div className="mx-auto max-w-7xl">
           <div className="mb-12 text-center">
             <h2 className="text-4xl font-extrabold tracking-tight md:text-5xl">
@@ -119,7 +119,7 @@ function Index() {
       </Section>
 
       {/* Testimonials */}
-      <section className="w-full px-4 py-16 md:py-24">
+      <section className="w-full px-4 py-16 sm:px-6 md:px-8 md:py-24">
         <div className="mx-auto max-w-7xl">
           <Testimonials items={TESTIMONIALS} />
         </div>
@@ -135,7 +135,7 @@ function Index() {
 
 function NewsletterSection() {
   return (
-    <section className="relative w-full overflow-hidden bg-[#fff5f7] px-4 py-20 md:py-28">
+    <section className="relative w-full overflow-hidden bg-[#fff5f7] px-4 py-20 sm:px-6 md:px-8 md:py-28">
       <div className="mx-auto grid max-w-7xl items-center gap-12 md:grid-cols-2">
         <div className="relative flex justify-center md:justify-start">
           <img
