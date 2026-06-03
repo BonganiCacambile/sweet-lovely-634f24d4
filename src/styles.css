@@ -143,3 +143,8 @@
     color: var(--color-foreground);
   }
 }
+
+/* Hide the "Remix for FREE" button in the Framer nav */
+.framer-1v5627w-container {
+  display: none !important;
+}
