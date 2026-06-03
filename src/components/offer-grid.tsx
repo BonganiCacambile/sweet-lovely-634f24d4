@@ -22,7 +22,9 @@ function DealCard({ variant, items, price, save, bg, images, darkText = false, b
   return (
     <article
       className={`relative w-full overflow-hidden rounded-[24px] ${bg} ${textColor} ${
-        big ? "min-h-[690px] px-6 pb-[440px] pt-6 md:px-12 md:pt-12" : "min-h-[491px] px-6 pb-[240px] pt-6 md:px-12 md:pt-12"
+        big
+          ? "min-h-[520px] px-6 pb-[220px] pt-6 md:min-h-[690px] md:px-12 md:pb-[440px] md:pt-12"
+          : "min-h-[420px] px-6 pb-[180px] pt-6 md:min-h-[491px] md:px-12 md:pb-[240px] md:pt-12"
       }`}
     >
       <h3 className="relative z-10 text-[28px] font-extrabold leading-[1.2] tracking-normal">
@@ -36,19 +38,19 @@ function DealCard({ variant, items, price, save, bg, images, darkText = false, b
           </li>
         ))}
       </ul>
-      <div className="relative z-10 mt-6 flex w-full items-center justify-between gap-4 pt-3">
+      <div className="relative z-10 mt-6 flex w-full flex-wrap items-center justify-between gap-3 pt-3">
         <button className="h-9 rounded-full bg-white px-6 text-[16px] font-medium leading-none text-neutral-900" type="button">
           Order Now
         </button>
-        <p className="flex items-end gap-2 whitespace-nowrap text-[22px] font-extrabold leading-none tracking-normal">
+        <p className="flex items-end gap-2 whitespace-nowrap text-[20px] font-extrabold leading-none tracking-normal md:text-[22px]">
           {price}
-          <span className="text-[22px] font-light leading-none">- Save {save}</span>
+          <span className="text-[18px] font-light leading-none md:text-[22px]">- Save {save}</span>
         </p>
       </div>
 
       <div
         className={`pointer-events-none absolute inset-x-0 bottom-0 z-[1] flex items-start justify-center overflow-visible ${
-          big ? "h-[456px]" : "h-[216px]"
+          big ? "h-[220px] md:h-[456px]" : "h-[180px] md:h-[216px]"
         }`}
         aria-hidden
       >
@@ -56,16 +58,20 @@ function DealCard({ variant, items, price, save, bg, images, darkText = false, b
           src={images[0]}
           alt=""
           loading="eager"
-          className={`absolute top-0 select-none object-fill ${
-            big ? "left-[-120px] h-[720px] w-[720px]" : "left-[-48px] h-[400px] w-[400px] max-md:left-[-120px] max-md:h-[200px] max-md:w-[200px]"
+          className={`absolute top-0 select-none object-contain ${
+            big
+              ? "left-[-60px] h-[340px] w-[340px] md:left-[-120px] md:h-[720px] md:w-[720px]"
+              : "left-[-50px] h-[260px] w-[260px] md:left-[-48px] md:h-[400px] md:w-[400px]"
           }`}
         />
         <img
           src={images[1]}
           alt=""
           loading="eager"
-          className={`absolute top-0 select-none object-fill ${
-            big ? "right-[-120px] h-[720px] w-[720px]" : "right-[-48px] h-[400px] w-[400px] max-md:right-[-120px] max-md:h-[200px] max-md:w-[200px]"
+          className={`absolute top-0 select-none object-contain ${
+            big
+              ? "right-[-60px] h-[340px] w-[340px] md:right-[-120px] md:h-[720px] md:w-[720px]"
+              : "right-[-50px] h-[260px] w-[260px] md:right-[-48px] md:h-[400px] md:w-[400px]"
           }`}
         />
       </div>
