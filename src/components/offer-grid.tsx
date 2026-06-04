@@ -23,7 +23,7 @@ function DealCard({ variant, items, price, save, bg, images, darkText = false, b
 
   return (
     <article
-      className={`relative w-full overflow-hidden rounded-[24px] ${bg} ${textColor} ${
+      className={`hover-zoom group relative w-full overflow-hidden rounded-[24px] transition-transform duration-300 hover:-translate-y-1.5 ${bg} ${textColor} ${
         big
           ? "min-h-[520px] px-6 pb-[220px] pt-6 md:min-h-[690px] md:px-12 md:pb-[440px] md:pt-12"
           : "min-h-[420px] px-6 pb-[180px] pt-6 md:min-h-[491px] md:px-12 md:pb-[240px] md:pt-12"
@@ -41,7 +41,7 @@ function DealCard({ variant, items, price, save, bg, images, darkText = false, b
         ))}
       </ul>
       <div className="relative z-10 mt-6 flex w-full flex-wrap items-center justify-between gap-3 pt-3">
-        <button className="h-9 rounded-full bg-white px-6 text-[16px] font-medium leading-none text-neutral-900" type="button">
+        <button className="btn-pop h-9 rounded-full bg-white px-6 text-[16px] font-medium leading-none text-neutral-900" type="button">
           Order Now
         </button>
         <p className="flex items-end gap-2 whitespace-nowrap text-[20px] font-extrabold leading-none tracking-normal md:text-[22px]">
@@ -60,7 +60,7 @@ function DealCard({ variant, items, price, save, bg, images, darkText = false, b
           src={images[0]}
           alt=""
           loading="eager"
-          className={`absolute top-0 select-none object-contain ${
+          className={`absolute top-0 select-none object-contain transition-transform duration-700 ease-out group-hover:-rotate-6 group-hover:scale-105 ${
             big
               ? "left-[-10px] h-[260px] w-[260px] sm:left-[-100px] sm:h-[520px] sm:w-[520px] md:left-[-120px] md:h-[720px] md:w-[720px]"
               : "left-[-5px] h-[210px] w-[210px] sm:left-[-60px] sm:h-[340px] sm:w-[340px] md:left-[-48px] md:h-[400px] md:w-[400px]"
@@ -70,7 +70,7 @@ function DealCard({ variant, items, price, save, bg, images, darkText = false, b
           src={images[1]}
           alt=""
           loading="eager"
-          className={`absolute top-0 select-none object-contain ${
+          className={`absolute top-0 select-none object-contain transition-transform duration-700 ease-out group-hover:rotate-6 group-hover:scale-105 ${
             big
               ? "right-[-10px] h-[260px] w-[260px] sm:right-[-100px] sm:h-[520px] sm:w-[520px] md:right-[-120px] md:h-[720px] md:w-[720px]"
               : "right-[-5px] h-[210px] w-[210px] sm:right-[-60px] sm:h-[340px] sm:w-[340px] md:right-[-48px] md:h-[400px] md:w-[400px]"
