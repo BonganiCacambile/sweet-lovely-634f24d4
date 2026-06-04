@@ -24,12 +24,12 @@ function ContactPage() {
       <SiteHeader />
 
       {/* Hero */}
-      <section className="w-full px-4 pt-16 sm:px-6 md:pt-24 lg:px-8">
+      <section className="w-full px-4 pt-12 sm:px-6 sm:pt-16 md:pt-24 lg:px-8">
         <div className="mx-auto max-w-7xl">
-          <h1 className="text-5xl font-extrabold tracking-tight text-neutral-900 sm:text-6xl md:text-7xl lg:text-8xl">
+          <h1 className="text-4xl font-extrabold tracking-tight text-neutral-900 sm:text-5xl md:text-7xl lg:text-8xl">
             Contact Us
           </h1>
-          <p className="mt-8 max-w-2xl text-base text-neutral-900 md:text-lg">
+          <p className="mt-6 max-w-2xl text-sm text-neutral-900 sm:mt-8 sm:text-base md:text-lg">
             Whether you have a question, feedback, or just want to say hi, we&apos;re always here for you.
             Reach out and let us know how we can make your experience even better.
           </p>
@@ -37,21 +37,21 @@ function ContactPage() {
       </section>
 
       {/* Addresses + Form */}
-      <section className="w-full px-4 py-16 sm:px-6 md:py-24 lg:px-8">
+      <section className="w-full px-4 py-12 sm:px-6 sm:py-16 md:py-24 lg:px-8">
         <div className="mx-auto grid max-w-7xl gap-12 lg:grid-cols-2 lg:gap-16">
           {/* Addresses */}
           <div>
-            <h2 className="text-2xl font-semibold tracking-tight text-neutral-900 md:text-3xl">
+            <h2 className="text-xl font-semibold tracking-tight text-neutral-900 sm:text-2xl md:text-3xl">
               Addresses
             </h2>
-            <div className="mt-8 grid gap-10 sm:grid-cols-2">
+            <div className="mt-6 grid gap-8 sm:mt-8 sm:grid-cols-2 sm:gap-10">
               {ADDRESSES.map((a) => (
                 <div key={a.city}>
                   <h3 className="text-base font-semibold text-neutral-900">{a.city}:</h3>
                   <p className="mt-3 text-sm text-neutral-700">{a.address}</p>
                   <a
                     href={`mailto:${a.email}`}
-                    className="mt-3 block text-sm text-neutral-400 hover:text-neutral-600"
+                    className="mt-3 block break-all text-sm text-neutral-400 hover:text-neutral-600"
                   >
                     {a.email}
                   </a>
@@ -63,26 +63,36 @@ function ContactPage() {
 
           {/* Form */}
           <div>
-            <h2 className="text-2xl font-semibold tracking-tight text-neutral-900 md:text-3xl">
+            <h2 className="text-xl font-semibold tracking-tight text-neutral-900 sm:text-2xl md:text-3xl">
               Write Us a Message
             </h2>
-            <div className="mt-8 w-full">
-              <ContactFormFramerComponent.Responsive />
+            <div className="mt-6 w-full overflow-hidden sm:mt-8">
+              <ContactFormFramerComponent.Responsive
+                variants={{
+                  base: "Mobile",
+                  sm: "Mobile",
+                  md: "Desktop",
+                  lg: "Desktop",
+                  xl: "Desktop",
+                  "2xl": "Desktop",
+                }}
+                style={{ width: "100%", maxWidth: "100%" }}
+              />
             </div>
           </div>
         </div>
       </section>
 
       {/* Maps & Delivery Info */}
-      <section className="w-full px-4 pb-16 sm:px-6 md:pb-24 lg:px-8">
+      <section className="w-full px-4 pb-12 sm:px-6 sm:pb-16 md:pb-24 lg:px-8">
         <div className="mx-auto max-w-7xl">
-          <h2 className="text-4xl font-extrabold tracking-tight text-neutral-900 sm:text-5xl md:text-6xl">
+          <h2 className="text-3xl font-extrabold tracking-tight text-neutral-900 sm:text-4xl md:text-5xl lg:text-6xl">
             Maps & Delivery Info
           </h2>
-          <div className="mt-10">
+          <div className="mt-8 sm:mt-10">
             <CityGrid cities={CITIES} />
           </div>
-          <div className="mt-16">
+          <div className="mt-12 sm:mt-16">
             <DeliveryFaqList />
           </div>
         </div>
