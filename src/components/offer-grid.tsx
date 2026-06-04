@@ -1,6 +1,5 @@
 type DealVariant =
   | "Spicy Duo Deal"
-  | "Spicy Duo Deal"
   | "Cheese Lovers Pair"
   | "Meat Feast Combo"
   | "Veggie Delight Duo"
