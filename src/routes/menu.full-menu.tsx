@@ -55,9 +55,9 @@ function FullMenuPage() {
       </section>
 
       {/* Category tabs */}
-      <nav className="mx-auto mt-12 max-w-7xl px-4 md:mt-16 md:px-8">
+      <nav className="sticky top-0 z-30 mx-auto mt-8 max-w-7xl bg-white/90 px-4 backdrop-blur-md md:static md:mt-16 md:bg-transparent md:px-8 md:backdrop-blur-none">
         <Reveal
-          className="flex flex-nowrap items-center gap-3 overflow-x-auto pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:gap-4"
+          className="-mx-4 flex snap-x snap-mandatory flex-nowrap items-center gap-2 overflow-x-auto px-4 py-3 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:mx-0 md:flex-wrap md:gap-4 md:px-0 md:py-2"
           stagger
           staggerStep={60}
         >
@@ -118,17 +118,22 @@ function TabButton({ label, image, selected, onClick }: TabButtonProps) {
     <button
       type="button"
       onClick={onClick}
-      className={`group flex shrink-0 items-center gap-3 rounded-full px-5 py-2.5 text-sm font-medium transition-all duration-300 hover:-translate-y-0.5 hover:scale-[1.03] md:text-base ${
+      aria-pressed={selected}
+      className={`group flex shrink-0 snap-start items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition-all duration-300 hover:-translate-y-0.5 active:scale-95 md:gap-3 md:px-5 md:py-2.5 md:text-base ${
         selected
-          ? "bg-neutral-100 text-neutral-900 shadow-sm"
-          : "text-neutral-700 hover:bg-neutral-50"
+          ? "border-[#ff003c] bg-[#ff003c] text-white shadow-md"
+          : "border-neutral-200 bg-white text-neutral-700 hover:border-neutral-300 hover:bg-neutral-50"
       }`}
     >
       {image && (
-        <img src={image} alt="" aria-hidden className="h-7 w-7 object-contain transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110" />
+        <img
+          src={image}
+          alt=""
+          aria-hidden
+          className="h-6 w-6 object-contain transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110 md:h-7 md:w-7"
+        />
       )}
-      <span>{label}</span>
-      {selected && <span className="ml-1 inline-block h-2 w-2 rounded-full bg-[#ff003c]" />}
+      <span className="whitespace-nowrap">{label}</span>
     </button>
   );
 }
