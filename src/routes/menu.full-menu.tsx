@@ -58,6 +58,8 @@ function FullMenuPage() {
       <nav className="mx-auto mt-12 max-w-7xl px-4 md:mt-16 md:px-8">
         <Reveal
           className="flex flex-nowrap items-center gap-3 overflow-x-auto pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:gap-4"
+          stagger
+          staggerStep={60}
         >
           <TabButton
             label="Full Menu"
