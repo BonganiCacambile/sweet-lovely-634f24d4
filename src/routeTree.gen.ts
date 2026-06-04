@@ -12,8 +12,11 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as LocationsRouteImport } from './routes/locations'
 import { Route as ContactRouteImport } from './routes/contact'
+import { Route as CheckoutRouteImport } from './routes/checkout'
+import { Route as CartRouteImport } from './routes/cart'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as MenuFullMenuRouteImport } from './routes/menu.full-menu'
+import { Route as CheckoutSuccessRouteImport } from './routes/checkout.success'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -30,6 +33,16 @@ const ContactRoute = ContactRouteImport.update({
   path: '/contact',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CheckoutRoute = CheckoutRouteImport.update({
+  id: '/checkout',
+  path: '/checkout',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CartRoute = CartRouteImport.update({
+  id: '/cart',
+  path: '/cart',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -40,45 +53,80 @@ const MenuFullMenuRoute = MenuFullMenuRouteImport.update({
   path: '/menu/full-menu',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CheckoutSuccessRoute = CheckoutSuccessRouteImport.update({
+  id: '/success',
+  path: '/success',
+  getParentRoute: () => CheckoutRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/cart': typeof CartRoute
+  '/checkout': typeof CheckoutRouteWithChildren
   '/contact': typeof ContactRoute
   '/locations': typeof LocationsRoute
   '/login': typeof LoginRoute
+  '/checkout/success': typeof CheckoutSuccessRoute
   '/menu/full-menu': typeof MenuFullMenuRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/cart': typeof CartRoute
+  '/checkout': typeof CheckoutRouteWithChildren
   '/contact': typeof ContactRoute
   '/locations': typeof LocationsRoute
   '/login': typeof LoginRoute
+  '/checkout/success': typeof CheckoutSuccessRoute
   '/menu/full-menu': typeof MenuFullMenuRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/cart': typeof CartRoute
+  '/checkout': typeof CheckoutRouteWithChildren
   '/contact': typeof ContactRoute
   '/locations': typeof LocationsRoute
   '/login': typeof LoginRoute
+  '/checkout/success': typeof CheckoutSuccessRoute
   '/menu/full-menu': typeof MenuFullMenuRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/contact' | '/locations' | '/login' | '/menu/full-menu'
-  fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/contact' | '/locations' | '/login' | '/menu/full-menu'
-  id:
-    | '__root__'
+  fullPaths:
     | '/'
+    | '/cart'
+    | '/checkout'
     | '/contact'
     | '/locations'
     | '/login'
+    | '/checkout/success'
+    | '/menu/full-menu'
+  fileRoutesByTo: FileRoutesByTo
+  to:
+    | '/'
+    | '/cart'
+    | '/checkout'
+    | '/contact'
+    | '/locations'
+    | '/login'
+    | '/checkout/success'
+    | '/menu/full-menu'
+  id:
+    | '__root__'
+    | '/'
+    | '/cart'
+    | '/checkout'
+    | '/contact'
+    | '/locations'
+    | '/login'
+    | '/checkout/success'
     | '/menu/full-menu'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  CartRoute: typeof CartRoute
+  CheckoutRoute: typeof CheckoutRouteWithChildren
   ContactRoute: typeof ContactRoute
   LocationsRoute: typeof LocationsRoute
   LoginRoute: typeof LoginRoute
@@ -108,6 +156,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ContactRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/checkout': {
+      id: '/checkout'
+      path: '/checkout'
+      fullPath: '/checkout'
+      preLoaderRoute: typeof CheckoutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/cart': {
+      id: '/cart'
+      path: '/cart'
+      fullPath: '/cart'
+      preLoaderRoute: typeof CartRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -122,11 +184,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MenuFullMenuRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/checkout/success': {
+      id: '/checkout/success'
+      path: '/success'
+      fullPath: '/checkout/success'
+      preLoaderRoute: typeof CheckoutSuccessRouteImport
+      parentRoute: typeof CheckoutRoute
+    }
   }
 }
 
+interface CheckoutRouteChildren {
+  CheckoutSuccessRoute: typeof CheckoutSuccessRoute
+}
+
+const CheckoutRouteChildren: CheckoutRouteChildren = {
+  CheckoutSuccessRoute: CheckoutSuccessRoute,
+}
+
+const CheckoutRouteWithChildren = CheckoutRoute._addFileChildren(
+  CheckoutRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  CartRoute: CartRoute,
+  CheckoutRoute: CheckoutRouteWithChildren,
   ContactRoute: ContactRoute,
   LocationsRoute: LocationsRoute,
   LoginRoute: LoginRoute,
