@@ -57,7 +57,7 @@ export function ProductGrid({ products, imageOnly = false }: ProductGridProps) {
                   }
                 : {})}
             />
-            <div className="pointer-events-none absolute right-4 top-4 z-10 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
+            <div className="pointer-events-none absolute right-4 top-4 z-10 opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100">
               <div className="pointer-events-auto">
                 <AddToCartButton item={p} />
               </div>
