@@ -23,8 +23,8 @@ function DealCard({ variant, items, price, save, bg, images, darkText = false, b
     <article
       className={`relative w-full overflow-hidden rounded-[24px] ${bg} ${textColor} ${
         big
-          ? "min-h-[520px] px-6 pb-[220px] pt-6 md:min-h-[690px] md:px-12 md:pb-[440px] md:pt-12"
-          : "min-h-[420px] px-6 pb-[180px] pt-6 md:min-h-[491px] md:px-12 md:pb-[240px] md:pt-12"
+          ? "min-h-[520px] px-6 pb-[260px] pt-6 sm:pb-[360px] md:min-h-[690px] md:px-12 md:pb-[440px] md:pt-12"
+          : "min-h-[420px] px-6 pb-[200px] pt-6 sm:pb-[240px] md:min-h-[491px] md:px-12 md:pb-[240px] md:pt-12"
       }`}
     >
       <h3 className="relative z-10 text-[28px] font-extrabold leading-[1.2] tracking-normal">
@@ -49,8 +49,8 @@ function DealCard({ variant, items, price, save, bg, images, darkText = false, b
       </div>
 
       <div
-        className={`pointer-events-none absolute inset-x-0 bottom-0 z-[1] flex items-start justify-center overflow-visible ${
-          big ? "h-[200px] sm:h-[260px] md:h-[456px]" : "h-[160px] sm:h-[200px] md:h-[216px]"
+        className={`pointer-events-none absolute inset-x-0 bottom-0 z-[1] overflow-hidden ${
+          big ? "h-[240px] sm:h-[340px] md:h-[456px]" : "h-[180px] sm:h-[220px] md:h-[216px]"
         }`}
         aria-hidden
       >
@@ -58,20 +58,20 @@ function DealCard({ variant, items, price, save, bg, images, darkText = false, b
           src={images[0]}
           alt=""
           loading="eager"
-          className={`absolute top-0 select-none object-contain ${
+          className={`absolute bottom-[-30%] select-none object-contain ${
             big
-              ? "left-[-40px] h-[260px] w-[260px] sm:left-[-100px] sm:h-[520px] sm:w-[520px] md:left-[-120px] md:h-[720px] md:w-[720px]"
-              : "left-[-30px] h-[210px] w-[210px] sm:left-[-60px] sm:h-[340px] sm:w-[340px] md:left-[-48px] md:h-[400px] md:w-[400px]"
+              ? "left-[-8%] h-[380px] w-[380px] sm:left-[-6%] sm:h-[540px] sm:w-[540px] md:left-[-60px] md:h-[720px] md:w-[720px]"
+              : "left-[-10%] h-[260px] w-[260px] sm:left-[-8%] sm:h-[340px] sm:w-[340px] md:left-[-40px] md:h-[400px] md:w-[400px]"
           }`}
         />
         <img
           src={images[1]}
           alt=""
           loading="eager"
-          className={`absolute top-0 select-none object-contain ${
+          className={`absolute bottom-[-30%] select-none object-contain ${
             big
-              ? "right-[-40px] h-[260px] w-[260px] sm:right-[-100px] sm:h-[520px] sm:w-[520px] md:right-[-120px] md:h-[720px] md:w-[720px]"
-              : "right-[-30px] h-[210px] w-[210px] sm:right-[-60px] sm:h-[340px] sm:w-[340px] md:right-[-48px] md:h-[400px] md:w-[400px]"
+              ? "right-[-8%] h-[380px] w-[380px] sm:right-[-6%] sm:h-[540px] sm:w-[540px] md:right-[-60px] md:h-[720px] md:w-[720px]"
+              : "right-[-10%] h-[260px] w-[260px] sm:right-[-8%] sm:h-[340px] sm:w-[340px] md:right-[-40px] md:h-[400px] md:w-[400px]"
           }`}
         />
       </div>
