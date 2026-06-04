@@ -29,7 +29,7 @@ export function CityGrid({ cities }: CityGridProps) {
           <Reveal key={c.id} delay={Math.min(i, 8) * 60}>
             <button
             type="button"
-            className="group relative aspect-square w-full overflow-hidden rounded-3xl"
+            className="group relative aspect-square w-full overflow-hidden rounded-3xl transition-transform duration-300 hover:-translate-y-1.5 hover:scale-[1.03] hover:shadow-xl"
             style={{
               backgroundImage: img ? `url(${img})` : undefined,
               backgroundSize: "cover",
@@ -38,10 +38,10 @@ export function CityGrid({ cities }: CityGridProps) {
           >
             <span
               aria-hidden
-              className="absolute inset-0 mix-blend-multiply"
+              className="absolute inset-0 mix-blend-multiply transition-opacity duration-300 group-hover:opacity-80"
               style={{ backgroundColor: c.color }}
             />
-            <span className="absolute inset-0 flex items-center justify-center px-2 text-center text-xl font-extrabold text-white drop-shadow md:text-2xl">
+            <span className="absolute inset-0 flex items-center justify-center px-2 text-center text-xl font-extrabold text-white drop-shadow transition-transform duration-300 group-hover:scale-110 md:text-2xl">
               {c.name}
             </span>
             </button>
