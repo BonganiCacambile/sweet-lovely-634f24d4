@@ -9,6 +9,7 @@ import { DeliveryFaqList } from "@/components/delivery-faq-list";
 import { OfferGrid } from "@/components/offer-grid";
 import { SiteFooter } from "@/components/site-footer";
 import { Testimonials } from "@/components/testimonials";
+import { Reveal } from "@/components/reveal";
 import MenuTabFramerComponent from "@/framer/menu-products/menu-tab";
 import { FEATURED_PRODUCTS, CITIES, DESSERTS, TESTIMONIALS } from "@/data/menu";
 
@@ -63,14 +64,14 @@ function Index() {
       {/* Hot Pizza, Hotter Deals */}
       <section id="deals" className="w-full px-4 py-16 sm:px-6 md:py-24 lg:px-8">
         <div className="mx-auto max-w-7xl">
-          <div className="mb-12 text-center">
+          <Reveal className="mb-12 text-center">
             <h2 className="text-4xl font-extrabold tracking-tight md:text-5xl">
               Hot Pizza, Hotter Deals
             </h2>
             <p className="mt-4 text-base text-neutral-700 md:text-lg">
               From family-sized deals to solo slices, find the perfect offer for your pizza cravings.
             </p>
-          </div>
+          </Reveal>
           <OfferGrid />
         </div>
       </section>
@@ -78,14 +79,14 @@ function Index() {
       {/* Desserts */}
       <section id="desserts" className="w-full bg-white px-4 py-16 sm:px-6 md:py-24 lg:px-8">
         <div className="mx-auto max-w-7xl">
-          <div className="mb-12 text-center">
+          <Reveal className="mb-12 text-center">
             <h2 className="text-4xl font-extrabold tracking-tight md:text-5xl">
               Save Room for Dessert!
             </h2>
             <p className="mt-4 text-base text-neutral-700 md:text-lg">
               Our desserts are worth it. Trust us, you won&apos;t want to miss these sweet delights.
             </p>
-          </div>
+          </Reveal>
           <ProductGrid products={DESSERTS} />
           <div className="mt-12 flex justify-center">
             <Link
@@ -101,14 +102,14 @@ function Index() {
       {/* Find Your Nearest Pizza Spot */}
       <section id="locations" className="w-full bg-neutral-50 px-4 py-16 sm:px-6 md:py-24 lg:px-8">
         <div className="mx-auto max-w-7xl">
-          <div className="mb-12 text-center">
+          <Reveal className="mb-12 text-center">
             <h2 className="text-4xl font-extrabold tracking-tight md:text-5xl">
               Find Your Nearest Pizza Spot
             </h2>
             <p className="mt-4 text-base text-neutral-700 md:text-lg">
               Locate our stores, check delivery zones, and pick the best option for you!
             </p>
-          </div>
+          </Reveal>
           <CityGrid cities={CITIES} />
         </div>
       </section>
@@ -182,14 +183,14 @@ function FanFavoritesSection() {
   return (
     <section className="w-full bg-[#fff5f7] px-4 py-20 sm:px-6 md:py-24 lg:px-8">
       <div className="mx-auto flex max-w-7xl flex-col items-center">
-        <div className="mb-11 text-center">
+        <Reveal className="mb-11 text-center">
           <h2 className="text-4xl font-extrabold tracking-tight md:text-5xl">
             Fan Favorites
           </h2>
           <p className="mt-7 text-base text-neutral-900 md:text-lg">
             From classic combinations to bold flavors, these pizzas top our list for a reason.
           </p>
-        </div>
+        </Reveal>
         <button
           className="mb-10"
           type="button"

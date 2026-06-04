@@ -1,4 +1,5 @@
 import ProductCardFramerComponent from "@/framer/menu-products/product-card";
+import { Reveal } from "@/components/reveal";
 
 export interface Product {
   id: string;
@@ -31,9 +32,9 @@ export function ProductGrid({ products, imageOnly = false }: ProductGridProps) {
       };
   return (
     <div className="grid grid-cols-1 justify-items-center gap-6 sm:grid-cols-2 lg:grid-cols-3">
-      {products.map((p) => (
-        <ProductCardFramerComponent.Responsive
-          key={p.id}
+      {products.map((p, i) => (
+        <Reveal key={p.id} delay={Math.min(i, 8) * 70}>
+          <ProductCardFramerComponent.Responsive
           variants={variants as never}
           FZjwTwKXl={p.title}
           gWA6po3g9={p.price}
@@ -53,7 +54,8 @@ export function ProductGrid({ products, imageOnly = false }: ProductGridProps) {
                 },
               }
             : {})}
-        />
+          />
+        </Reveal>
       ))}
     </div>
   );

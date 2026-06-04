@@ -1,3 +1,5 @@
+import { Reveal } from "@/components/reveal";
+
 export interface City {
   id: string;
   name: string;
@@ -21,11 +23,11 @@ const CITY_IMAGES: Record<string, string> = {
 export function CityGrid({ cities }: CityGridProps) {
   return (
     <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:gap-6 lg:grid-cols-5">
-      {cities.map((c) => {
+      {cities.map((c, i) => {
         const img = c.image ?? CITY_IMAGES[c.id];
         return (
-          <button
-            key={c.id}
+          <Reveal key={c.id} delay={Math.min(i, 8) * 60}>
+            <button
             type="button"
             className="group relative aspect-square w-full overflow-hidden rounded-3xl"
             style={{
@@ -42,7 +44,8 @@ export function CityGrid({ cities }: CityGridProps) {
             <span className="absolute inset-0 flex items-center justify-center px-2 text-center text-xl font-extrabold text-white drop-shadow md:text-2xl">
               {c.name}
             </span>
-          </button>
+            </button>
+          </Reveal>
         );
       })}
     </div>
