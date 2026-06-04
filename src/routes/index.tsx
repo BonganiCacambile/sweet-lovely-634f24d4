@@ -43,7 +43,7 @@ function Index() {
           <div className="mt-10">
             <Link
               to="/menu/full-menu"
-              className="inline-flex items-center rounded-full bg-[#ff003c] px-8 py-3.5 text-base font-medium text-white shadow-[0_0_10px_rgba(255,0,60,0)] transition-shadow hover:shadow-[0_8px_20px_rgba(255,0,60,0.25)]"
+              className="btn-pop inline-flex items-center rounded-full bg-[#ff003c] px-8 py-3.5 text-base font-medium text-white shadow-[0_0_10px_rgba(255,0,60,0)] hover:bg-[#e6003a]"
             >
               View Our Menu
             </Link>
@@ -52,7 +52,7 @@ function Index() {
             <img
               src="https://framerusercontent.com/images/TselH8OEkb2YNE35eIM1vVAfb6s.png?scale-down-to=1024"
               alt="Pizza Margheritta"
-              className="h-auto w-full select-none"
+              className="h-auto w-full select-none animate-spin-slow"
             />
           </div>
         </div>
@@ -91,7 +91,7 @@ function Index() {
           <div className="mt-12 flex justify-center">
             <Link
               to="/menu/full-menu"
-              className="inline-flex items-center rounded-full bg-neutral-900 px-8 py-4 text-base font-semibold text-white transition hover:bg-neutral-800"
+              className="btn-pop inline-flex items-center rounded-full bg-neutral-900 px-8 py-4 text-base font-semibold text-white hover:bg-neutral-800"
             >
               View Deserts Menu
             </Link>
@@ -142,7 +142,7 @@ function NewsletterSection() {
           <img
             src="https://framerusercontent.com/images/TselH8OEkb2YNE35eIM1vVAfb6s.png?scale-down-to=1024"
             alt="Pizza Margheritta"
-            className="h-auto w-[320px] select-none md:w-[460px]"
+            className="h-auto w-[320px] select-none md:w-[460px] animate-spin-slow"
           />
         </div>
         <div className="text-center md:text-left">
@@ -166,7 +166,7 @@ function NewsletterSection() {
             />
             <button
               type="submit"
-              className="h-12 rounded-full bg-[#ff003c] px-8 text-sm font-semibold text-white transition hover:bg-[#e6003a]"
+              className="btn-pop h-12 rounded-full bg-[#ff003c] px-8 text-sm font-semibold text-white hover:bg-[#e6003a]"
             >
               Submit
             </button>
@@ -209,7 +209,7 @@ function FanFavoritesSection() {
         <div className="mt-12 flex justify-center">
           <Link
             to="/menu/full-menu"
-            className="inline-flex items-center rounded-full bg-neutral-900 px-8 py-4 text-base font-semibold text-white transition hover:bg-neutral-800"
+            className="btn-pop inline-flex items-center rounded-full bg-neutral-900 px-8 py-4 text-base font-semibold text-white hover:bg-neutral-800"
           >
             View Pizza Menu
           </Link>
@@ -240,7 +240,8 @@ function HeroIngredients() {
           key={i}
           src={it.src}
           alt=""
-          className={`absolute select-none object-contain ${it.className}`}
+          className={`absolute select-none object-contain ${i % 2 === 0 ? "animate-float" : "animate-float-slow"} ${it.className}`}
+          style={{ animationDelay: `${(i % 5) * 0.4}s` }}
         />
       ))}
     </div>
