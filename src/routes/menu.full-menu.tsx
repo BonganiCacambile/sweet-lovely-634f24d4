@@ -56,7 +56,11 @@ function FullMenuPage() {
 
       {/* Category tabs */}
       <nav className="mx-auto mt-12 max-w-7xl px-4 md:mt-16 md:px-8">
-        <Reveal className="flex flex-wrap items-center gap-3 md:gap-4" stagger staggerStep={60}>
+        <Reveal
+          className="flex flex-nowrap items-center gap-3 overflow-x-auto pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:gap-4"
+          stagger
+          staggerStep={60}
+        >
           <TabButton
             label="Full Menu"
             selected={active === "all"}
@@ -114,7 +118,7 @@ function TabButton({ label, image, selected, onClick }: TabButtonProps) {
     <button
       type="button"
       onClick={onClick}
-      className={`group flex items-center gap-3 rounded-full px-5 py-2.5 text-sm font-medium transition-all duration-300 hover:-translate-y-0.5 hover:scale-[1.03] md:text-base ${
+      className={`group flex shrink-0 items-center gap-3 rounded-full px-5 py-2.5 text-sm font-medium transition-all duration-300 hover:-translate-y-0.5 hover:scale-[1.03] md:text-base ${
         selected
           ? "bg-neutral-100 text-neutral-900 shadow-sm"
           : "text-neutral-700 hover:bg-neutral-50"
