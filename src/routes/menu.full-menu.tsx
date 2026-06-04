@@ -130,10 +130,10 @@ function TabButton({ label, image, selected, onClick }: TabButtonProps) {
           src={image}
           alt=""
           aria-hidden
-          className="h-6 w-6 object-contain transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110 md:h-7 md:w-7"
+          className="h-5 w-5 shrink-0 object-contain transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110 md:h-6 md:w-6"
         />
       )}
-      <span className="whitespace-nowrap">{label}</span>
+      <span className="whitespace-nowrap leading-none">{label}</span>
     </button>
   );
 }
