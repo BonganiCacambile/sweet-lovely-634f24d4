@@ -192,18 +192,35 @@ function FanFavoritesSection() {
           </p>
         </Reveal>
         <button
-          className="mb-10"
           type="button"
           onClick={() => setShowPopular((v) => !v)}
           aria-pressed={showPopular}
+          className={`group mb-10 inline-flex items-center gap-3 rounded-full border pl-2 pr-6 py-2 text-base font-semibold transition-all duration-300 ease-out shadow-sm hover:shadow-lg hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#ff003c] ${
+            showPopular
+              ? "bg-neutral-900 text-white border-neutral-900"
+              : "bg-white text-neutral-900 border-neutral-200 hover:border-neutral-900"
+          }`}
         >
-          <MenuTabFramerComponent
-            variant={showPopular ? "Selected - With Photo" : "With photo"}
-            title="Popular"
-            image={{
-              src: "https://framerusercontent.com/images/bo5PFGtg1mLU0lWO3J9CWKVAcM.png?scale-down-to=512",
-            }}
-          />
+          <span className="relative flex h-10 w-10 items-center justify-center rounded-full bg-[#fff5f7] overflow-hidden ring-1 ring-black/5">
+            <img
+              src="https://framerusercontent.com/images/bo5PFGtg1mLU0lWO3J9CWKVAcM.png?scale-down-to=512"
+              alt=""
+              className="h-9 w-9 object-contain transition-transform duration-500 group-hover:rotate-12 group-hover:scale-110"
+            />
+          </span>
+          <span className="tracking-tight">Popular</span>
+          <span
+            aria-hidden="true"
+            className={`ml-1 relative inline-flex h-5 w-9 items-center rounded-full transition-colors duration-300 ${
+              showPopular ? "bg-[#ff003c]" : "bg-neutral-300"
+            }`}
+          >
+            <span
+              className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform duration-300 ${
+                showPopular ? "translate-x-4" : "translate-x-0.5"
+              }`}
+            />
+          </span>
         </button>
         {showPopular && <ProductGrid products={FEATURED_PRODUCTS} imageOnly />}
         <div className="mt-12 flex justify-center">
