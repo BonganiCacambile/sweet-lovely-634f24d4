@@ -50,7 +50,7 @@ function DealCard({ variant, items, price, save, bg, images, darkText = false, b
 
       <div
         className={`pointer-events-none absolute inset-x-0 bottom-0 z-[1] flex items-start justify-center overflow-visible ${
-          big ? "h-[260px] md:h-[456px]" : "h-[200px] md:h-[216px]"
+          big ? "h-[200px] sm:h-[260px] md:h-[456px]" : "h-[160px] sm:h-[200px] md:h-[216px]"
         }`}
         aria-hidden
       >
@@ -60,8 +60,8 @@ function DealCard({ variant, items, price, save, bg, images, darkText = false, b
           loading="eager"
           className={`absolute top-0 select-none object-contain ${
             big
-              ? "left-[-60px] h-[380px] w-[380px] sm:left-[-100px] sm:h-[520px] sm:w-[520px] md:left-[-120px] md:h-[720px] md:w-[720px]"
-              : "left-[-50px] h-[280px] w-[280px] sm:left-[-60px] sm:h-[340px] sm:w-[340px] md:left-[-48px] md:h-[400px] md:w-[400px]"
+              ? "left-[-40px] h-[260px] w-[260px] sm:left-[-100px] sm:h-[520px] sm:w-[520px] md:left-[-120px] md:h-[720px] md:w-[720px]"
+              : "left-[-30px] h-[210px] w-[210px] sm:left-[-60px] sm:h-[340px] sm:w-[340px] md:left-[-48px] md:h-[400px] md:w-[400px]"
           }`}
         />
         <img
@@ -70,8 +70,8 @@ function DealCard({ variant, items, price, save, bg, images, darkText = false, b
           loading="eager"
           className={`absolute top-0 select-none object-contain ${
             big
-              ? "right-[-60px] h-[380px] w-[380px] sm:right-[-100px] sm:h-[520px] sm:w-[520px] md:right-[-120px] md:h-[720px] md:w-[720px]"
-              : "right-[-50px] h-[280px] w-[280px] sm:right-[-60px] sm:h-[340px] sm:w-[340px] md:right-[-48px] md:h-[400px] md:w-[400px]"
+              ? "right-[-40px] h-[260px] w-[260px] sm:right-[-100px] sm:h-[520px] sm:w-[520px] md:right-[-120px] md:h-[720px] md:w-[720px]"
+              : "right-[-30px] h-[210px] w-[210px] sm:right-[-60px] sm:h-[340px] sm:w-[340px] md:right-[-48px] md:h-[400px] md:w-[400px]"
           }`}
         />
       </div>
