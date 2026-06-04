@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode, type CSSProperties, type ElementType } from "react";
+import { Children, useEffect, useRef, useState, type ReactNode, type CSSProperties, type ElementType } from "react";
 
 interface RevealProps {
   children: ReactNode;
@@ -67,8 +67,8 @@ export function Reveal({
     );
   }
 
-  // Stagger: wrap each direct child with its own delay
-  const items = Array.isArray(children) ? children : [children];
+  // Stagger: wrap each direct child with its own delay (flattens fragments/arrays)
+  const items = Children.toArray(children);
   return (
     <Tag
       ref={ref as never}
