@@ -114,14 +114,14 @@ function TabButton({ label, image, selected, onClick }: TabButtonProps) {
     <button
       type="button"
       onClick={onClick}
-      className={`flex items-center gap-3 rounded-full px-5 py-2.5 text-sm font-medium transition-colors md:text-base ${
+      className={`group flex items-center gap-3 rounded-full px-5 py-2.5 text-sm font-medium transition-all duration-300 hover:-translate-y-0.5 hover:scale-[1.03] md:text-base ${
         selected
-          ? "bg-neutral-100 text-neutral-900"
+          ? "bg-neutral-100 text-neutral-900 shadow-sm"
           : "text-neutral-700 hover:bg-neutral-50"
       }`}
     >
       {image && (
-        <img src={image} alt="" aria-hidden className="h-7 w-7 object-contain" />
+        <img src={image} alt="" aria-hidden className="h-7 w-7 object-contain transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110" />
       )}
       <span>{label}</span>
       {selected && <span className="ml-1 inline-block h-2 w-2 rounded-full bg-[#ff003c]" />}
