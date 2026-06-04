@@ -9,7 +9,11 @@ export function SiteFooter() {
         <div className="grid gap-12 md:grid-cols-2 lg:grid-cols-4">
           {/* Brand */}
           <div>
-            <Link to="/" className="text-3xl font-extrabold tracking-tight text-white">
+            <Link
+              to="/"
+              className="text-4xl tracking-tight text-white"
+              style={{ fontFamily: '"Cherry Bomb One", sans-serif' }}
+            >
               Sweet &amp; Lovely
             </Link>
             <address className="mt-5 not-italic text-sm leading-6 text-white/90">
