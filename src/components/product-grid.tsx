@@ -66,7 +66,8 @@ export function ProductGrid({ products, imageOnly = false, isPizza = false }: Pr
                 <AddToCartButton
                   item={p}
                   isPizza={isPizza}
-                  className="h-10 px-6 text-sm sm:h-11 sm:px-7"
+                  label={isPizza ? "Add to cart" : "Add to cart"}
+                  className="h-10 min-w-[150px] justify-center px-6 text-sm sm:h-11 sm:min-w-[160px] sm:px-7"
                 />
               </div>
             </div>
