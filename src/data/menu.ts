@@ -112,7 +112,7 @@ export const FEATURED_PRODUCTS: Product[] = [
   {
     id: "cheese-avalanche-fav",
     title: "Cheese Avalanche",
-    price: "R14.99",
+    price: "R80",
     allergens: "Dairy, Gluten",
     nutrition: "from",
     content:
@@ -122,7 +122,7 @@ export const FEATURED_PRODUCTS: Product[] = [
   {
     id: "buffalo-bliss-fav",
     title: "Buffalo Bliss",
-    price: "R15.99",
+    price: "R80",
     allergens: "Dairy, Gluten, Eggs",
     nutrition: "from",
     content:
@@ -132,7 +132,7 @@ export const FEATURED_PRODUCTS: Product[] = [
   {
     id: "mediterranean-marvel-fav",
     title: "Mediterranean Marvel",
-    price: "R15.99",
+    price: "R80",
     allergens: "Dairy, Gluten",
     nutrition: "from",
     content:
@@ -146,21 +146,21 @@ export const FULL_MENU: Product[] = [
   {
     id: "veggie-supreme",
     title: "Veggie Supreme",
-    price: "R10.99",
+    price: "R80",
     allergens: "Dairy, Gluten",
     content: "Peppers, onions, olives, mushrooms.",
   },
   {
     id: "four-cheese",
     title: "Four Cheese",
-    price: "R12.49",
+    price: "R80",
     allergens: "Dairy, Gluten",
     content: "Mozzarella, gorgonzola, parmesan, ricotta.",
   },
   {
     id: "bbq-chicken",
     title: "BBQ Chicken",
-    price: "R13.49",
+    price: "R80",
     allergens: "Dairy, Gluten",
     content: "Smoky BBQ sauce, grilled chicken, red onion.",
   },
