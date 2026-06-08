@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { Loader2, Mail, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
@@ -140,6 +140,3 @@ function Stepper({ step }: { step: number }) {
     </div>
   );
 }
-
-// keep effect import used somewhere to avoid TS unused warning if not needed
-void useEffect;

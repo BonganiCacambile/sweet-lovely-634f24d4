@@ -15,6 +15,7 @@ import { CartProvider } from "@/lib/cart-context";
 import { CartFab } from "@/components/cart/cart-fab";
 import { CartDrawer } from "@/components/cart/cart-drawer";
 import { Toaster } from "@/components/ui/sonner";
+import { AuthProvider } from "@/lib/auth-context";
 
 function NotFoundComponent() {
   return (
@@ -126,13 +127,15 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <CartProvider>
-        {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-        <Outlet />
-        <CartFab />
-        <CartDrawer />
-        <Toaster position="top-center" richColors />
-      </CartProvider>
+      <AuthProvider>
+        <CartProvider>
+          {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+          <Outlet />
+          <CartFab />
+          <CartDrawer />
+          <Toaster position="top-center" richColors />
+        </CartProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }
