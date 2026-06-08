@@ -24,6 +24,7 @@ import { Route as AuthForgotPasswordRouteImport } from './routes/auth.forgot-pas
 import { Route as AuthAdminRouteImport } from './routes/auth.admin'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedAccountRouteImport } from './routes/_authenticated/account'
+import { Route as AuthAdminMfaRouteImport } from './routes/auth.admin.mfa'
 import { Route as AuthenticatedAccountSecurityRouteImport } from './routes/_authenticated/account.security'
 import { Route as AuthenticatedAccountPreferencesRouteImport } from './routes/_authenticated/account.preferences'
 import { Route as AuthenticatedAccountOrdersRouteImport } from './routes/_authenticated/account.orders'
@@ -103,6 +104,11 @@ const AuthenticatedAccountRoute = AuthenticatedAccountRouteImport.update({
   path: '/account',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthAdminMfaRoute = AuthAdminMfaRouteImport.update({
+  id: '/mfa',
+  path: '/mfa',
+  getParentRoute: () => AuthAdminRoute,
+} as any)
 const AuthenticatedAccountSecurityRoute =
   AuthenticatedAccountSecurityRouteImport.update({
     id: '/security',
@@ -138,7 +144,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/account': typeof AuthenticatedAccountRouteWithChildren
   '/admin': typeof AuthenticatedAdminRoute
-  '/auth/admin': typeof AuthAdminRoute
+  '/auth/admin': typeof AuthAdminRouteWithChildren
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
   '/checkout/success': typeof CheckoutSuccessRoute
@@ -147,6 +153,7 @@ export interface FileRoutesByFullPath {
   '/account/orders': typeof AuthenticatedAccountOrdersRoute
   '/account/preferences': typeof AuthenticatedAccountPreferencesRoute
   '/account/security': typeof AuthenticatedAccountSecurityRoute
+  '/auth/admin/mfa': typeof AuthAdminMfaRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -158,7 +165,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/account': typeof AuthenticatedAccountRouteWithChildren
   '/admin': typeof AuthenticatedAdminRoute
-  '/auth/admin': typeof AuthAdminRoute
+  '/auth/admin': typeof AuthAdminRouteWithChildren
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
   '/checkout/success': typeof CheckoutSuccessRoute
@@ -167,6 +174,7 @@ export interface FileRoutesByTo {
   '/account/orders': typeof AuthenticatedAccountOrdersRoute
   '/account/preferences': typeof AuthenticatedAccountPreferencesRoute
   '/account/security': typeof AuthenticatedAccountSecurityRoute
+  '/auth/admin/mfa': typeof AuthAdminMfaRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -180,7 +188,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/_authenticated/account': typeof AuthenticatedAccountRouteWithChildren
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
-  '/auth/admin': typeof AuthAdminRoute
+  '/auth/admin': typeof AuthAdminRouteWithChildren
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
   '/checkout/success': typeof CheckoutSuccessRoute
@@ -189,6 +197,7 @@ export interface FileRoutesById {
   '/_authenticated/account/orders': typeof AuthenticatedAccountOrdersRoute
   '/_authenticated/account/preferences': typeof AuthenticatedAccountPreferencesRoute
   '/_authenticated/account/security': typeof AuthenticatedAccountSecurityRoute
+  '/auth/admin/mfa': typeof AuthAdminMfaRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -211,6 +220,7 @@ export interface FileRouteTypes {
     | '/account/orders'
     | '/account/preferences'
     | '/account/security'
+    | '/auth/admin/mfa'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -231,6 +241,7 @@ export interface FileRouteTypes {
     | '/account/orders'
     | '/account/preferences'
     | '/account/security'
+    | '/auth/admin/mfa'
   id:
     | '__root__'
     | '/'
@@ -252,6 +263,7 @@ export interface FileRouteTypes {
     | '/_authenticated/account/orders'
     | '/_authenticated/account/preferences'
     | '/_authenticated/account/security'
+    | '/auth/admin/mfa'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -373,6 +385,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAccountRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/auth/admin/mfa': {
+      id: '/auth/admin/mfa'
+      path: '/mfa'
+      fullPath: '/auth/admin/mfa'
+      preLoaderRoute: typeof AuthAdminMfaRouteImport
+      parentRoute: typeof AuthAdminRoute
+    }
     '/_authenticated/account/security': {
       id: '/_authenticated/account/security'
       path: '/security'
@@ -435,14 +454,26 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
 const AuthenticatedRouteRouteWithChildren =
   AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
 
+interface AuthAdminRouteChildren {
+  AuthAdminMfaRoute: typeof AuthAdminMfaRoute
+}
+
+const AuthAdminRouteChildren: AuthAdminRouteChildren = {
+  AuthAdminMfaRoute: AuthAdminMfaRoute,
+}
+
+const AuthAdminRouteWithChildren = AuthAdminRoute._addFileChildren(
+  AuthAdminRouteChildren,
+)
+
 interface AuthRouteChildren {
-  AuthAdminRoute: typeof AuthAdminRoute
+  AuthAdminRoute: typeof AuthAdminRouteWithChildren
   AuthForgotPasswordRoute: typeof AuthForgotPasswordRoute
   AuthResetPasswordRoute: typeof AuthResetPasswordRoute
 }
 
 const AuthRouteChildren: AuthRouteChildren = {
-  AuthAdminRoute: AuthAdminRoute,
+  AuthAdminRoute: AuthAdminRouteWithChildren,
   AuthForgotPasswordRoute: AuthForgotPasswordRoute,
   AuthResetPasswordRoute: AuthResetPasswordRoute,
 }
@@ -475,3 +506,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
