@@ -28,14 +28,17 @@ export function AuthLayout({
       <div className="mx-auto grid min-h-dvh w-full max-w-7xl grid-cols-1 lg:grid-cols-2">
         {/* Left brand panel */}
         <section className="relative hidden flex-col justify-between p-10 lg:flex">
-          <Link to="/" className="inline-flex items-center gap-2">
+          <Link to="/" className="inline-flex items-center">
             <span
-              className="inline-flex h-9 w-9 items-center justify-center rounded-xl text-white"
-              style={{ background: "linear-gradient(135deg,#ff003c,#ff5a36)" }}
+              style={{
+                fontFamily: '"Cherry Bomb One", sans-serif',
+                color: "rgb(255, 153, 0)",
+                fontSize: "28px",
+                lineHeight: 1,
+              }}
             >
-              <Sparkles className="h-5 w-5" />
+              Sweet &amp; Lovely
             </span>
-            <span className="text-lg font-semibold tracking-tight text-neutral-900">Sweet &amp; Lovely</span>
           </Link>
 
           <motion.div
@@ -81,14 +84,15 @@ export function AuthLayout({
           >
             {/* Mobile brand header */}
             <div className="mb-6 flex flex-col items-center text-center lg:hidden">
-              <Link to="/" className="inline-flex items-center gap-2">
+              <Link to="/" className="inline-flex items-center">
                 <span
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-xl text-white"
-                  style={{ background: "linear-gradient(135deg,#ff003c,#ff5a36)" }}
+                  style={{
+                    fontFamily: '"Cherry Bomb One", sans-serif',
+                    color: "rgb(255, 153, 0)",
+                    fontSize: "26px",
+                    lineHeight: 1,
+                  }}
                 >
-                  <Sparkles className="h-4 w-4" />
-                </span>
-                <span className="text-base font-semibold tracking-tight text-neutral-900">
                   Sweet &amp; Lovely
                 </span>
               </Link>
