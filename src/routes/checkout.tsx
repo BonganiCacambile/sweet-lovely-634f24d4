@@ -148,7 +148,7 @@ function CheckoutPage() {
       key: config.publicKey,
       email: form.email,
       amount,
-      currency: "USD",
+      currency: "ZAR",
       metadata: {
         custom_fields: [
           {
