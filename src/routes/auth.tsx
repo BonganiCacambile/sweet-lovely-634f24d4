@@ -1,11 +1,10 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { motion, AnimatePresence } from "framer-motion";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { ShieldCheck, UserRound, ArrowLeft, ArrowRight } from "lucide-react";
 import { AuthLayout } from "@/components/auth/auth-layout";
 import { LoginForm } from "@/components/auth/login-form";
 import { RegisterForm } from "@/components/auth/register-form";
-import { supabase } from "@/integrations/supabase/client";
 
 type Tab = "signin" | "signup";
 type Role = "customer" | "admin" | null;
@@ -24,12 +23,6 @@ function AuthPage() {
   const navigate = useNavigate();
   const [tab, setTab] = useState<Tab>("signin");
   const [role, setRole] = useState<Role>(null);
-
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      if (data.session) navigate({ to: "/" });
-    });
-  }, [navigate]);
 
   if (!role) {
     return (

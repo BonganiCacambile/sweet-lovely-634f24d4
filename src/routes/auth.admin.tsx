@@ -1,10 +1,11 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
-import { Loader2, ShieldCheck, Eye, EyeOff, LifeBuoy, KeyRound } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Loader2, ShieldCheck, Eye, EyeOff, LifeBuoy, KeyRound, LogOut, ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { AdminAuthLayout } from "@/components/admin/admin-auth-layout";
 import { Field, fieldCls } from "@/components/auth/login-form";
+import { GoogleButton } from "@/components/auth/social-buttons";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/auth/admin")({
@@ -24,6 +25,48 @@ function AdminAuth() {
   const [show, setShow] = useState(false);
   const [remember, setRemember] = useState(true);
   const [loading, setLoading] = useState(false);
+  const [existing, setExisting] = useState<
+    | { state: "loading" }
+    | { state: "none" }
+    | { state: "signed-in"; email: string; isAdmin: boolean }
+  >({ state: "loading" });
+
+  const checkExistingSession = async () => {
+    const { data: userRes } = await supabase.auth.getUser();
+    const u = userRes.user;
+    if (!u) {
+      setExisting({ state: "none" });
+      return;
+    }
+    const { data: roles } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", u.id);
+    const isAdmin = Boolean(roles?.some((r: { role: string }) => r.role === "admin"));
+    setExisting({ state: "signed-in", email: u.email ?? "", isAdmin });
+  };
+
+  useEffect(() => {
+    void checkExistingSession();
+    const { data: sub } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "USER_UPDATED") {
+        void checkExistingSession();
+      }
+    });
+    return () => sub.subscription.unsubscribe();
+  }, []);
+
+  const proceedToConsole = (verifiedEmail: string) => {
+    try {
+      sessionStorage.setItem(
+        "sl_admin_mfa_pending",
+        JSON.stringify({ email: verifiedEmail, remember, at: Date.now() }),
+      );
+    } catch {
+      /* storage unavailable */
+    }
+    navigate({ to: "/auth/admin/mfa" });
+  };
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,7 +74,11 @@ function AdminAuth() {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error || !data.user) {
       setLoading(false);
-      toast.error("Sign-in failed", { description: error?.message ?? "Unknown error" });
+      const msg = error?.message ?? "Unknown error";
+      const hint = /invalid login credentials/i.test(msg)
+        ? "If you usually sign in with Google, use the Google button above."
+        : msg;
+      toast.error("Sign-in failed", { description: hint });
       return;
     }
     const { data: roles } = await supabase
@@ -46,13 +93,24 @@ function AdminAuth() {
       return;
     }
     toast.success("Credentials verified", { description: "Complete two-factor verification." });
-    try {
-      sessionStorage.setItem(
-        "sl_admin_mfa_pending",
-        JSON.stringify({ email, remember, at: Date.now() }),
-      );
-    } catch { /* storage unavailable */ }
-    navigate({ to: "/auth/admin/mfa" });
+    proceedToConsole(data.user.email ?? email);
+  };
+
+  const useThisAccount = async () => {
+    if (existing.state !== "signed-in") return;
+    if (!existing.isAdmin) {
+      toast.error("This account isn't an administrator.");
+      return;
+    }
+    toast.success("Welcome back, Administrator");
+    proceedToConsole(existing.email);
+  };
+
+  const signOutAndSwitch = async () => {
+    await supabase.auth.signOut();
+    setEmail("");
+    setPassword("");
+    toast.success("Signed out. Use a different administrator account.");
   };
 
   return (
@@ -66,15 +124,62 @@ function AdminAuth() {
         animate={{ opacity: 1, y: 0 }}
         className="space-y-4"
       >
-        <div className="flex items-start gap-3 rounded-2xl border border-amber-200/70 bg-amber-50/60 p-3.5 text-xs text-amber-900">
+        {existing.state === "signed-in" ? (
+          <div className="space-y-3 rounded-2xl border border-emerald-200/70 bg-emerald-50/60 p-4 text-sm text-emerald-900">
+            <div className="flex items-start gap-3">
+              <ShieldCheck className="mt-0.5 h-4 w-4 flex-none" />
+              <div className="min-w-0">
+                <p className="font-semibold">You&rsquo;re signed in as</p>
+                <p className="truncate text-xs text-emerald-800/80">{existing.email}</p>
+                {!existing.isAdmin && (
+                  <p className="mt-1 text-xs text-rose-700">
+                    This account isn&rsquo;t an administrator.
+                  </p>
+                )}
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {existing.isAdmin && (
+                <button
+                  type="button"
+                  onClick={useThisAccount}
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-3 py-2 text-xs font-semibold text-white hover:bg-emerald-700"
+                >
+                  Continue as administrator <ArrowRight className="h-3.5 w-3.5" />
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={signOutAndSwitch}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-300 bg-white px-3 py-2 text-xs font-semibold text-emerald-800 hover:bg-emerald-50"
+              >
+                <LogOut className="h-3.5 w-3.5" /> Use a different account
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-start gap-3 rounded-2xl border border-amber-200/70 bg-amber-50/60 p-3.5 text-xs text-amber-900">
           <ShieldCheck className="mt-0.5 h-4 w-4 flex-none" />
           <p>
             Authorized administrators only. Unauthorized access attempts are reported and may be
             subject to legal action.
           </p>
         </div>
+        )}
 
-        <form onSubmit={submit} className="space-y-4">
+        {existing.state !== "signed-in" && (
+          <>
+            <GoogleButton label="Continue with Google" />
+            <div className="flex items-center gap-3 py-1">
+              <span className="h-px flex-1 bg-neutral-200" />
+              <span className="text-xs uppercase tracking-wider text-neutral-400">or email</span>
+              <span className="h-px flex-1 bg-neutral-200" />
+            </div>
+          </>
+        )}
+
+        {existing.state !== "signed-in" && (
+          <form onSubmit={submit} className="space-y-4">
           <Field label="Admin email">
             <input
               type="email"
@@ -132,7 +237,8 @@ function AdminAuth() {
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
             {loading ? "Verifying…" : "Continue to verification"}
           </button>
-        </form>
+          </form>
+        )}
 
         <div className="grid grid-cols-1 gap-2 pt-2 text-xs text-neutral-600 sm:grid-cols-2">
           <a
