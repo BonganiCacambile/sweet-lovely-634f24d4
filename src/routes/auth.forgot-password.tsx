@@ -10,8 +10,8 @@ import { supabase } from "@/integrations/supabase/client";
 export const Route = createFileRoute("/auth/forgot-password")({
   head: () => ({
     meta: [
-      { title: "Reset your password — Pepper" },
-      { name: "description", content: "Reset your Pepper account password securely." },
+      { title: "Reset your password — Sweet & Lovely" },
+      { name: "description", content: "Reset your Sweet & Lovely account password securely." },
     ],
   }),
   component: ForgotPasswordPage,
@@ -63,7 +63,7 @@ function ForgotPasswordPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className={fieldCls}
-                placeholder="you@pepper.com"
+                placeholder="you@sweetandlovely.pizza"
               />
             </Field>
             <button

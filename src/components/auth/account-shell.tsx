@@ -1,5 +1,5 @@
 import { Link, useRouter } from "@tanstack/react-router";
-import { LogOut, User as UserIcon, ShieldCheck, Bell, Settings, ShoppingBag, Sparkles, LayoutDashboard } from "lucide-react";
+import { LogOut, User as UserIcon, ShieldCheck, Bell, Settings, ShoppingBag, LayoutDashboard } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import type { ReactNode } from "react";
 import { motion } from "framer-motion";
@@ -33,14 +33,17 @@ export function AccountShell({ children, title }: { children: ReactNode; title: 
     <main className="min-h-dvh bg-[#fafafa]">
       <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
         <header className="mb-8 flex flex-wrap items-center justify-between gap-4">
-          <Link to="/" className="inline-flex items-center gap-2">
+          <Link to="/" className="inline-flex items-center">
             <span
-              className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-white"
-              style={{ background: "linear-gradient(135deg,#ff003c,#ff5a36)" }}
+              style={{
+                fontFamily: '"Cherry Bomb One", sans-serif',
+                color: "rgb(255, 0, 60)",
+                fontSize: "22px",
+                lineHeight: 1,
+              }}
             >
-              <Sparkles className="h-4 w-4" />
+              Sweet &amp; Lovely
             </span>
-            <span className="text-base font-semibold tracking-tight text-neutral-900">Pepper</span>
           </Link>
           <button
             onClick={onSignOut}
@@ -66,7 +69,7 @@ export function AccountShell({ children, title }: { children: ReactNode; title: 
                 </div>
                 <div className="min-w-0">
                   <p className="truncate text-sm font-semibold text-neutral-900">
-                    {profile?.full_name || "Pepper member"}
+                    {profile?.full_name || "Sweet & Lovely member"}
                   </p>
                   <p className="truncate text-xs text-neutral-500">{user?.email}</p>
                 </div>

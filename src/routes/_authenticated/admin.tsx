@@ -6,7 +6,7 @@ import { useAuth } from "@/lib/auth-context";
 import { Users, ShieldAlert } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin")({
-  head: () => ({ meta: [{ title: "Admin dashboard — Pepper" }] }),
+  head: () => ({ meta: [{ title: "Admin dashboard — Sweet & Lovely" }] }),
   beforeLoad: async () => {
     const { data } = await supabase.auth.getUser();
     if (!data.user) throw redirect({ to: "/auth/admin" });

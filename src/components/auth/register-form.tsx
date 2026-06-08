@@ -75,7 +75,7 @@ export function RegisterForm() {
     >
       <div>
         <h2 className="text-2xl font-semibold tracking-tight text-neutral-900">Create your account</h2>
-        <p className="mt-1 text-sm text-neutral-500">Join Pepper in less than a minute.</p>
+        <p className="mt-1 text-sm text-neutral-500">Join Sweet & Lovely in less than a minute.</p>
       </div>
 
       <GoogleButton label="Sign up with Google" />
@@ -116,7 +116,7 @@ export function RegisterForm() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           className={fieldCls}
-          placeholder="you@pepper.com"
+          placeholder="you@sweetandlovely.pizza"
           autoComplete="email"
         />
       </Field>

@@ -3,7 +3,7 @@ import { AccountShell, Card } from "@/components/auth/account-shell";
 import { ShoppingBag } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/account/orders")({
-  head: () => ({ meta: [{ title: "Your orders — Pepper" }] }),
+  head: () => ({ meta: [{ title: "Your orders — Sweet & Lovely" }] }),
   component: () => (
     <AccountShell title="Orders">
       <Card>
