@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Loader2, ShieldCheck, Eye, EyeOff, LifeBuoy, KeyRound, LogOut, ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
@@ -20,6 +20,7 @@ export const Route = createFileRoute("/auth/admin")({
 
 function AdminAuth() {
   const navigate = useNavigate();
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [show, setShow] = useState(false);
@@ -30,6 +31,8 @@ function AdminAuth() {
     | { state: "none" }
     | { state: "signed-in"; email: string; isAdmin: boolean }
   >({ state: "loading" });
+
+  if (pathname !== "/auth/admin") return <Outlet />;
 
   const checkExistingSession = async () => {
     const { data: userRes } = await supabase.auth.getUser();
@@ -169,7 +172,7 @@ function AdminAuth() {
 
         {existing.state !== "signed-in" && (
           <>
-            <GoogleButton label="Continue with Google" />
+            <GoogleButton label="Continue with Google" redirectTo="/auth/admin" />
             <div className="flex items-center gap-3 py-1">
               <span className="h-px flex-1 bg-neutral-200" />
               <span className="text-xs uppercase tracking-wider text-neutral-400">or email</span>
