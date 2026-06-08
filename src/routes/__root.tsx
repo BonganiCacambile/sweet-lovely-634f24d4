@@ -8,6 +8,7 @@ import {
   Scripts,
 } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
+import { useRouterState, Navigate } from "@tanstack/react-router";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
@@ -15,7 +16,7 @@ import { CartProvider } from "@/lib/cart-context";
 import { CartFab } from "@/components/cart/cart-fab";
 import { CartDrawer } from "@/components/cart/cart-drawer";
 import { Toaster } from "@/components/ui/sonner";
-import { AuthProvider } from "@/lib/auth-context";
+import { AuthProvider, useAuth } from "@/lib/auth-context";
 
 function NotFoundComponent() {
   return (
@@ -129,13 +130,36 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <CartProvider>
-          {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-          <Outlet />
-          <CartFab />
-          <CartDrawer />
+          <AuthGate>
+            {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+            <Outlet />
+            <CartFab />
+            <CartDrawer />
+          </AuthGate>
           <Toaster position="top-center" richColors />
         </CartProvider>
       </AuthProvider>
     </QueryClientProvider>
   );
+}
+
+const PUBLIC_PREFIXES = ["/auth"];
+
+function AuthGate({ children }: { children: ReactNode }) {
+  const { user, loading } = useAuth();
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const isPublic = PUBLIC_PREFIXES.some((p) => pathname === p || pathname.startsWith(p + "/") || pathname.startsWith(p));
+
+  if (isPublic) return <>{children}</>;
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-muted border-t-foreground" />
+      </div>
+    );
+  }
+  if (!user) {
+    return <Navigate to="/auth" search={{ redirect: pathname } as never} replace />;
+  }
+  return <>{children}</>;
 }
