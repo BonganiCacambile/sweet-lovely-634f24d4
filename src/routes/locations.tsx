@@ -9,8 +9,8 @@ import { CITIES } from "@/data/menu";
 export const Route = createFileRoute("/locations")({
   head: () => ({
     meta: [
-      { title: "Locations & Delivery — Pepper" },
-      { name: "description", content: "Find a Pepper near you and see delivery zones, fees and pickup info." },
+      { title: "Locations & Delivery — Sweet & Lovely" },
+      { name: "description", content: "Find a Sweet & Lovely near you and see delivery zones, fees and pickup info." },
       { property: "og:title", content: "Locations & Delivery — Pepper" },
       { property: "og:description", content: "Find a Pepper near you and see delivery zones, fees and pickup info." },
     ],

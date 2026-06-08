@@ -41,7 +41,7 @@ export const CATEGORY_INTRO: Record<MenuCategory, string> = {
   pasta:
     "Twirl into comfort with our handcrafted pasta — slow-simmered sauces, al dente noodles, and bright, fresh ingredients in every bowl.",
   sides:
-    "Crispy, cheesy, golden and dippable — the perfect supporting cast to any Pepper meal.",
+    "Crispy, cheesy, golden and dippable — the perfect supporting cast to any Sweet & Lovely meal.",
   deserts:
     "End on a sweet note with warm, indulgent desserts made fresh in-house every day.",
   drinks:
