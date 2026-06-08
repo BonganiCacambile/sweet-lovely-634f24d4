@@ -16,10 +16,12 @@ interface ProductGridProps {
   products: Product[];
   /** Use the "Only Pizza" variant set (image-only Fan Favorites style) instead of the full "Others" card. */
   imageOnly?: boolean;
+  /** Mark items as pizzas so the Add button opens a Medium/Large size picker. */
+  isPizza?: boolean;
 }
 
 /** Responsive grid of Framer product cards. */
-export function ProductGrid({ products, imageOnly = false }: ProductGridProps) {
+export function ProductGrid({ products, imageOnly = false, isPizza = false }: ProductGridProps) {
   const variants = imageOnly
     ? {
         base: "Only Pizza - Desktop",
@@ -45,6 +47,7 @@ export function ProductGrid({ products, imageOnly = false }: ProductGridProps) {
               JV7xTZLzb={`<p>${p.nutrition ?? "Nutritional Info"}</p>`}
               ZaUVK_Zrs={`<p>${p.content ?? ""}</p>`}
               GTORt8VJU={""}
+              O5tlPGRu3={"Add"}
               {...(p.image
                 ? {
                     EKtkBiqHP: {
@@ -57,9 +60,9 @@ export function ProductGrid({ products, imageOnly = false }: ProductGridProps) {
                   }
                 : {})}
             />
-            <div className="pointer-events-none absolute right-4 top-4 z-10 opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100">
+            <div className="pointer-events-none absolute right-4 top-4 z-10">
               <div className="pointer-events-auto">
-                <AddToCartButton item={p} />
+                <AddToCartButton item={p} isPizza={isPizza} />
               </div>
             </div>
           </div>
