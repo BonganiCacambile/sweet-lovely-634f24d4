@@ -14,9 +14,13 @@ import { Route as LocationsRouteImport } from './routes/locations'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as CheckoutRouteImport } from './routes/checkout'
 import { Route as CartRouteImport } from './routes/cart'
+import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as MenuFullMenuRouteImport } from './routes/menu.full-menu'
 import { Route as CheckoutSuccessRouteImport } from './routes/checkout.success'
+import { Route as AuthResetPasswordRouteImport } from './routes/auth.reset-password'
+import { Route as AuthForgotPasswordRouteImport } from './routes/auth.forgot-password'
+import { Route as AuthAdminRouteImport } from './routes/auth.admin'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -43,6 +47,11 @@ const CartRoute = CartRouteImport.update({
   path: '/cart',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -58,35 +67,62 @@ const CheckoutSuccessRoute = CheckoutSuccessRouteImport.update({
   path: '/success',
   getParentRoute: () => CheckoutRoute,
 } as any)
+const AuthResetPasswordRoute = AuthResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthForgotPasswordRoute = AuthForgotPasswordRouteImport.update({
+  id: '/forgot-password',
+  path: '/forgot-password',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthAdminRoute = AuthAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => AuthRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRouteWithChildren
   '/cart': typeof CartRoute
   '/checkout': typeof CheckoutRouteWithChildren
   '/contact': typeof ContactRoute
   '/locations': typeof LocationsRoute
   '/login': typeof LoginRoute
+  '/auth/admin': typeof AuthAdminRoute
+  '/auth/forgot-password': typeof AuthForgotPasswordRoute
+  '/auth/reset-password': typeof AuthResetPasswordRoute
   '/checkout/success': typeof CheckoutSuccessRoute
   '/menu/full-menu': typeof MenuFullMenuRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRouteWithChildren
   '/cart': typeof CartRoute
   '/checkout': typeof CheckoutRouteWithChildren
   '/contact': typeof ContactRoute
   '/locations': typeof LocationsRoute
   '/login': typeof LoginRoute
+  '/auth/admin': typeof AuthAdminRoute
+  '/auth/forgot-password': typeof AuthForgotPasswordRoute
+  '/auth/reset-password': typeof AuthResetPasswordRoute
   '/checkout/success': typeof CheckoutSuccessRoute
   '/menu/full-menu': typeof MenuFullMenuRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/auth': typeof AuthRouteWithChildren
   '/cart': typeof CartRoute
   '/checkout': typeof CheckoutRouteWithChildren
   '/contact': typeof ContactRoute
   '/locations': typeof LocationsRoute
   '/login': typeof LoginRoute
+  '/auth/admin': typeof AuthAdminRoute
+  '/auth/forgot-password': typeof AuthForgotPasswordRoute
+  '/auth/reset-password': typeof AuthResetPasswordRoute
   '/checkout/success': typeof CheckoutSuccessRoute
   '/menu/full-menu': typeof MenuFullMenuRoute
 }
@@ -94,37 +130,50 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/auth'
     | '/cart'
     | '/checkout'
     | '/contact'
     | '/locations'
     | '/login'
+    | '/auth/admin'
+    | '/auth/forgot-password'
+    | '/auth/reset-password'
     | '/checkout/success'
     | '/menu/full-menu'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/auth'
     | '/cart'
     | '/checkout'
     | '/contact'
     | '/locations'
     | '/login'
+    | '/auth/admin'
+    | '/auth/forgot-password'
+    | '/auth/reset-password'
     | '/checkout/success'
     | '/menu/full-menu'
   id:
     | '__root__'
     | '/'
+    | '/auth'
     | '/cart'
     | '/checkout'
     | '/contact'
     | '/locations'
     | '/login'
+    | '/auth/admin'
+    | '/auth/forgot-password'
+    | '/auth/reset-password'
     | '/checkout/success'
     | '/menu/full-menu'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthRoute: typeof AuthRouteWithChildren
   CartRoute: typeof CartRoute
   CheckoutRoute: typeof CheckoutRouteWithChildren
   ContactRoute: typeof ContactRoute
@@ -170,6 +219,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CartRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -191,8 +247,43 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CheckoutSuccessRouteImport
       parentRoute: typeof CheckoutRoute
     }
+    '/auth/reset-password': {
+      id: '/auth/reset-password'
+      path: '/reset-password'
+      fullPath: '/auth/reset-password'
+      preLoaderRoute: typeof AuthResetPasswordRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/auth/forgot-password': {
+      id: '/auth/forgot-password'
+      path: '/forgot-password'
+      fullPath: '/auth/forgot-password'
+      preLoaderRoute: typeof AuthForgotPasswordRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/auth/admin': {
+      id: '/auth/admin'
+      path: '/admin'
+      fullPath: '/auth/admin'
+      preLoaderRoute: typeof AuthAdminRouteImport
+      parentRoute: typeof AuthRoute
+    }
   }
 }
+
+interface AuthRouteChildren {
+  AuthAdminRoute: typeof AuthAdminRoute
+  AuthForgotPasswordRoute: typeof AuthForgotPasswordRoute
+  AuthResetPasswordRoute: typeof AuthResetPasswordRoute
+}
+
+const AuthRouteChildren: AuthRouteChildren = {
+  AuthAdminRoute: AuthAdminRoute,
+  AuthForgotPasswordRoute: AuthForgotPasswordRoute,
+  AuthResetPasswordRoute: AuthResetPasswordRoute,
+}
+
+const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
 
 interface CheckoutRouteChildren {
   CheckoutSuccessRoute: typeof CheckoutSuccessRoute
@@ -208,6 +299,7 @@ const CheckoutRouteWithChildren = CheckoutRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthRoute: AuthRouteWithChildren,
   CartRoute: CartRoute,
   CheckoutRoute: CheckoutRouteWithChildren,
   ContactRoute: ContactRoute,
@@ -218,3 +310,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
