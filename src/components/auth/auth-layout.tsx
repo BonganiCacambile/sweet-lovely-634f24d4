@@ -32,7 +32,7 @@ export function AuthLayout({
             <span
               style={{
                 fontFamily: '"Cherry Bomb One", sans-serif',
-                color: "rgb(255, 153, 0)",
+                color: "rgb(255, 0, 60)",
                 fontSize: "28px",
                 lineHeight: 1,
               }}
