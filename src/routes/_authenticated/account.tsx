@@ -4,7 +4,7 @@ import { useAuth } from "@/lib/auth-context";
 import { CheckCircle2, ShieldCheck, MapPin, Star } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/account")({
-  head: () => ({ meta: [{ title: "Your account — Pepper" }] }),
+  head: () => ({ meta: [{ title: "Your account — Sweet & Lovely" }] }),
   component: AccountPage,
 });
 
@@ -29,7 +29,7 @@ function AccountPage() {
           <ul className="mt-3 space-y-3 text-sm">
             <Status ok={verified} label={verified ? "Email verified" : "Email not verified"} />
             <Status ok={true} label="Account in good standing" />
-            <Status ok={true} label="Member of Pepper Rewards" />
+            <Status ok={true} label="Member of Sweet & Lovely Rewards" />
           </ul>
         </Card>
 
@@ -71,7 +71,7 @@ function AccountPage() {
               <Star className="h-4 w-4" />
             </span>
             <div>
-              <p className="text-sm font-semibold text-neutral-900">0 Pepper points</p>
+              <p className="text-sm font-semibold text-neutral-900">0 Sweet & Lovely points</p>
               <p className="mt-1 text-xs text-neutral-500">Earn 1 point per R10 spent.</p>
             </div>
           </div>

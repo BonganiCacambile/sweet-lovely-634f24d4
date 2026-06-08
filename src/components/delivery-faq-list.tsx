@@ -11,7 +11,7 @@ const FAQ_ITEMS: FaqItem[] = [
     title: "Delivery Zones",
     body: (
       <div className="space-y-2 text-neutral-700">
-        <p>We deliver across all 5 of our cities — New York, London, Amsterdam, Berlin and Bucharest — within a 6&nbsp;mile / 10&nbsp;km radius of each Pepper location.</p>
+        <p>We deliver across all 5 of our cities — New York, London, Amsterdam, Berlin and Bucharest — within a 6&nbsp;mile / 10&nbsp;km radius of each Sweet & Lovely location.</p>
         <p>Enter your address at checkout to see live availability and estimated delivery time for your spot.</p>
       </div>
     ),
@@ -29,7 +29,7 @@ const FAQ_ITEMS: FaqItem[] = [
     title: "Pickup Info",
     body: (
       <div className="space-y-2 text-neutral-700">
-        <p>Skip the fee — order online and collect from any Pepper store. Most pickup orders are ready in 15 minutes.</p>
+        <p>Skip the fee — order online and collect from any Sweet & Lovely store. Most pickup orders are ready in 15 minutes.</p>
         <p>You&apos;ll get a text the moment your pizza leaves the oven so it&apos;s in your hands while it&apos;s still hot.</p>
       </div>
     ),

@@ -3,7 +3,7 @@ import { AccountShell, Card } from "@/components/auth/account-shell";
 import { useState } from "react";
 
 export const Route = createFileRoute("/_authenticated/account/notifications")({
-  head: () => ({ meta: [{ title: "Notifications — Pepper" }] }),
+  head: () => ({ meta: [{ title: "Notifications — Sweet & Lovely" }] }),
   component: NotificationsPage,
 });
 

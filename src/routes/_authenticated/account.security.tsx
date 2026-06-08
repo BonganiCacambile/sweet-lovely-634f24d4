@@ -9,7 +9,7 @@ import { OtpVerification } from "@/components/auth/otp-verification";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_authenticated/account/security")({
-  head: () => ({ meta: [{ title: "Security — Pepper" }] }),
+  head: () => ({ meta: [{ title: "Security — Sweet & Lovely" }] }),
   component: SecurityPage,
 });
 

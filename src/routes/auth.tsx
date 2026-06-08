@@ -12,8 +12,8 @@ type Tab = "signin" | "signup";
 export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
-      { title: "Sign in or create an account — Pepper" },
-      { name: "description", content: "Sign in or create your Pepper account to order faster, track deliveries, and unlock member deals." },
+      { title: "Sign in or create an account — Sweet & Lovely" },
+      { name: "description", content: "Sign in or create your Sweet & Lovely account to order faster, track deliveries, and unlock member deals." },
     ],
   }),
   component: AuthPage,

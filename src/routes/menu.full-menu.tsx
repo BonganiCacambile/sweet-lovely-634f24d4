@@ -14,8 +14,8 @@ import {
 export const Route = createFileRoute("/menu/full-menu")({
   head: () => ({
     meta: [
-      { title: "Full Menu - Pepper - Pizza Framer Template" },
-      { name: "description", content: "Browse the full Pepper menu — pizzas, sides and desserts." },
+      { title: "Full Menu - Sweet & Lovely - Pizza Framer Template" },
+      { name: "description", content: "Browse the full Sweet & Lovely menu — pizzas, sides and desserts." },
       { property: "og:title", content: "Full Menu - Pepper - Pizza Framer Template" },
       { property: "og:description", content: "Browse the full Pepper menu — pizzas, sides and desserts." },
     ],

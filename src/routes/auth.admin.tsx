@@ -10,8 +10,8 @@ import { supabase } from "@/integrations/supabase/client";
 export const Route = createFileRoute("/auth/admin")({
   head: () => ({
     meta: [
-      { title: "Admin sign-in — Pepper" },
-      { name: "description", content: "Restricted access for Pepper administrators." },
+      { title: "Admin sign-in — Sweet & Lovely" },
+      { name: "description", content: "Restricted access for Sweet & Lovely administrators." },
     ],
   }),
   component: AdminAuth,
@@ -75,7 +75,7 @@ function AdminAuth() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className={fieldCls}
-              placeholder="admin@pepper.com"
+              placeholder="admin@sweetandlovely.pizza"
               autoComplete="email"
             />
           </Field>

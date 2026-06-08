@@ -9,8 +9,8 @@ import { CITIES } from "@/data/menu";
 export const Route = createFileRoute("/contact")({
   head: () => ({
     meta: [
-      { title: "Contact — Pepper" },
-      { name: "description", content: "Get in touch with Pepper — questions, feedback, catering." },
+      { title: "Contact — Sweet & Lovely" },
+      { name: "description", content: "Get in touch with Sweet & Lovely — questions, feedback, catering." },
       { property: "og:title", content: "Contact — Pepper" },
       { property: "og:description", content: "Get in touch with Pepper — questions, feedback, catering." },
     ],
@@ -107,31 +107,31 @@ const ADDRESSES = [
   {
     city: "New York",
     address: "113 E31st St, New York, NY 10016",
-    email: "newyork@pepper.pizza",
+    email: "newyork@sweetandlovely.pizza",
     phone: "+01 222 555 444",
   },
   {
     city: "London",
     address: "Ingeni Building, Broadwick St, London W1F 0DL, UK",
-    email: "london@pepper.pizza",
+    email: "london@sweetandlovely.pizza",
     phone: "+44 333 555 777",
   },
   {
     city: "Amsterdam",
     address: "Keizersgracht 351, 1016 EZ Amsterdam, Netherlands",
-    email: "amsterdam@pepper.pizza",
+    email: "amsterdam@sweetandlovely.pizza",
     phone: "+31 555 444 222",
   },
   {
     city: "Berlin",
     address: "Genter Str. 14, 13353 Berlin, Germany",
-    email: "berlin@pepper.pizza",
+    email: "berlin@sweetandlovely.pizza",
     phone: "+49 777 333 888",
   },
   {
     city: "Bucharest",
     address: "Strada General Christian Tell 1-3, București 030167",
-    email: "bucharest@pepper.pizza",
+    email: "bucharest@sweetandlovely.pizza",
     phone: "+40 555 444 777",
   },
 ];

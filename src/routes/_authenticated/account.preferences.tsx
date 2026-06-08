@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/account/preferences")({
-  head: () => ({ meta: [{ title: "Preferences — Pepper" }] }),
+  head: () => ({ meta: [{ title: "Preferences — Sweet & Lovely" }] }),
   component: PrefsPage,
 });
 

@@ -55,7 +55,7 @@ export function LoginForm() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           className={fieldCls}
-          placeholder="you@pepper.com"
+          placeholder="you@sweetandlovely.pizza"
         />
       </Field>
 
