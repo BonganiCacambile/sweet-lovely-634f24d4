@@ -1,11 +1,12 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { Plus, Check, X } from "lucide-react";
+import { Plus, Check, X, Pizza } from "lucide-react";
 import * as React from "react";
+import { createPortal } from "react-dom";
 import { useCart, parsePrice, formatPrice, type CartItem } from "@/lib/cart-context";
 
 export const PIZZA_SIZES = [
-  { id: "medium", label: "Medium", price: 80 },
-  { id: "large", label: "Large", price: 150 },
+  { id: "medium", label: "Medium", price: 80, diameter: '10"', desc: "Perfect for one" },
+  { id: "large", label: "Large", price: 150, diameter: '14"', desc: "Great for sharing" },
 ] as const;
 
 interface Props {
@@ -21,21 +22,19 @@ export function AddToCartButton({ item, className = "", label = "Add", isPizza =
   const { addItem } = useCart();
   const [added, setAdded] = React.useState(false);
   const [open, setOpen] = React.useState(false);
-  const wrapRef = React.useRef<HTMLDivElement>(null);
+  const [selected, setSelected] = React.useState<(typeof PIZZA_SIZES)[number]["id"]>("medium");
 
   React.useEffect(() => {
     if (!open) return;
-    const onDoc = (e: MouseEvent) => {
-      if (!wrapRef.current?.contains(e.target as Node)) setOpen(false);
-    };
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") setOpen(false);
     };
-    document.addEventListener("mousedown", onDoc);
     document.addEventListener("keydown", onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
     return () => {
-      document.removeEventListener("mousedown", onDoc);
       document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prev;
     };
   }, [open]);
 
@@ -79,7 +78,7 @@ export function AddToCartButton({ item, className = "", label = "Add", isPizza =
   };
 
   return (
-    <div ref={wrapRef} className="relative inline-block">
+    <div className="relative inline-block">
       <motion.button
         type="button"
         onClick={onClick}
@@ -92,44 +91,122 @@ export function AddToCartButton({ item, className = "", label = "Add", isPizza =
         {added ? "Added" : label}
       </motion.button>
 
-      <AnimatePresence>
-        {open && isPizza && (
-          <motion.div
-            initial={{ opacity: 0, y: -6, scale: 0.96 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -6, scale: 0.96 }}
-            transition={{ duration: 0.15 }}
-            role="menu"
-            className="absolute right-0 top-full z-50 mt-2 w-56 origin-top-right overflow-hidden rounded-2xl border border-neutral-100 bg-white p-2 shadow-[0_20px_50px_-20px_rgba(0,0,0,0.25)]"
-          >
-            <div className="flex items-center justify-between px-2 pb-1 pt-1">
-              <span className="text-[11px] font-semibold uppercase tracking-wider text-neutral-500">
-                Choose size
-              </span>
-              <button
-                type="button"
+      {typeof document !== "undefined" &&
+        createPortal(
+          <AnimatePresence>
+            {open && isPizza && (
+              <motion.div
+                key="size-picker-overlay"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.18 }}
+                className="fixed inset-0 z-[100] flex items-end justify-center bg-black/50 backdrop-blur-sm sm:items-center sm:p-4"
                 onClick={() => setOpen(false)}
-                aria-label="Close"
-                className="flex h-6 w-6 items-center justify-center rounded-full text-neutral-400 transition-colors hover:bg-neutral-100 hover:text-neutral-900"
+                role="dialog"
+                aria-modal="true"
+                aria-label="Choose pizza size"
               >
-                <X className="h-3.5 w-3.5" />
-              </button>
-            </div>
-            {PIZZA_SIZES.map((s) => (
-              <button
-                key={s.id}
-                type="button"
-                role="menuitem"
-                onClick={() => handlePickSize(s)}
-                className="flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium text-neutral-900 transition-colors hover:bg-[#fff5f7] focus:bg-[#fff5f7] focus:outline-none"
-              >
-                <span>{s.label}</span>
-                <span className="text-sm font-bold text-[#ff003c]">{formatPrice(s.price)}</span>
-              </button>
-            ))}
-          </motion.div>
+                <motion.div
+                  initial={{ y: 40, opacity: 0, scale: 0.98 }}
+                  animate={{ y: 0, opacity: 1, scale: 1 }}
+                  exit={{ y: 40, opacity: 0, scale: 0.98 }}
+                  transition={{ type: "spring", damping: 26, stiffness: 280 }}
+                  onClick={(e) => e.stopPropagation()}
+                  className="relative w-full max-w-md overflow-hidden rounded-t-3xl bg-white shadow-[0_-20px_60px_-20px_rgba(0,0,0,0.35)] sm:rounded-3xl sm:shadow-[0_30px_80px_-20px_rgba(0,0,0,0.4)]"
+                >
+                  {/* Mobile grab handle */}
+                  <div className="flex justify-center pt-2 sm:hidden">
+                    <span className="h-1.5 w-10 rounded-full bg-neutral-200" />
+                  </div>
+
+                  {/* Header */}
+                  <div className="relative px-6 pb-4 pt-5 sm:pt-6">
+                    <button
+                      type="button"
+                      onClick={() => setOpen(false)}
+                      aria-label="Close"
+                      className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-full bg-neutral-100 text-neutral-500 transition-colors hover:bg-neutral-200 hover:text-neutral-900"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                    <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#ff003c]">
+                      <Pizza className="h-3.5 w-3.5" />
+                      Choose your size
+                    </div>
+                    <h3 className="mt-1.5 line-clamp-2 pr-10 text-lg font-bold text-neutral-900 sm:text-xl">
+                      {item.title}
+                    </h3>
+                  </div>
+
+                  {/* Size cards */}
+                  <div className="grid grid-cols-2 gap-3 px-6">
+                    {PIZZA_SIZES.map((s) => {
+                      const isActive = selected === s.id;
+                      const scale = s.id === "large" ? "h-20 w-20" : "h-14 w-14";
+                      return (
+                        <button
+                          key={s.id}
+                          type="button"
+                          onClick={() => setSelected(s.id)}
+                          className={`group relative flex flex-col items-center rounded-2xl border-2 px-3 py-4 text-center transition-all ${
+                            isActive
+                              ? "border-[#ff003c] bg-[#fff5f7] shadow-[0_10px_24px_-12px_rgba(255,0,60,0.45)]"
+                              : "border-neutral-200 bg-white hover:border-neutral-300"
+                          }`}
+                        >
+                          {isActive && (
+                            <span className="absolute right-2 top-2 flex h-5 w-5 items-center justify-center rounded-full bg-[#ff003c] text-white">
+                              <Check className="h-3 w-3" strokeWidth={3} />
+                            </span>
+                          )}
+                          <div className="flex h-20 items-end justify-center">
+                            <div
+                              className={`${scale} rounded-full bg-gradient-to-br from-[#ffb199] to-[#ff003c] shadow-inner transition-transform ${
+                                isActive ? "scale-105" : "opacity-80 group-hover:opacity-100"
+                              }`}
+                            />
+                          </div>
+                          <span className="mt-2 text-sm font-bold text-neutral-900">
+                            {s.label}
+                          </span>
+                          <span className="text-[11px] text-neutral-500">{s.diameter} · {s.desc}</span>
+                          <span className="mt-1 text-sm font-extrabold text-[#ff003c]">
+                            {formatPrice(s.price)}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* CTA */}
+                  <div className="mt-5 flex items-center justify-between gap-3 border-t border-neutral-100 bg-neutral-50/60 px-6 py-4">
+                    <div className="flex flex-col">
+                      <span className="text-[11px] uppercase tracking-wider text-neutral-500">
+                        Total
+                      </span>
+                      <span className="text-lg font-extrabold text-neutral-900">
+                        {formatPrice(PIZZA_SIZES.find((p) => p.id === selected)!.price)}
+                      </span>
+                    </div>
+                    <motion.button
+                      type="button"
+                      whileTap={{ scale: 0.97 }}
+                      onClick={() =>
+                        handlePickSize(PIZZA_SIZES.find((p) => p.id === selected)!)
+                      }
+                      className="inline-flex flex-1 items-center justify-center gap-2 rounded-full bg-[#ff003c] px-5 py-3 text-sm font-bold text-white shadow-[0_12px_24px_-12px_rgba(255,0,60,0.7)] transition-all hover:-translate-y-0.5 hover:bg-[#e6003a]"
+                    >
+                      <Plus className="h-4 w-4" />
+                      Add to cart
+                    </motion.button>
+                  </div>
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>,
+          document.body,
         )}
-      </AnimatePresence>
     </div>
   );
 }
