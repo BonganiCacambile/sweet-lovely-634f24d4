@@ -7,7 +7,7 @@ export function GoogleButton({ label = "Continue with Google" }: { label?: strin
   const onClick = async () => {
     setLoading(true);
     const res = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin + "/account",
+      redirect_uri: window.location.origin + "/",
     });
     if (res.error) {
       toast.error("Google sign-in failed", { description: res.error.message });
@@ -15,7 +15,7 @@ export function GoogleButton({ label = "Continue with Google" }: { label?: strin
       return;
     }
     if (res.redirected) return;
-    window.location.href = "/account";
+    window.location.href = "/";
   };
   return (
     <button
