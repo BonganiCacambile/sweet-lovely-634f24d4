@@ -183,7 +183,7 @@ export function RegisterForm() {
           className="mt-0.5 h-4 w-4 rounded border-neutral-300 text-[#ff003c] focus:ring-[#ff003c]"
         />
         <span>
-          I agree to Pepper's <a href="#" className="underline">Terms of Service</a> and{" "}
+          I agree to Sweet &amp; Lovely's <a href="#" className="underline">Terms of Service</a> and{" "}
           <a href="#" className="underline">Privacy Policy</a>.
         </span>
       </label>
