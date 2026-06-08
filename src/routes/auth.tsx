@@ -32,7 +32,7 @@ function AuthPage() {
   return (
     <AuthLayout
       eyebrow={tab === "signup" ? "Get started" : "Welcome back"}
-      title={tab === "signup" ? "Create your Pepper account" : "Sign in to Pepper"}
+      title={tab === "signup" ? "Create your Sweet & Lovely account" : "Sign in to Sweet & Lovely"}
       subtitle={
         tab === "signup"
           ? "Free to join. Save your favorites, get faster checkout, and unlock perks."

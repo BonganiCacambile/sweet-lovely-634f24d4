@@ -51,7 +51,7 @@ function AdminAuth() {
   return (
     <AuthLayout
       eyebrow="Restricted area"
-      title="Pepper Admin Portal"
+      title="Sweet & Lovely Admin Portal"
       subtitle="Elevated access. All sign-ins are logged and protected by additional verification."
     >
       <motion.div
