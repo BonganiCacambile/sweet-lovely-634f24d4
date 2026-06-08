@@ -1,28 +1,73 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { motion } from "framer-motion";
+import { useEffect } from "react";
 import {
   Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from "recharts";
-import { ArrowUpRight, ShoppingBag, UserPlus, Activity } from "lucide-react";
+import { ArrowUpRight, ShoppingBag, UserPlus, Activity, RefreshCw, Inbox, AlertCircle } from "lucide-react";
+import { useServerFn } from "@tanstack/react-start";
+import { queryOptions, useQuery, useQueryClient } from "@tanstack/react-query";
 import { KpiCard } from "@/components/admin/kpi-card";
 import { SectionCard } from "@/components/admin/section-card";
-import { KPIS, REVENUE, RECENT_ORDERS, RECENT_SIGNUPS } from "@/data/admin/mock";
 import { useAuth } from "@/lib/auth-context";
+import { getDashboardStats, type DashboardStats } from "@/lib/admin-dashboard.functions";
+import { supabase } from "@/integrations/supabase/client";
+import { Skeleton } from "@/components/ui/skeleton";
+
+const DASHBOARD_QUERY_KEY = ["admin", "dashboard"] as const;
+
+function dashboardQueryOptions(fetcher: () => Promise<DashboardStats>) {
+  return queryOptions({
+    queryKey: DASHBOARD_QUERY_KEY,
+    queryFn: fetcher,
+    refetchInterval: 30_000,
+    refetchOnWindowFocus: true,
+    staleTime: 10_000,
+  });
+}
 
 export const Route = createFileRoute("/_authenticated/admin/")({
   component: DashboardHome,
+  errorComponent: ({ error, reset }) => <DashboardError message={error.message} reset={reset} />,
 });
 
 const STATUS_STYLES: Record<string, string> = {
   Delivered: "bg-emerald-50 text-emerald-700",
   "Out for delivery": "bg-sky-50 text-sky-700",
   Preparing: "bg-amber-50 text-amber-700",
+  Pending: "bg-neutral-100 text-neutral-700",
   Cancelled: "bg-rose-50 text-rose-700",
 };
 
 function DashboardHome() {
   const { profile, user } = useAuth();
   const greeting = profile?.full_name?.split(" ")[0] || user?.email?.split("@")[0] || "Administrator";
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const fetchStats = useServerFn(getDashboardStats);
+  const { data, isLoading, isFetching, error, refetch, dataUpdatedAt } = useQuery(
+    dashboardQueryOptions(() => fetchStats()),
+  );
+
+  // Realtime: refetch on any orders/notifications change
+  useEffect(() => {
+    const channel = supabase
+      .channel("admin-dashboard")
+      .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, () => {
+        queryClient.invalidateQueries({ queryKey: DASHBOARD_QUERY_KEY });
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "profiles" }, () => {
+        queryClient.invalidateQueries({ queryKey: DASHBOARD_QUERY_KEY });
+      })
+      .subscribe();
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
+
+  if (error) {
+    return <DashboardError message={(error as Error).message} reset={() => router.invalidate()} />;
+  }
 
   return (
     <div className="space-y-6">
@@ -38,8 +83,17 @@ function DashboardHome() {
         </div>
         <div className="flex items-center gap-2">
           <span className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white/70 px-3 py-1.5 text-xs text-neutral-600">
-            <Activity className="h-3.5 w-3.5 text-emerald-500" /> All systems operational
+            <Activity className="h-3.5 w-3.5 text-emerald-500" />
+            {dataUpdatedAt ? `Updated ${formatRelative(new Date(dataUpdatedAt))}` : "Loading…"}
           </span>
+          <button
+            type="button"
+            onClick={() => refetch()}
+            disabled={isFetching}
+            className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-3 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50 disabled:opacity-60"
+          >
+            <RefreshCw className={"h-3.5 w-3.5 " + (isFetching ? "animate-spin" : "")} /> Refresh
+          </button>
         </div>
       </header>
 
@@ -49,11 +103,15 @@ function DashboardHome() {
         variants={{ hidden: {}, show: { transition: { staggerChildren: 0.05 } } }}
         className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
       >
-        {KPIS.map((kpi) => (
-          <motion.div key={kpi.key} variants={{ hidden: { opacity: 0, y: 8 }, show: { opacity: 1, y: 0 } }}>
-            <KpiCard kpi={kpi} />
-          </motion.div>
-        ))}
+        {isLoading || !data
+          ? Array.from({ length: 6 }).map((_, i) => (
+              <Skeleton key={i} className="h-[148px] rounded-3xl" />
+            ))
+          : data.kpis.map((kpi) => (
+              <motion.div key={kpi.key} variants={{ hidden: { opacity: 0, y: 8 }, show: { opacity: 1, y: 0 } }}>
+                <KpiCard kpi={kpi} />
+              </motion.div>
+            ))}
       </motion.div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
@@ -70,8 +128,13 @@ function DashboardHome() {
           }
         >
           <div className="h-72 w-full">
+            {isLoading || !data ? (
+              <Skeleton className="h-full w-full rounded-2xl" />
+            ) : data.revenue.every((p) => p.revenue === 0) ? (
+              <EmptyBlock icon={<Activity className="h-5 w-5" />} label="No revenue in the last 30 days" />
+            ) : (
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={REVENUE} margin={{ top: 8, right: 12, left: -10, bottom: 0 }}>
+              <AreaChart data={data.revenue} margin={{ top: 8, right: 12, left: -10, bottom: 0 }}>
                 <defs>
                   <linearGradient id="rev-grad" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor="#ff003c" stopOpacity={0.35} />
@@ -88,6 +151,7 @@ function DashboardHome() {
                 <Area type="monotone" dataKey="revenue" stroke="#ff003c" strokeWidth={2.5} fill="url(#rev-grad)" />
               </AreaChart>
             </ResponsiveContainer>
+            )}
           </div>
         </SectionCard>
 
@@ -95,23 +159,33 @@ function DashboardHome() {
           title="New sign-ups"
           action={<UserPlus className="h-4 w-4 text-neutral-400" />}
         >
-          <ul className="space-y-3">
-            {RECENT_SIGNUPS.map((s) => (
-              <li key={s.email} className="flex items-center gap-3">
-                <div
-                  className="flex h-9 w-9 flex-none items-center justify-center rounded-2xl text-xs font-semibold text-white"
-                  style={{ background: "linear-gradient(135deg,#ff003c,#ff7a45)" }}
-                >
-                  {s.name.split(" ").map((n) => n[0]).join("").slice(0, 2)}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium text-neutral-900">{s.name}</p>
-                  <p className="truncate text-xs text-neutral-500">{s.email}</p>
-                </div>
-                <span className="text-[11px] text-neutral-500">{s.at}</span>
-              </li>
-            ))}
-          </ul>
+          {isLoading || !data ? (
+            <div className="space-y-3">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <Skeleton key={i} className="h-10 w-full rounded-xl" />
+              ))}
+            </div>
+          ) : data.recentSignups.length === 0 ? (
+            <EmptyBlock icon={<UserPlus className="h-5 w-5" />} label="No new sign-ups yet" />
+          ) : (
+            <ul className="space-y-3">
+              {data.recentSignups.map((s) => (
+                <li key={s.id} className="flex items-center gap-3">
+                  <div
+                    className="flex h-9 w-9 flex-none items-center justify-center rounded-2xl text-xs font-semibold text-white"
+                    style={{ background: "linear-gradient(135deg,#ff003c,#ff7a45)" }}
+                  >
+                    {initials(s.name)}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium text-neutral-900">{s.name}</p>
+                    <p className="truncate text-xs text-neutral-500">{s.email}</p>
+                  </div>
+                  <span className="text-[11px] text-neutral-500">{formatRelative(new Date(s.created_at))}</span>
+                </li>
+              ))}
+            </ul>
+          )}
         </SectionCard>
       </div>
 
@@ -127,6 +201,15 @@ function DashboardHome() {
         }
       >
         <div className="-mx-2 overflow-x-auto">
+          {isLoading || !data ? (
+            <div className="space-y-2 p-3">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <Skeleton key={i} className="h-10 w-full rounded-xl" />
+              ))}
+            </div>
+          ) : data.recentOrders.length === 0 ? (
+            <EmptyBlock icon={<Inbox className="h-5 w-5" />} label="No orders yet" />
+          ) : (
           <table className="w-full min-w-[640px] text-left text-sm">
             <thead>
               <tr className="text-xs uppercase tracking-wider text-neutral-500">
@@ -138,12 +221,12 @@ function DashboardHome() {
               </tr>
             </thead>
             <tbody>
-              {RECENT_ORDERS.map((o) => (
+              {data.recentOrders.map((o) => (
                 <tr key={o.id} className="border-t border-neutral-100 hover:bg-neutral-50/60">
                   <td className="px-3 py-3 font-medium text-neutral-900">
                     <span className="inline-flex items-center gap-2">
                       <ShoppingBag className="h-3.5 w-3.5 text-neutral-400" />
-                      {o.id}
+                      {o.order_number}
                     </span>
                   </td>
                   <td className="px-3 py-3 text-neutral-700">{o.customer}</td>
@@ -153,13 +236,68 @@ function DashboardHome() {
                       {o.status}
                     </span>
                   </td>
-                  <td className="px-3 py-3 text-right text-xs text-neutral-500">{o.at}</td>
+                  <td className="px-3 py-3 text-right text-xs text-neutral-500">{formatRelative(new Date(o.created_at))}</td>
                 </tr>
               ))}
             </tbody>
           </table>
+          )}
         </div>
       </SectionCard>
+    </div>
+  );
+}
+
+function initials(name: string) {
+  return name
+    .split(" ")
+    .map((n) => n[0])
+    .filter(Boolean)
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+}
+
+function formatRelative(d: Date) {
+  const diff = Date.now() - d.getTime();
+  const sec = Math.round(diff / 1000);
+  if (sec < 60) return `${sec}s ago`;
+  const min = Math.round(sec / 60);
+  if (min < 60) return `${min}m ago`;
+  const hr = Math.round(min / 60);
+  if (hr < 24) return `${hr}h ago`;
+  const day = Math.round(hr / 24);
+  return `${day}d ago`;
+}
+
+function EmptyBlock({ icon, label }: { icon: React.ReactNode; label: string }) {
+  return (
+    <div className="flex h-full min-h-[160px] flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-neutral-200 bg-neutral-50/50 p-6 text-center">
+      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-neutral-400 shadow-sm">
+        {icon}
+      </div>
+      <p className="text-sm text-neutral-500">{label}</p>
+    </div>
+  );
+}
+
+function DashboardError({ message, reset }: { message: string; reset: () => void }) {
+  return (
+    <div className="rounded-3xl border border-rose-200 bg-rose-50/70 p-6">
+      <div className="flex items-start gap-3">
+        <AlertCircle className="mt-0.5 h-5 w-5 text-rose-600" />
+        <div className="flex-1">
+          <p className="text-sm font-semibold text-rose-800">Couldn&rsquo;t load dashboard data</p>
+          <p className="mt-1 text-sm text-rose-700">{message}</p>
+          <button
+            type="button"
+            onClick={reset}
+            className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-rose-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-rose-700"
+          >
+            <RefreshCw className="h-3.5 w-3.5" /> Try again
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

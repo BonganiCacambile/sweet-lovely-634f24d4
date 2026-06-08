@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { motion, useInView } from "framer-motion";
 import { ArrowDownRight, ArrowUpRight } from "lucide-react";
 import { Area, AreaChart, ResponsiveContainer } from "recharts";
-import type { Kpi } from "@/data/admin/mock";
+import type { DashboardKpi as Kpi } from "@/lib/admin-dashboard.functions";
 
 function useCount(target: number, duration = 900) {
   const [v, setV] = useState(0);
