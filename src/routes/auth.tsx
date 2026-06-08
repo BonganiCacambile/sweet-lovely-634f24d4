@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
 import { ShieldCheck, UserRound, ArrowLeft, ArrowRight } from "lucide-react";
@@ -21,8 +21,11 @@ export const Route = createFileRoute("/auth")({
 
 function AuthPage() {
   const navigate = useNavigate();
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [tab, setTab] = useState<Tab>("signin");
   const [role, setRole] = useState<Role>(null);
+
+  if (pathname !== "/auth") return <Outlet />;
 
   if (!role) {
     return (

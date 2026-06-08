@@ -2,12 +2,12 @@ import { lovable } from "@/integrations/lovable";
 import { toast } from "sonner";
 import { useState } from "react";
 
-export function GoogleButton({ label = "Continue with Google" }: { label?: string }) {
+export function GoogleButton({ label = "Continue with Google", redirectTo = "/" }: { label?: string; redirectTo?: string }) {
   const [loading, setLoading] = useState(false);
   const onClick = async () => {
     setLoading(true);
     const res = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin + "/",
+      redirect_uri: window.location.origin + redirectTo,
     });
     if (res.error) {
       toast.error("Google sign-in failed", { description: res.error.message });
@@ -15,7 +15,7 @@ export function GoogleButton({ label = "Continue with Google" }: { label?: strin
       return;
     }
     if (res.redirected) return;
-    window.location.href = "/";
+    window.location.href = redirectTo;
   };
   return (
     <button
