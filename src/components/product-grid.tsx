@@ -37,7 +37,7 @@ export function ProductGrid({ products, imageOnly = false, isPizza = false }: Pr
     <div className="grid grid-cols-1 justify-items-center gap-6 sm:grid-cols-2 lg:grid-cols-3">
       {products.map((p, i) => (
         <Reveal key={p.id} delay={Math.min(i, 8) * 70}>
-          <div className="group relative">
+          <div className="group relative [&_a[href='#'],&_a:not([href])]:pointer-events-none">
             <ProductCardFramerComponent.Responsive
               variants={variants as never}
               FZjwTwKXl={p.title}
@@ -60,9 +60,15 @@ export function ProductGrid({ products, imageOnly = false, isPizza = false }: Pr
                   }
                 : {})}
             />
-            <div className="pointer-events-none absolute right-4 top-4 z-10">
+            {/* Overlay the real Add-to-cart button on top of the Framer "Order Now" CTA (bottom-left of card). */}
+            <div className="pointer-events-none absolute bottom-5 left-5 z-20 sm:bottom-6 sm:left-6">
               <div className="pointer-events-auto">
-                <AddToCartButton item={p} isPizza={isPizza} />
+                <AddToCartButton
+                  item={p}
+                  isPizza={isPizza}
+                  label={isPizza ? "Add to cart" : "Add to cart"}
+                  className="h-10 min-w-[150px] justify-center px-6 text-sm sm:h-11 sm:min-w-[160px] sm:px-7"
+                />
               </div>
             </div>
           </div>
