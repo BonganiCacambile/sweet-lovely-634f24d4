@@ -34,7 +34,7 @@ export function parsePrice(price: string | number): number {
 }
 
 export function formatPrice(amount: number): string {
-  return `$${amount.toFixed(2)}`;
+  return `R${amount.toFixed(2)}`;
 }
 
 export function CartProvider({ children }: { children: React.ReactNode }) {

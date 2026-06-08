@@ -1,6 +1,6 @@
 import type { MenuItem } from "@/data/menu";
-import { ORDER_URL } from "@/data/menu";
 import { Reveal } from "@/components/reveal";
+import { AddToCartButton } from "@/components/cart/add-to-cart-button";
 
 /** Horizontal menu item card matching the Pepper Framer "Others - Menu - Desktop" variant. */
 export function MenuCard({ item }: { item: MenuItem }) {
@@ -37,14 +37,11 @@ export function MenuCard({ item }: { item: MenuItem }) {
           )}
         </dl>
         <div className="mt-2 flex items-center justify-between gap-6">
-          <a
-            href={item.orderUrl ?? ORDER_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="btn-pop inline-flex h-11 items-center justify-center rounded-full bg-[#ff003c] px-7 text-sm font-medium text-white"
-          >
-            Order Now
-          </a>
+          <AddToCartButton
+            item={item}
+            isPizza={item.category === "pizza"}
+            className="h-11 px-7 text-sm"
+          />
           <div className="flex items-baseline gap-2">
             <span className="text-sm text-neutral-500">{item.portion ?? ""}</span>
             <span className="text-2xl font-bold md:text-[28px]">{item.price}</span>
