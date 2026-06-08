@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import {
-  Command, CommandDialog, CommandEmpty, CommandGroup, CommandInput,
+  CommandDialog, CommandEmpty, CommandGroup, CommandInput,
   CommandItem, CommandList, CommandSeparator,
 } from "@/components/ui/command";
 import {
@@ -42,8 +42,7 @@ export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenCh
 
   return (
     <CommandDialog open={open} onOpenChange={onOpenChange}>
-      <Command>
-        <CommandInput placeholder="Search dashboard, users, orders, settings…" />
+      <CommandInput placeholder="Search dashboard, users, orders, settings…" />
         <CommandList>
           <CommandEmpty>No results.</CommandEmpty>
           {groups.map((g, gi) => (
@@ -69,7 +68,6 @@ export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenCh
             </div>
           ))}
         </CommandList>
-      </Command>
     </CommandDialog>
   );
 }
