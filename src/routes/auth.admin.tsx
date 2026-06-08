@@ -1,9 +1,9 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { Loader2, ShieldCheck, Eye, EyeOff } from "lucide-react";
+import { Loader2, ShieldCheck, Eye, EyeOff, LifeBuoy, KeyRound } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
-import { AuthLayout } from "@/components/auth/auth-layout";
+import { AdminAuthLayout } from "@/components/admin/admin-auth-layout";
 import { Field, fieldCls } from "@/components/auth/login-form";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -22,6 +22,7 @@ function AdminAuth() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [show, setShow] = useState(false);
+  const [remember, setRemember] = useState(true);
   const [loading, setLoading] = useState(false);
 
   const submit = async (e: React.FormEvent) => {
@@ -44,26 +45,32 @@ function AdminAuth() {
       toast.error("Access denied", { description: "This account isn't an administrator." });
       return;
     }
-    toast.success("Admin access granted");
-    navigate({ to: "/admin" });
+    toast.success("Credentials verified", { description: "Complete two-factor verification." });
+    try {
+      sessionStorage.setItem(
+        "sl_admin_mfa_pending",
+        JSON.stringify({ email, remember, at: Date.now() }),
+      );
+    } catch { /* storage unavailable */ }
+    navigate({ to: "/auth/admin/mfa" });
   };
 
   return (
-    <AuthLayout
+    <AdminAuthLayout
       eyebrow="Restricted area"
-      title="Sweet & Lovely Admin Portal"
-      subtitle="Elevated access. All sign-ins are logged and protected by additional verification."
+      title="Welcome back, Administrator"
+      subtitle="Elevated access to the Sweet & Lovely control center. Every sign-in is verified, encrypted and logged."
     >
       <motion.div
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         className="space-y-4"
       >
-        <div className="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50/60 p-3.5 text-xs text-amber-900">
+        <div className="flex items-start gap-3 rounded-2xl border border-amber-200/70 bg-amber-50/60 p-3.5 text-xs text-amber-900">
           <ShieldCheck className="mt-0.5 h-4 w-4 flex-none" />
           <p>
-            This portal is for authorized administrators only. Unauthorized access
-            attempts will be reported.
+            Authorized administrators only. Unauthorized access attempts are reported and may be
+            subject to legal action.
           </p>
         </div>
 
@@ -100,23 +107,48 @@ function AdminAuth() {
               </button>
             </div>
           </Field>
+
+          <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+            <label className="inline-flex cursor-pointer items-center gap-2 text-neutral-700">
+              <input
+                type="checkbox"
+                checked={remember}
+                onChange={(e) => setRemember(e.target.checked)}
+                className="h-4 w-4 rounded border-neutral-300 text-[#ff003c] focus:ring-[#ff003c]"
+              />
+              Trust this device for 30 days
+            </label>
+            <Link to="/auth/forgot-password" className="font-medium text-[#ff003c] hover:underline">
+              Forgot password?
+            </Link>
+          </div>
+
           <button
             type="submit"
             disabled={loading}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-neutral-900 px-4 py-3 text-sm font-semibold text-white shadow-[0_10px_30px_-10px_rgba(0,0,0,0.5)] transition-all hover:scale-[1.01] disabled:opacity-60"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-3.5 text-sm font-semibold text-white shadow-[0_18px_40px_-16px_rgba(255,0,60,0.55)] transition-all hover:scale-[1.01] disabled:opacity-60"
+            style={{ background: "linear-gradient(135deg,#ff003c,#ff5a36)" }}
           >
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
-            {loading ? "Verifying…" : "Continue securely"}
+            {loading ? "Verifying…" : "Continue to verification"}
           </button>
         </form>
 
-        <p className="text-center text-xs text-neutral-500">
-          Not an admin?{" "}
-          <Link to="/auth" className="font-medium text-[#ff003c] hover:underline">
-            Back to sign-in
+        <div className="grid grid-cols-1 gap-2 pt-2 text-xs text-neutral-600 sm:grid-cols-2">
+          <a
+            href="mailto:security@sweetandlovely.pizza"
+            className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-neutral-200 bg-white/70 px-3 py-2 hover:bg-white"
+          >
+            <LifeBuoy className="h-3.5 w-3.5" /> Contact support
+          </a>
+          <Link
+            to="/auth"
+            className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-neutral-200 bg-white/70 px-3 py-2 hover:bg-white"
+          >
+            <KeyRound className="h-3.5 w-3.5" /> Customer sign-in
           </Link>
-        </p>
+        </div>
       </motion.div>
-    </AuthLayout>
+    </AdminAuthLayout>
   );
 }
