@@ -32,8 +32,6 @@ function AdminAuth() {
     | { state: "signed-in"; email: string; isAdmin: boolean }
   >({ state: "loading" });
 
-  if (pathname !== "/auth/admin") return <Outlet />;
-
   const checkExistingSession = async () => {
     const { data: userRes } = await supabase.auth.getUser();
     const u = userRes.user;
@@ -115,6 +113,8 @@ function AdminAuth() {
     setPassword("");
     toast.success("Signed out. Use a different administrator account.");
   };
+
+  if (pathname !== "/auth/admin") return <Outlet />;
 
   return (
     <AdminAuthLayout
