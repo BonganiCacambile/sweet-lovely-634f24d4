@@ -15,53 +15,52 @@ export function AuthLayout({
   subtitle?: string;
 }) {
   return (
-    <main className="relative min-h-dvh w-full overflow-x-hidden bg-[#fff5f7]">
+    <main className="relative min-h-dvh w-full overflow-x-hidden bg-white">
+      {/* Soft brand gradient backdrop */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 -z-10"
+        style={{
+          background:
+            "radial-gradient(900px 500px at -10% -10%, rgba(255,0,60,0.10), transparent 60%), radial-gradient(700px 500px at 110% 110%, rgba(255,153,0,0.08), transparent 60%), #ffffff",
+        }}
+      />
       <div className="mx-auto grid min-h-dvh w-full max-w-7xl grid-cols-1 lg:grid-cols-2">
         {/* Left brand panel */}
-        <section className="relative hidden flex-col justify-between overflow-hidden bg-[#ff0d3f] p-10 text-white lg:flex">
-          <div
-            aria-hidden
-            className="pointer-events-none absolute inset-0"
-            style={{
-              background:
-                "radial-gradient(600px 400px at 10% 0%, rgba(255,153,0,0.25), transparent 60%), radial-gradient(700px 500px at 100% 100%, rgba(255,255,255,0.08), transparent 60%)",
-            }}
-          />
-          <div className="relative">
+        <section className="relative hidden flex-col justify-between p-10 lg:flex">
           <Link to="/" className="inline-flex items-center">
             <span
               style={{
                 fontFamily: '"Cherry Bomb One", sans-serif',
                 color: "rgb(255, 153, 0)",
-                fontSize: "32px",
+                fontSize: "28px",
                 lineHeight: 1,
               }}
             >
               Sweet &amp; Lovely
             </span>
           </Link>
-          </div>
 
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="relative max-w-md"
+            className="max-w-md"
           >
-            <p className="text-sm uppercase tracking-[0.18em] text-[rgb(255,153,0)]">{eyebrow}</p>
-            <h1 className="mt-3 text-4xl font-semibold tracking-tight text-white">
+            <p className="text-sm uppercase tracking-[0.18em] text-[#ff003c]">{eyebrow}</p>
+            <h1 className="mt-3 text-4xl font-semibold tracking-tight text-neutral-900">
               {title}
             </h1>
-            <p className="mt-3 text-base leading-relaxed text-white/85">{subtitle}</p>
+            <p className="mt-3 text-base leading-relaxed text-neutral-600">{subtitle}</p>
 
-            <ul className="mt-8 space-y-3 text-sm text-white/90">
+            <ul className="mt-8 space-y-3 text-sm text-neutral-700">
               {[
                 { icon: ShieldCheck, label: "Bank-grade encryption · TLS 1.3" },
                 { icon: Lock, label: "Two-factor authentication ready" },
                 { icon: Sparkles, label: "One-tap reorders for members" },
               ].map(({ icon: Icon, label }) => (
                 <li key={label} className="flex items-center gap-3">
-                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/15 text-white ring-1 ring-white/20 backdrop-blur">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#fff0f3] text-[#ff003c]">
                     <Icon className="h-4 w-4" />
                   </span>
                   {label}
@@ -70,7 +69,7 @@ export function AuthLayout({
             </ul>
           </motion.div>
 
-          <p className="relative text-xs text-white/70">
+          <p className="text-xs text-neutral-500">
             © {new Date().getFullYear()} Sweet &amp; Lovely. Crafted with care.
           </p>
         </section>
