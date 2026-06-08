@@ -222,7 +222,7 @@ function FanFavoritesSection() {
             />
           </span>
         </button>
-        {showPopular && <ProductGrid products={FEATURED_PRODUCTS} imageOnly />}
+        {showPopular && <ProductGrid products={FEATURED_PRODUCTS} imageOnly isPizza />}
         <div className="mt-12 flex justify-center">
           <Link
             to="/menu/full-menu"
