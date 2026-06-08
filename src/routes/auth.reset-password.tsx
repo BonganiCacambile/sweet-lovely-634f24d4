@@ -39,7 +39,7 @@ function ResetPassword() {
     setLoading(false);
     if (error) return toast.error("Couldn't update password", { description: error.message });
     toast.success("Password updated");
-    navigate({ to: "/account" });
+    navigate({ to: "/" });
   };
 
   return (

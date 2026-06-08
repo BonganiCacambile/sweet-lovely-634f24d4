@@ -24,7 +24,7 @@ export function LoginForm() {
       return;
     }
     toast.success("Welcome back");
-    navigate({ to: "/account" });
+    navigate({ to: "/" });
   };
 
   return (

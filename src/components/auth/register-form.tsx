@@ -53,7 +53,7 @@ export function RegisterForm() {
       email,
       password,
       options: {
-        emailRedirectTo: window.location.origin + "/account",
+        emailRedirectTo: window.location.origin + "/",
         data: { full_name: fullName, phone },
       },
     });
@@ -63,7 +63,7 @@ export function RegisterForm() {
       return;
     }
     toast.success("Account created. Check your email to verify.");
-    navigate({ to: "/account" });
+    navigate({ to: "/" });
   };
 
   return (
