@@ -6,7 +6,7 @@ import type { ReactNode } from "react";
 export function AuthLayout({
   children,
   eyebrow = "Welcome",
-  title = "Sign in to Pepper",
+  title = "Sign in to Sweet & Lovely",
   subtitle = "Order faster, track deliveries, and unlock member-only deals.",
 }: {
   children: ReactNode;
@@ -15,7 +15,7 @@ export function AuthLayout({
   subtitle?: string;
 }) {
   return (
-    <main className="relative min-h-dvh w-full overflow-hidden bg-white">
+    <main className="relative min-h-dvh w-full overflow-x-hidden bg-white">
       {/* Soft brand gradient backdrop */}
       <div
         aria-hidden
@@ -35,7 +35,7 @@ export function AuthLayout({
             >
               <Sparkles className="h-5 w-5" />
             </span>
-            <span className="text-lg font-semibold tracking-tight text-neutral-900">Pepper</span>
+            <span className="text-lg font-semibold tracking-tight text-neutral-900">Sweet &amp; Lovely</span>
           </Link>
 
           <motion.div
@@ -67,29 +67,43 @@ export function AuthLayout({
           </motion.div>
 
           <p className="text-xs text-neutral-500">
-            © {new Date().getFullYear()} Pepper. Crafted with care.
+            © {new Date().getFullYear()} Sweet &amp; Lovely. Crafted with care.
           </p>
         </section>
 
         {/* Right card */}
-        <section className="flex items-center justify-center p-5 sm:p-8">
+        <section className="flex items-center justify-center px-4 py-8 sm:p-8">
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
             className="w-full max-w-md"
           >
-            <Link to="/" className="mb-6 inline-flex items-center gap-2 lg:hidden">
-              <span
-                className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-white"
-                style={{ background: "linear-gradient(135deg,#ff003c,#ff5a36)" }}
-              >
-                <Sparkles className="h-4 w-4" />
-              </span>
-              <span className="text-base font-semibold tracking-tight text-neutral-900">Pepper</span>
-            </Link>
+            {/* Mobile brand header */}
+            <div className="mb-6 flex flex-col items-center text-center lg:hidden">
+              <Link to="/" className="inline-flex items-center gap-2">
+                <span
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-xl text-white"
+                  style={{ background: "linear-gradient(135deg,#ff003c,#ff5a36)" }}
+                >
+                  <Sparkles className="h-4 w-4" />
+                </span>
+                <span className="text-base font-semibold tracking-tight text-neutral-900">
+                  Sweet &amp; Lovely
+                </span>
+              </Link>
+              <p className="mt-3 text-[11px] uppercase tracking-[0.18em] text-[#ff003c]">
+                {eyebrow}
+              </p>
+              <h1 className="mt-1.5 text-2xl font-semibold tracking-tight text-neutral-900">
+                {title}
+              </h1>
+              <p className="mt-2 max-w-xs text-sm leading-relaxed text-neutral-600">
+                {subtitle}
+              </p>
+            </div>
             <div
-              className="rounded-3xl border border-neutral-200/70 bg-white/80 p-6 shadow-[0_30px_80px_-30px_rgba(15,15,15,0.18)] backdrop-blur-xl sm:p-8"
+              className="rounded-3xl border border-neutral-200/70 bg-white/80 p-5 shadow-[0_30px_80px_-30px_rgba(15,15,15,0.18)] backdrop-blur-xl sm:p-8"
               style={{ backdropFilter: "blur(20px)" }}
             >
               {children}
