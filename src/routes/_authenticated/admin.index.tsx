@@ -45,25 +45,10 @@ function DashboardHome() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const fetchStats = useServerFn(getDashboardStats);
-  const { data, isLoading, isFetching, error, refetch, dataUpdatedAt } = useQuery(
-    dashboardQueryOptions(() => fetchStats()),
-  );
-
-  // Realtime: refetch on any orders/notifications change
-  useEffect(() => {
-    const channel = supabase
-      .channel("admin-dashboard")
-      .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, () => {
-        queryClient.invalidateQueries({ queryKey: DASHBOARD_QUERY_KEY });
-      })
-      .on("postgres_changes", { event: "*", schema: "public", table: "profiles" }, () => {
-        queryClient.invalidateQueries({ queryKey: DASHBOARD_QUERY_KEY });
-      })
-      .subscribe();
-    return () => {
-      void supabase.removeChannel(channel);
-    };
-  }, [queryClient]);
+  const { data, isLoading, isFetching, error, refetch, dataUpdatedAt } = useQuery({
+    ...dashboardQueryOptions(() => fetchStats()),
+    refetchInterval: 30_000,
+  });
 
   if (error) {
     return <DashboardError error={error} isRetrying={isFetching} reset={() => void refetch()} />;
