@@ -1,17 +1,15 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { motion } from "framer-motion";
-import { useEffect } from "react";
 import {
   Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from "recharts";
 import { ArrowUpRight, ShoppingBag, UserPlus, Activity, RefreshCw, Inbox, AlertCircle } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
-import { queryOptions, useQuery, useQueryClient } from "@tanstack/react-query";
+import { queryOptions, useQuery } from "@tanstack/react-query";
 import { KpiCard } from "@/components/admin/kpi-card";
 import { SectionCard } from "@/components/admin/section-card";
 import { useAuth } from "@/lib/auth-context";
 import { getDashboardStats, type DashboardStats } from "@/lib/admin-dashboard.functions";
-import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const DASHBOARD_QUERY_KEY = ["admin", "dashboard"] as const;
