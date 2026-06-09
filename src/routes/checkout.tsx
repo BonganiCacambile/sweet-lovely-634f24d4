@@ -7,7 +7,8 @@ import { toast } from "sonner";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { useCart, formatPrice, computeTotals } from "@/lib/cart-context";
-import { getPaystackConfig, verifyPaystackTransaction } from "@/lib/paystack.functions";
+import { getPaystackConfig, verifyAndCreateOrder } from "@/lib/paystack.functions";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/checkout")({
   head: () => ({
@@ -77,7 +78,7 @@ function CheckoutPage() {
   );
 
   const fetchConfig = useServerFn(getPaystackConfig);
-  const verifyTx = useServerFn(verifyPaystackTransaction);
+  const placeOrder = useServerFn(verifyAndCreateOrder);
 
   React.useEffect(() => {
     fetchConfig().then(setConfig).catch(() => setConfig({ publicKey: "", configured: false }));
@@ -169,24 +170,55 @@ function CheckoutPage() {
         ],
       },
       callback: (response) => {
-        // Verify on server, then navigate to success
-        verifyTx({ data: { reference: response.reference } })
-          .then((res) => {
+        // Verify on the server, persist the order, then go to success
+        (async () => {
+          try {
+            const { data: sessionData } = await supabase.auth.getSession();
+            const userId = sessionData.session?.user.id ?? null;
+            const res = await placeOrder({
+              data: {
+                reference: response.reference,
+                customer: {
+                  firstName: form.firstName,
+                  lastName: form.lastName,
+                  email: form.email,
+                  phone: form.phone,
+                  address: form.address,
+                  city: form.city,
+                  state: form.state,
+                  country: form.country,
+                  postal: form.postal,
+                },
+                items: items.map((it) => ({
+                  id: it.id,
+                  title: it.title,
+                  price: it.price,
+                  quantity: it.quantity,
+                })),
+                subtotal,
+                shipping,
+                tax,
+                total,
+                userId,
+              },
+            });
             if (res.success) {
+              if ("warning" in res && res.warning) toast.warning(res.warning);
               clear();
               navigate({
                 to: "/checkout/success",
-                search: { ref: response.reference },
+                search: { ref: response.reference, order: res.orderNumber },
               });
             } else {
-              toast.error("We couldn't verify your payment. Please contact support.");
+              toast.error(res.error || "We couldn't confirm your order. Please contact support.");
               setPaying(false);
             }
-          })
-          .catch(() => {
+          } catch (err) {
+            console.error(err);
             toast.error("Verification error. Please try again.");
             setPaying(false);
-          });
+          }
+        })();
       },
       onClose: () => {
         setPaying(false);

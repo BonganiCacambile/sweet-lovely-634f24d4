@@ -7,7 +7,7 @@ import { SiteFooter } from "@/components/site-footer";
 
 export const Route = createFileRoute("/checkout/success")({
   validateSearch: (s) =>
-    z.object({ ref: z.string().optional() }).parse(s),
+    z.object({ ref: z.string().optional(), order: z.string().optional() }).parse(s),
   head: () => ({
     meta: [
       { title: "Order confirmed — Sweet & Lovely" },
@@ -18,10 +18,12 @@ export const Route = createFileRoute("/checkout/success")({
 });
 
 function SuccessPage() {
-  const { ref } = Route.useSearch();
-  const orderNumber = ref
-    ? `#${ref.slice(-8).toUpperCase()}`
-    : `#${Math.random().toString(36).slice(2, 10).toUpperCase()}`;
+  const { ref, order } = Route.useSearch();
+  const orderNumber = order
+    ? `#${order}`
+    : ref
+      ? `#${ref.slice(-8).toUpperCase()}`
+      : `#${Math.random().toString(36).slice(2, 10).toUpperCase()}`;
 
   const eta = new Date(Date.now() + 35 * 60_000).toLocaleTimeString([], {
     hour: "2-digit",
