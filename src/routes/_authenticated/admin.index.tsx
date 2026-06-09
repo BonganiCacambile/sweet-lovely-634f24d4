@@ -1,17 +1,15 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { motion } from "framer-motion";
-import { useEffect } from "react";
 import {
   Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from "recharts";
 import { ArrowUpRight, ShoppingBag, UserPlus, Activity, RefreshCw, Inbox, AlertCircle } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
-import { queryOptions, useQuery, useQueryClient } from "@tanstack/react-query";
+import { queryOptions, useQuery } from "@tanstack/react-query";
 import { KpiCard } from "@/components/admin/kpi-card";
 import { SectionCard } from "@/components/admin/section-card";
 import { useAuth } from "@/lib/auth-context";
 import { getDashboardStats, type DashboardStats } from "@/lib/admin-dashboard.functions";
-import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const DASHBOARD_QUERY_KEY = ["admin", "dashboard"] as const;
@@ -43,27 +41,11 @@ function DashboardHome() {
   const { profile, user } = useAuth();
   const greeting = profile?.full_name?.split(" ")[0] || user?.email?.split("@")[0] || "Administrator";
   const router = useRouter();
-  const queryClient = useQueryClient();
   const fetchStats = useServerFn(getDashboardStats);
-  const { data, isLoading, isFetching, error, refetch, dataUpdatedAt } = useQuery(
-    dashboardQueryOptions(() => fetchStats()),
-  );
-
-  // Realtime: refetch on any orders/notifications change
-  useEffect(() => {
-    const channel = supabase
-      .channel("admin-dashboard")
-      .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, () => {
-        queryClient.invalidateQueries({ queryKey: DASHBOARD_QUERY_KEY });
-      })
-      .on("postgres_changes", { event: "*", schema: "public", table: "profiles" }, () => {
-        queryClient.invalidateQueries({ queryKey: DASHBOARD_QUERY_KEY });
-      })
-      .subscribe();
-    return () => {
-      void supabase.removeChannel(channel);
-    };
-  }, [queryClient]);
+  const { data, isLoading, isFetching, error, refetch, dataUpdatedAt } = useQuery({
+    ...dashboardQueryOptions(() => fetchStats()),
+    refetchInterval: 30_000,
+  });
 
   if (error) {
     return <DashboardError error={error} isRetrying={isFetching} reset={() => void refetch()} />;
