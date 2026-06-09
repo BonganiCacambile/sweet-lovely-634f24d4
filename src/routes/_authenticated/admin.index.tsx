@@ -41,7 +41,6 @@ function DashboardHome() {
   const { profile, user } = useAuth();
   const greeting = profile?.full_name?.split(" ")[0] || user?.email?.split("@")[0] || "Administrator";
   const router = useRouter();
-  const queryClient = useQueryClient();
   const fetchStats = useServerFn(getDashboardStats);
   const { data, isLoading, isFetching, error, refetch, dataUpdatedAt } = useQuery({
     ...dashboardQueryOptions(() => fetchStats()),
