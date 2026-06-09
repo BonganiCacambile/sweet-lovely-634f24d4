@@ -116,11 +116,26 @@ export const getDashboardStats = createServerFn({ method: "GET" })
     ]);
     void ordersPrevRes;
 
-    if (ordersRecentRes.error) throw new Error(ordersRecentRes.error.message);
-    if (recentOrdersRes.error) throw new Error(recentOrdersRes.error.message);
-    if (productsCountRes.error) throw new Error(productsCountRes.error.message);
-    if (activeTodayRes.error) throw new Error(activeTodayRes.error.message);
-    if (usersListRes.error) throw new Error(usersListRes.error.message);
+    if (ordersRecentRes.error) {
+      console.error("[dashboard] ordersRecent error", ordersRecentRes.error);
+      throw new Error(`orders(60d): ${ordersRecentRes.error.message}`);
+    }
+    if (recentOrdersRes.error) {
+      console.error("[dashboard] recentOrders error", recentOrdersRes.error);
+      throw new Error(`recentOrders: ${recentOrdersRes.error.message}`);
+    }
+    if (productsCountRes.error) {
+      console.error("[dashboard] productsCount error", productsCountRes.error);
+      throw new Error(`products: ${productsCountRes.error.message}`);
+    }
+    if (activeTodayRes.error) {
+      console.error("[dashboard] activeToday error", activeTodayRes.error);
+      throw new Error(`ordersToday: ${activeTodayRes.error.message}`);
+    }
+    if (usersListRes.error) {
+      console.error("[dashboard] usersList error", usersListRes.error);
+      throw new Error(`users(admin.listUsers): ${usersListRes.error.message}`);
+    }
 
     const allOrders = (ordersRecentRes.data ?? []).map((o) => ({
       ...o,
