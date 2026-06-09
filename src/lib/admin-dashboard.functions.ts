@@ -126,7 +126,10 @@ export const getDashboardStats = createServerFn({ method: "GET" })
     }
     if (productsCountRes.error) {
       console.error("[dashboard] productsCount error", productsCountRes.error);
-      throw new Error(`products: ${productsCountRes.error.message}`);
+      const e = productsCountRes.error as { message?: string; details?: string; hint?: string; code?: string };
+      throw new Error(
+        `products: ${e.message || "(no message)"} | code=${e.code ?? "?"} | details=${e.details ?? "?"} | hint=${e.hint ?? "?"}`,
+      );
     }
     if (activeTodayRes.error) {
       console.error("[dashboard] activeToday error", activeTodayRes.error);
