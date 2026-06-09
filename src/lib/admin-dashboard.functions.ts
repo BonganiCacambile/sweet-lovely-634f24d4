@@ -107,7 +107,7 @@ export const getDashboardStats = createServerFn({ method: "GET" })
         .select("id, order_number, customer_name, total_zar, status, created_at")
         .order("created_at", { ascending: false })
         .limit(8),
-      supabaseAdmin.from("products").select("id", { count: "exact", head: true }),
+      supabaseAdmin.from("products").select("*", { count: "exact", head: true }),
       supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 200 }),
       supabaseAdmin
         .from("orders")
