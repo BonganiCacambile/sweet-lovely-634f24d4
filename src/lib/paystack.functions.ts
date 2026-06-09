@@ -124,7 +124,7 @@ export const verifyAndCreateOrder = createServerFn({ method: "POST" })
       .from("orders")
       .insert({
         user_id: data.userId ?? null,
-        status: "paid",
+        status: "preparing",
         customer_name: `${customer.firstName} ${customer.lastName}`.trim(),
         customer_email: customer.email,
         customer_phone: customer.phone,
