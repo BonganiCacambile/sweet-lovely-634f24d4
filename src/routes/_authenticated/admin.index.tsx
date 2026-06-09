@@ -28,7 +28,7 @@ function dashboardQueryOptions(fetcher: () => Promise<DashboardStats>) {
 
 export const Route = createFileRoute("/_authenticated/admin/")({
   component: DashboardHome,
-  errorComponent: ({ error, reset }) => <DashboardError message={error.message} reset={reset} />,
+  errorComponent: ({ error, reset }) => <DashboardRouteError error={error} reset={reset} />,
 });
 
 const STATUS_STYLES: Record<string, string> = {
@@ -66,7 +66,7 @@ function DashboardHome() {
   }, [queryClient]);
 
   if (error) {
-    return <DashboardError message={(error as Error).message} reset={() => router.invalidate()} />;
+    return <DashboardError error={error} isRetrying={isFetching} reset={() => void refetch()} />;
   }
 
   return (
@@ -281,7 +281,23 @@ function EmptyBlock({ icon, label }: { icon: React.ReactNode; label: string }) {
   );
 }
 
-function DashboardError({ message, reset }: { message: string; reset: () => void }) {
+function DashboardRouteError({ error, reset }: { error: unknown; reset: () => void }) {
+  const router = useRouter();
+
+  return (
+    <DashboardError
+      error={error}
+      reset={() => {
+        reset();
+        void router.invalidate();
+      }}
+    />
+  );
+}
+
+function DashboardError({ error, reset, isRetrying = false }: { error: unknown; reset: () => void; isRetrying?: boolean }) {
+  const { message, details } = formatErrorForDisplay(error);
+
   return (
     <div className="rounded-3xl border border-rose-200 bg-rose-50/70 p-6">
       <div className="flex items-start gap-3">
@@ -289,15 +305,55 @@ function DashboardError({ message, reset }: { message: string; reset: () => void
         <div className="flex-1">
           <p className="text-sm font-semibold text-rose-800">Couldn&rsquo;t load dashboard data</p>
           <p className="mt-1 text-sm text-rose-700">{message}</p>
+          {details ? (
+            <details className="mt-4 rounded-2xl border border-rose-200 bg-white/80 p-3 text-left">
+              <summary className="cursor-pointer text-xs font-semibold uppercase tracking-wider text-rose-800">
+                Error stack trace
+              </summary>
+              <pre className="mt-3 max-h-80 overflow-auto whitespace-pre-wrap break-words rounded-xl bg-neutral-950 p-3 text-xs leading-relaxed text-neutral-50">
+                {details}
+              </pre>
+            </details>
+          ) : null}
           <button
             type="button"
             onClick={reset}
-            className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-rose-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-rose-700"
+            disabled={isRetrying}
+            className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-rose-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-rose-700 disabled:opacity-60"
           >
-            <RefreshCw className="h-3.5 w-3.5" /> Try again
+            <RefreshCw className={"h-3.5 w-3.5 " + (isRetrying ? "animate-spin" : "")} />
+            {isRetrying ? "Retrying…" : "Retry loading data"}
           </button>
         </div>
       </div>
     </div>
   );
+}
+
+function formatErrorForDisplay(error: unknown) {
+  if (error instanceof Error) {
+    const stack = error.stack && error.stack !== error.message ? error.stack : "";
+    const extra = Object.entries(error)
+      .filter(([key]) => key !== "message" && key !== "stack")
+      .map(([key, value]) => `${key}: ${safeStringify(value)}`)
+      .join("\n");
+
+    return {
+      message: error.message || "Unknown dashboard error",
+      details: [stack, extra].filter(Boolean).join("\n\n"),
+    };
+  }
+
+  return {
+    message: typeof error === "string" ? error : "Unknown dashboard error",
+    details: typeof error === "string" ? error : safeStringify(error),
+  };
+}
+
+function safeStringify(value: unknown) {
+  try {
+    return JSON.stringify(value, null, 2);
+  } catch {
+    return String(value);
+  }
 }
