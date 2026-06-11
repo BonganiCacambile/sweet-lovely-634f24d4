@@ -22,10 +22,11 @@ export function HeaderAccountMenu() {
     return (
       <Link
         to="/auth"
-        className="pointer-events-auto inline-flex items-center gap-1.5 rounded-full bg-[#ff003c] px-3 py-1.5 text-xs font-semibold text-white shadow-[0_8px_20px_-8px_rgba(255,0,60,0.6)] transition hover:scale-[1.03] sm:px-4 sm:py-2 sm:text-sm"
+        aria-label="Sign in"
+        className="pointer-events-auto group inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/70 text-[#ff003c] ring-1 ring-black/5 shadow-[0_6px_20px_-8px_rgba(0,0,0,0.25)] backdrop-blur-md transition hover:bg-white hover:scale-105 sm:h-10 sm:w-auto sm:gap-1.5 sm:rounded-full sm:px-3.5 sm:text-sm sm:font-semibold"
       >
-        <UserIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-        Sign in
+        <UserIcon className="h-4 w-4 sm:h-4 sm:w-4" />
+        <span className="hidden sm:inline">Sign in</span>
       </Link>
     );
   }
@@ -38,11 +39,12 @@ export function HeaderAccountMenu() {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white/90 px-1.5 py-1 text-xs font-medium text-neutral-800 shadow-sm backdrop-blur transition hover:bg-white sm:gap-2 sm:px-2 sm:py-1.5 sm:text-sm"
+        aria-label="Account menu"
+        className="inline-flex items-center gap-2 rounded-full bg-white/70 p-1 pr-1 text-sm font-medium text-neutral-800 ring-1 ring-black/5 shadow-[0_6px_20px_-8px_rgba(0,0,0,0.25)] backdrop-blur-md transition hover:bg-white hover:scale-[1.03] sm:pr-3"
         aria-haspopup="menu"
         aria-expanded={open}
       >
-        <span className="grid h-7 w-7 place-items-center rounded-full bg-gradient-to-br from-[#ff003c] to-[#ff5a36] text-[11px] font-semibold text-white sm:h-8 sm:w-8 sm:text-xs">
+        <span className="grid h-8 w-8 place-items-center rounded-full bg-gradient-to-br from-[#ff003c] to-[#ff5a36] text-xs font-semibold text-white shadow-inner">
           {initial}
         </span>
         <span className="hidden max-w-[8rem] truncate sm:inline">{name}</span>
