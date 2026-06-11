@@ -15,7 +15,7 @@ export function SiteHeader() {
           "2xl": "Desktop",
         }}
       />
-      <div className="pointer-events-none absolute right-2 top-1/2 z-40 -translate-y-1/2 sm:right-4 md:right-6">
+      <div className="pointer-events-none absolute right-2 top-full z-40 mt-2 flex justify-end sm:right-4 md:right-6">
         <HeaderAccountMenu />
       </div>
     </header>
