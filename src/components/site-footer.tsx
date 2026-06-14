@@ -1,6 +1,8 @@
 import { Link } from "@tanstack/react-router";
 import { Facebook, Instagram, Twitter, Youtube } from "lucide-react";
 
+const LOGO_URL = "/__l5e/assets-v1/e8de6399-e42e-450d-8b68-d75c9fceea0c/logo.png";
+
 /** Semantic 4-column site footer modeled after the Pepper Framer template. */
 export function SiteFooter() {
   return (
@@ -9,12 +11,13 @@ export function SiteFooter() {
         <div className="grid gap-12 md:grid-cols-2 lg:grid-cols-4">
           {/* Brand */}
           <div>
-            <Link
-              to="/"
-              className="text-4xl tracking-tight text-white"
-              style={{ fontFamily: '"Cherry Bomb One", sans-serif' }}
-            >
-              Sweet &amp; Lovely
+            <Link to="/" aria-label="Sweet & Lovely home">
+              <img
+                src={LOGO_URL}
+                alt="Sweet & Lovely"
+                className="block"
+                style={{ height: 48, width: "auto" }}
+              />
             </Link>
             <address className="mt-5 not-italic text-sm leading-6 text-white/90">
               123 Pizza St.<br />
