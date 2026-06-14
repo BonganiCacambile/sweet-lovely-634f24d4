@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { motion } from "framer-motion";
 import { ShieldCheck, Lock, Sparkles } from "lucide-react";
+import { LogoImage } from "@/components/logo";
 import type { ReactNode } from "react";
 
 export function AuthLayout({
@@ -29,16 +30,7 @@ export function AuthLayout({
         {/* Left brand panel */}
         <section className="relative hidden flex-col justify-between p-10 lg:flex">
           <Link to="/" className="inline-flex items-center">
-            <span
-              style={{
-                fontFamily: '"Cherry Bomb One", sans-serif',
-                color: "rgb(255, 0, 60)",
-                fontSize: "28px",
-                lineHeight: 1,
-              }}
-            >
-              Sweet &amp; Lovely
-            </span>
+            <LogoImage height={40} />
           </Link>
 
           <motion.div
@@ -85,16 +77,7 @@ export function AuthLayout({
             {/* Mobile brand header */}
             <div className="mb-6 flex flex-col items-center text-center lg:hidden">
               <Link to="/" className="inline-flex items-center">
-                <span
-                  style={{
-                    fontFamily: '"Cherry Bomb One", sans-serif',
-                    color: "rgb(255, 0, 60)",
-                    fontSize: "26px",
-                    lineHeight: 1,
-                  }}
-                >
-                  Sweet &amp; Lovely
-                </span>
+                <LogoImage height={36} />
               </Link>
               <p className="mt-3 text-[11px] uppercase tracking-[0.18em] text-[#ff003c]">
                 {eyebrow}
