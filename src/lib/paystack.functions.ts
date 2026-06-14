@@ -74,6 +74,24 @@ const createOrderSchema = z.object({
   userId: z.string().uuid().nullable().optional(),
 });
 
+// Server-authoritative pizza size prices (must match PIZZA_SIZES in
+// src/components/cart/add-to-cart-button.tsx). Cart ids for pizzas are
+// `${slug}-medium` / `${slug}-large`.
+const PIZZA_SIZE_PRICES: Record<string, number> = {
+  medium: 80,
+  large: 150,
+};
+const PIZZA_SUFFIXES = Object.keys(PIZZA_SIZE_PRICES);
+
+function splitPizzaId(id: string): { slug: string; size: string | null } {
+  for (const suffix of PIZZA_SUFFIXES) {
+    if (id.endsWith(`-${suffix}`)) {
+      return { slug: id.slice(0, -(suffix.length + 1)), size: suffix };
+    }
+  }
+  return { slug: id, size: null };
+}
+
 /**
  * Verifies the Paystack transaction and, on success, persists the order
  * and its line items. Returns the generated order_number for the success page.
@@ -109,14 +127,72 @@ export const verifyAndCreateOrder = createServerFn({ method: "POST" })
       return { success: false as const, error: `Payment not successful (${paystack.data!.status})` };
     }
 
-    // 2) Sanity-check amount (Paystack returns smallest unit)
-    const expectedAmount = Math.round(data.total * 100);
-    if (paystack.data!.amount !== expectedAmount) {
-      console.error("Amount mismatch:", { expected: expectedAmount, got: paystack.data!.amount });
-      return { success: false as const, error: "Payment amount mismatch" };
+    // 2) Recompute prices server-side from products table — never trust client.
+    const parsedItems = data.items.map((it) => ({ ...it, ...splitPizzaId(it.id) }));
+    const slugs = Array.from(new Set(parsedItems.map((p) => p.slug)));
+    const { data: products, error: prodErr } = await supabaseAdmin
+      .from("products")
+      .select("slug, price_zar, title, is_active")
+      .in("slug", slugs);
+    if (prodErr) {
+      console.error("Product lookup error:", prodErr);
+      return { success: false as const, error: "Could not validate product prices" };
+    }
+    const productMap = new Map((products ?? []).map((p) => [p.slug, p]));
+
+    type PricedItem = {
+      cartId: string;
+      slug: string;
+      title: string;
+      quantity: number;
+      unitPrice: number;
+      lineTotal: number;
+    };
+    const priced: PricedItem[] = [];
+    for (const it of parsedItems) {
+      const product = productMap.get(it.slug);
+      if (!product || product.is_active === false) {
+        return { success: false as const, error: `Unknown product: ${it.slug}` };
+      }
+      let unitPrice: number;
+      if (it.size) {
+        const sizePrice = PIZZA_SIZE_PRICES[it.size];
+        if (typeof sizePrice !== "number") {
+          return { success: false as const, error: `Invalid size: ${it.size}` };
+        }
+        unitPrice = sizePrice;
+      } else {
+        unitPrice = Number(product.price_zar);
+      }
+      const lineTotal = Number((unitPrice * it.quantity).toFixed(2));
+      priced.push({
+        cartId: it.id,
+        slug: it.slug,
+        title: product.title,
+        quantity: it.quantity,
+        unitPrice,
+        lineTotal,
+      });
     }
 
-    // 3) Persist order + items (service role; works for guest checkout)
+    const serverSubtotal = Number(
+      priced.reduce((s, p) => s + p.lineTotal, 0).toFixed(2),
+    );
+    // Trust client shipping/tax only as upper bounds (cap to a sane max).
+    const shipping = Math.max(0, Math.min(data.shipping, 10_000));
+    const tax = Math.max(0, Math.min(data.tax, 1_000_000));
+    const serverTotal = Number((serverSubtotal + shipping + tax).toFixed(2));
+    const expectedAmount = Math.round(serverTotal * 100);
+    if (paystack.data!.amount < expectedAmount) {
+      console.error("Amount mismatch:", {
+        expected: expectedAmount,
+        got: paystack.data!.amount,
+      });
+      return { success: false as const, error: "Payment amount does not match order" };
+    }
+
+    // 3) Persist order + items (service role; works for guest checkout).
+    // Unique index on paystack_reference prevents reference replay.
     const { customer } = data;
     const fullAddress = `${customer.address}, ${customer.city}, ${customer.state}, ${customer.country} ${customer.postal}`;
 
@@ -130,25 +206,33 @@ export const verifyAndCreateOrder = createServerFn({ method: "POST" })
         customer_phone: customer.phone,
         address: fullAddress,
         notes: `Paystack ref: ${data.reference}`,
-        subtotal_zar: data.subtotal,
-        delivery_zar: data.shipping,
-        total_zar: data.total,
+        subtotal_zar: serverSubtotal,
+        delivery_zar: shipping,
+        total_zar: serverTotal,
+        paystack_reference: data.reference,
       })
       .select("id, order_number")
       .single();
 
     if (orderErr || !order) {
       console.error("Order insert error:", orderErr);
+      const code = (orderErr as { code?: string } | null)?.code;
+      if (code === "23505") {
+        return {
+          success: false as const,
+          error: "This payment reference has already been used",
+        };
+      }
       return { success: false as const, error: "Could not save order after payment" };
     }
 
-    const itemRows = data.items.map((it) => ({
+    const itemRows = priced.map((it) => ({
       order_id: order.id,
-      product_slug: it.id,
+      product_slug: it.slug,
       title_snapshot: it.title,
       quantity: it.quantity,
-      unit_price_zar: it.price,
-      line_total_zar: Number((it.price * it.quantity).toFixed(2)),
+      unit_price_zar: it.unitPrice,
+      line_total_zar: it.lineTotal,
     }));
 
     const { error: itemsErr } = await supabaseAdmin.from("order_items").insert(itemRows);
