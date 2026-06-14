@@ -25,7 +25,6 @@ import { Route as AuthAdminRouteImport } from './routes/auth.admin'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedAccountRouteImport } from './routes/_authenticated/account'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
-import { Route as AuthAdminMfaRouteImport } from './routes/auth.admin.mfa'
 import { Route as AuthenticatedAdminUsersRouteImport } from './routes/_authenticated/admin.users'
 import { Route as AuthenticatedAdminSettingsRouteImport } from './routes/_authenticated/admin.settings'
 import { Route as AuthenticatedAdminSecurityRouteImport } from './routes/_authenticated/admin.security'
@@ -125,11 +124,6 @@ const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AuthenticatedAdminRoute,
-} as any)
-const AuthAdminMfaRoute = AuthAdminMfaRouteImport.update({
-  id: '/mfa',
-  path: '/mfa',
-  getParentRoute: () => AuthAdminRoute,
 } as any)
 const AuthenticatedAdminUsersRoute = AuthenticatedAdminUsersRouteImport.update({
   id: '/users',
@@ -259,7 +253,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/account': typeof AuthenticatedAccountRouteWithChildren
   '/admin': typeof AuthenticatedAdminRouteWithChildren
-  '/auth/admin': typeof AuthAdminRouteWithChildren
+  '/auth/admin': typeof AuthAdminRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
   '/checkout/success': typeof CheckoutSuccessRoute
@@ -284,7 +278,6 @@ export interface FileRoutesByFullPath {
   '/admin/security': typeof AuthenticatedAdminSecurityRoute
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
-  '/auth/admin/mfa': typeof AuthAdminMfaRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
 }
 export interface FileRoutesByTo {
@@ -296,7 +289,7 @@ export interface FileRoutesByTo {
   '/locations': typeof LocationsRoute
   '/login': typeof LoginRoute
   '/account': typeof AuthenticatedAccountRouteWithChildren
-  '/auth/admin': typeof AuthAdminRouteWithChildren
+  '/auth/admin': typeof AuthAdminRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
   '/checkout/success': typeof CheckoutSuccessRoute
@@ -321,7 +314,6 @@ export interface FileRoutesByTo {
   '/admin/security': typeof AuthenticatedAdminSecurityRoute
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
-  '/auth/admin/mfa': typeof AuthAdminMfaRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
 }
 export interface FileRoutesById {
@@ -336,7 +328,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/_authenticated/account': typeof AuthenticatedAccountRouteWithChildren
   '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
-  '/auth/admin': typeof AuthAdminRouteWithChildren
+  '/auth/admin': typeof AuthAdminRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
   '/checkout/success': typeof CheckoutSuccessRoute
@@ -361,7 +353,6 @@ export interface FileRoutesById {
   '/_authenticated/admin/security': typeof AuthenticatedAdminSecurityRoute
   '/_authenticated/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/_authenticated/admin/users': typeof AuthenticatedAdminUsersRoute
-  '/auth/admin/mfa': typeof AuthAdminMfaRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
 }
 export interface FileRouteTypes {
@@ -401,7 +392,6 @@ export interface FileRouteTypes {
     | '/admin/security'
     | '/admin/settings'
     | '/admin/users'
-    | '/auth/admin/mfa'
     | '/admin/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -438,7 +428,6 @@ export interface FileRouteTypes {
     | '/admin/security'
     | '/admin/settings'
     | '/admin/users'
-    | '/auth/admin/mfa'
     | '/admin'
   id:
     | '__root__'
@@ -477,7 +466,6 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/security'
     | '/_authenticated/admin/settings'
     | '/_authenticated/admin/users'
-    | '/auth/admin/mfa'
     | '/_authenticated/admin/'
   fileRoutesById: FileRoutesById
 }
@@ -606,13 +594,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/'
       preLoaderRoute: typeof AuthenticatedAdminIndexRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
-    }
-    '/auth/admin/mfa': {
-      id: '/auth/admin/mfa'
-      path: '/mfa'
-      fullPath: '/auth/admin/mfa'
-      preLoaderRoute: typeof AuthAdminMfaRouteImport
-      parentRoute: typeof AuthAdminRoute
     }
     '/_authenticated/admin/users': {
       id: '/_authenticated/admin/users'
@@ -831,26 +812,14 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
 const AuthenticatedRouteRouteWithChildren =
   AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
 
-interface AuthAdminRouteChildren {
-  AuthAdminMfaRoute: typeof AuthAdminMfaRoute
-}
-
-const AuthAdminRouteChildren: AuthAdminRouteChildren = {
-  AuthAdminMfaRoute: AuthAdminMfaRoute,
-}
-
-const AuthAdminRouteWithChildren = AuthAdminRoute._addFileChildren(
-  AuthAdminRouteChildren,
-)
-
 interface AuthRouteChildren {
-  AuthAdminRoute: typeof AuthAdminRouteWithChildren
+  AuthAdminRoute: typeof AuthAdminRoute
   AuthForgotPasswordRoute: typeof AuthForgotPasswordRoute
   AuthResetPasswordRoute: typeof AuthResetPasswordRoute
 }
 
 const AuthRouteChildren: AuthRouteChildren = {
-  AuthAdminRoute: AuthAdminRouteWithChildren,
+  AuthAdminRoute: AuthAdminRoute,
   AuthForgotPasswordRoute: AuthForgotPasswordRoute,
   AuthResetPasswordRoute: AuthResetPasswordRoute,
 }
