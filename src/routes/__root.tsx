@@ -17,6 +17,7 @@ import { CartFab } from "@/components/cart/cart-fab";
 import { CartDrawer } from "@/components/cart/cart-drawer";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider, useAuth } from "@/lib/auth-context";
+import { LoadingScreen } from "@/components/loading-screen";
 
 function NotFoundComponent() {
   return (
@@ -152,11 +153,7 @@ function AuthGate({ children }: { children: ReactNode }) {
 
   if (isPublic) return <>{children}</>;
   if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-muted border-t-foreground" />
-      </div>
-    );
+    return <LoadingScreen message="Signing you in" />;
   }
   if (!user) {
     return <Navigate to="/auth" search={{ redirect: pathname } as never} replace />;
