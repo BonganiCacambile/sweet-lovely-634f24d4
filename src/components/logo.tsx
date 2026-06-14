@@ -1,7 +1,7 @@
 const LOGO_URL = "/__l5e/assets-v1/9da0083b-bffb-4e22-9eb3-92650381c94b/logo.png";
 
 export function LogoImage({
-  height = 64,
+  height = 84,
   className = "",
 }: {
   height?: number;
