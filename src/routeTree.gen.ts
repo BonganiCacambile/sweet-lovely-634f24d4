@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as LocationsRouteImport } from './routes/locations'
+import { Route as LoadingRouteImport } from './routes/loading'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as CheckoutRouteImport } from './routes/checkout'
 import { Route as CartRouteImport } from './routes/cart'
@@ -54,6 +55,11 @@ const LoginRoute = LoginRouteImport.update({
 const LocationsRoute = LocationsRouteImport.update({
   id: '/locations',
   path: '/locations',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoadingRoute = LoadingRouteImport.update({
+  id: '/loading',
+  path: '/loading',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ContactRoute = ContactRouteImport.update({
@@ -249,6 +255,7 @@ export interface FileRoutesByFullPath {
   '/cart': typeof CartRoute
   '/checkout': typeof CheckoutRouteWithChildren
   '/contact': typeof ContactRoute
+  '/loading': typeof LoadingRoute
   '/locations': typeof LocationsRoute
   '/login': typeof LoginRoute
   '/account': typeof AuthenticatedAccountRouteWithChildren
@@ -286,6 +293,7 @@ export interface FileRoutesByTo {
   '/cart': typeof CartRoute
   '/checkout': typeof CheckoutRouteWithChildren
   '/contact': typeof ContactRoute
+  '/loading': typeof LoadingRoute
   '/locations': typeof LocationsRoute
   '/login': typeof LoginRoute
   '/account': typeof AuthenticatedAccountRouteWithChildren
@@ -324,6 +332,7 @@ export interface FileRoutesById {
   '/cart': typeof CartRoute
   '/checkout': typeof CheckoutRouteWithChildren
   '/contact': typeof ContactRoute
+  '/loading': typeof LoadingRoute
   '/locations': typeof LocationsRoute
   '/login': typeof LoginRoute
   '/_authenticated/account': typeof AuthenticatedAccountRouteWithChildren
@@ -363,6 +372,7 @@ export interface FileRouteTypes {
     | '/cart'
     | '/checkout'
     | '/contact'
+    | '/loading'
     | '/locations'
     | '/login'
     | '/account'
@@ -400,6 +410,7 @@ export interface FileRouteTypes {
     | '/cart'
     | '/checkout'
     | '/contact'
+    | '/loading'
     | '/locations'
     | '/login'
     | '/account'
@@ -437,6 +448,7 @@ export interface FileRouteTypes {
     | '/cart'
     | '/checkout'
     | '/contact'
+    | '/loading'
     | '/locations'
     | '/login'
     | '/_authenticated/account'
@@ -476,6 +488,7 @@ export interface RootRouteChildren {
   CartRoute: typeof CartRoute
   CheckoutRoute: typeof CheckoutRouteWithChildren
   ContactRoute: typeof ContactRoute
+  LoadingRoute: typeof LoadingRoute
   LocationsRoute: typeof LocationsRoute
   LoginRoute: typeof LoginRoute
   MenuFullMenuRoute: typeof MenuFullMenuRoute
@@ -495,6 +508,13 @@ declare module '@tanstack/react-router' {
       path: '/locations'
       fullPath: '/locations'
       preLoaderRoute: typeof LocationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/loading': {
+      id: '/loading'
+      path: '/loading'
+      fullPath: '/loading'
+      preLoaderRoute: typeof LoadingRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/contact': {
@@ -845,6 +865,7 @@ const rootRouteChildren: RootRouteChildren = {
   CartRoute: CartRoute,
   CheckoutRoute: CheckoutRouteWithChildren,
   ContactRoute: ContactRoute,
+  LoadingRoute: LoadingRoute,
   LocationsRoute: LocationsRoute,
   LoginRoute: LoginRoute,
   MenuFullMenuRoute: MenuFullMenuRoute,
