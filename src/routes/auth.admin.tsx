@@ -57,16 +57,10 @@ function AdminAuth() {
     return () => sub.subscription.unsubscribe();
   }, []);
 
-  const proceedToConsole = (verifiedEmail: string) => {
-    try {
-      sessionStorage.setItem(
-        "sl_admin_mfa_pending",
-        JSON.stringify({ email: verifiedEmail, remember, at: Date.now() }),
-      );
-    } catch {
-      /* storage unavailable */
-    }
-    navigate({ to: "/auth/admin/mfa" });
+  const proceedToConsole = (_verifiedEmail: string) => {
+    void _verifiedEmail;
+    void remember;
+    navigate({ to: "/admin" });
   };
 
   const submit = async (e: React.FormEvent) => {
