@@ -16,7 +16,7 @@ export function SiteFooter() {
                 src={LOGO_URL}
                 alt="Sweet & Lovely"
                 className="block"
-                style={{ height: 48, width: "auto" }}
+                style={{ height: 58, width: "auto" }}
               />
             </Link>
             <address className="mt-5 not-italic text-sm leading-6 text-white/90">
