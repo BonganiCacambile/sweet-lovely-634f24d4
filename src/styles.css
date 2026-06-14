@@ -149,6 +149,19 @@
   display: none !important;
 }
 
+/* Replace the old text logo with the new image logo in the Framer nav */
+.framer-8x6WV .framer-323bah {
+  display: none !important;
+}
+.framer-8x6WV.framer-4ztssu {
+  background-image: url(/__l5e/assets-v1/e8de6399-e42e-450d-8b68-d75c9fceea0c/logo.png);
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  width: 54px !important;
+  min-width: 54px !important;
+}
+
 /* =========================================================
  * Site-wide animations & hover effects (Pepper-template feel)
  * Respect prefers-reduced-motion below.
