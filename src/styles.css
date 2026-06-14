@@ -158,9 +158,10 @@
   background-size: contain;
   background-repeat: no-repeat;
   background-position: center;
-  width: 64px !important;
-  min-width: 64px !important;
-  height: 64px !important;
+  width: clamp(82px, 18vw, 112px) !important;
+  min-width: clamp(82px, 18vw, 112px) !important;
+  height: clamp(68px, 15vw, 96px) !important;
+  filter: drop-shadow(0 3px 8px rgba(0, 0, 0, 0.18));
 }
 
 /* =========================================================

@@ -30,7 +30,7 @@ export function AuthLayout({
         {/* Left brand panel */}
         <section className="relative hidden flex-col justify-between p-10 lg:flex">
           <Link to="/" className="inline-flex items-center">
-            <LogoImage height={48} />
+            <LogoImage height={66} />
           </Link>
 
           <motion.div
@@ -77,7 +77,7 @@ export function AuthLayout({
             {/* Mobile brand header */}
             <div className="mb-6 flex flex-col items-center text-center lg:hidden">
               <Link to="/" className="inline-flex items-center">
-                <LogoImage height={42} />
+                <LogoImage height={56} />
               </Link>
               <p className="mt-3 text-[11px] uppercase tracking-[0.18em] text-[#ff003c]">
                 {eyebrow}
