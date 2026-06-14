@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { motion } from "framer-motion";
 import { ShieldCheck, Lock, Sparkles } from "lucide-react";
+import { LogoImage } from "@/components/logo";
 import type { ReactNode } from "react";
 
 export function AuthLayout({
