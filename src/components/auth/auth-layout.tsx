@@ -77,7 +77,7 @@ export function AuthLayout({
             {/* Mobile brand header */}
             <div className="mb-6 flex flex-col items-center text-center lg:hidden">
               <Link to="/" className="inline-flex items-center">
-                <LogoImage height={42} />
+                <LogoImage height={64} />
               </Link>
               <p className="mt-3 text-[11px] uppercase tracking-[0.18em] text-[#ff003c]">
                 {eyebrow}
