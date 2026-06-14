@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { Facebook, Instagram, Twitter, Youtube } from "lucide-react";
 
-const LOGO_URL = "/logo.png";
+const LOGO_URL = "/logo-transparent.png";
 
 /** Semantic 4-column site footer modeled after the Pepper Framer template. */
 export function SiteFooter() {
