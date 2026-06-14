@@ -30,7 +30,7 @@ export function AuthLayout({
         {/* Left brand panel */}
         <section className="relative hidden flex-col justify-between p-10 lg:flex">
           <Link to="/" className="inline-flex items-center">
-            <LogoImage height={48} />
+            <LogoImage height={72} />
           </Link>
 
           <motion.div
