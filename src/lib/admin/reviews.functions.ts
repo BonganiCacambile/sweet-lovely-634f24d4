@@ -45,7 +45,7 @@ export const moderateReview = createServerFn({ method: "POST" })
       .update({ status: data.status })
       .eq("id", data.id);
     if (error) throw new Error(error.message);
-    await logAudit(context.supabase, "review.moderate", "review", data.id, { status: data.status });
+    await logAudit(context, "review.moderate", "review", data.id, { status: data.status });
     return { ok: true };
   });
 
@@ -56,7 +56,7 @@ export const deleteReview = createServerFn({ method: "POST" })
     await requireAdmin(context.supabase, context.userId);
     const { error } = await context.supabase.from("reviews").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
-    await logAudit(context.supabase, "review.delete", "review", data.id);
+    await logAudit(context, "review.delete", "review", data.id);
     return { ok: true };
   });
 

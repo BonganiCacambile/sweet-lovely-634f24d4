@@ -32,6 +32,6 @@ export const updateIntegration = createServerFn({ method: "POST" })
     if (data.config) payload.config = data.config as IntegrationUpdate["config"];
     const { error } = await context.supabase.from("integrations").update(payload).eq("id", data.id);
     if (error) throw new Error(error.message);
-    await logAudit(context.supabase, "integration.update", "integration", data.id, { status: data.status });
+    await logAudit(context, "integration.update", "integration", data.id, { status: data.status });
     return { ok: true };
   });

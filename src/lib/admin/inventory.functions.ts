@@ -56,7 +56,7 @@ export const adjustStock = createServerFn({ method: "POST" })
       _reason: data.reason ?? undefined,
     });
     if (error) throw new Error(error.message);
-    await logAudit(context.supabase, "inventory.adjust", "product", data.slug, {
+    await logAudit(context, "inventory.adjust", "product", data.slug, {
       delta: data.delta,
       type: data.type,
       reason: data.reason,
@@ -77,7 +77,7 @@ export const setLowStockThreshold = createServerFn({ method: "POST" })
       .update({ low_stock_threshold: data.threshold })
       .eq("slug", data.slug);
     if (error) throw new Error(error.message);
-    await logAudit(context.supabase, "inventory.threshold", "product", data.slug, { threshold: data.threshold });
+    await logAudit(context, "inventory.threshold", "product", data.slug, { threshold: data.threshold });
     return { ok: true };
   });
 
