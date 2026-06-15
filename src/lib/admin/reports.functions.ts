@@ -88,11 +88,11 @@ export const runReport = createServerFn({ method: "POST" })
       case "low_stock": {
         const { data: rows, error } = await sb
           .from("products")
-          .select("slug, title, stock, low_stock_threshold, available")
+          .select("slug, title, stock, low_stock_threshold, is_active")
           .order("stock", { ascending: true });
         if (error) throw new Error(error.message);
         const filtered = (rows ?? []).filter(r => Number(r.stock ?? 0) <= Number(r.low_stock_threshold ?? 0));
-        return { columns: ["slug", "title", "stock", "low_stock_threshold", "available"], rows: filtered };
+        return { columns: ["slug", "title", "stock", "low_stock_threshold", "is_active"], rows: filtered };
       }
       case "status_mix": {
         const { data: rows, error } = await sb
