@@ -5,6 +5,7 @@ import { AccountShell, Card } from "@/components/auth/account-shell";
 import { ShoppingBag, Loader2, ArrowRight } from "lucide-react";
 import { getMyOrders } from "@/lib/orders.functions";
 import { formatPrice } from "@/lib/cart-context";
+import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
 
 export const Route = createFileRoute("/_authenticated/account/orders")({
   head: () => ({ meta: [{ title: "Your orders — Sweet & Lovely" }] }),
@@ -24,6 +25,7 @@ function OrdersPage() {
     queryKey: ["my-orders"],
     queryFn: () => fetchOrders(),
   });
+  useRealtimeInvalidate(["orders", "order_items"], [["my-orders"]]);
 
   if (isLoading) {
     return (

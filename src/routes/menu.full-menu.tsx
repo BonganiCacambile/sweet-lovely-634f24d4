@@ -1,5 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { MenuCard } from "@/components/menu-card";
@@ -9,7 +11,10 @@ import {
   MENU_CATEGORIES,
   MENU_ITEMS,
   type MenuCategory,
+  type MenuItem,
 } from "@/data/menu";
+import { getPublicMenu } from "@/lib/public-menu.functions";
+import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
 
 export const Route = createFileRoute("/menu/full-menu")({
   head: () => ({
@@ -25,9 +30,43 @@ export const Route = createFileRoute("/menu/full-menu")({
 
 function FullMenuPage() {
   const [active, setActive] = useState<MenuCategory | "all">("all");
+  const fetchMenu = useServerFn(getPublicMenu);
+  const { data } = useQuery({
+    queryKey: ["public-menu"],
+    queryFn: () => fetchMenu(),
+    staleTime: 30_000,
+  });
+  useRealtimeInvalidate(["products", "categories"], [["public-menu"]]);
+
+  // Merge live DB rows with rich static metadata (ingredients/allergens/nutrition)
+  const liveItems: MenuItem[] = (data?.products ?? []).map((p) => {
+    const fallback = MENU_ITEMS.find((m) => m.id === p.slug);
+    return {
+      id: p.slug,
+      title: p.title,
+      price: `R${Math.round(Number(p.price_zar))}`,
+      image: p.image ?? fallback?.image ?? "",
+      category: (p.category_slug as MenuCategory) ?? fallback?.category ?? "pizza",
+      content: fallback?.content,
+      nutrition: fallback?.nutrition,
+      allergens: fallback?.allergens,
+      portion: fallback?.portion,
+    } satisfies MenuItem;
+  });
+  const items: MenuItem[] = liveItems.length > 0 ? liveItems : MENU_ITEMS;
+  const liveCategories = (data?.categories ?? []).map((c) => ({
+    id: c.slug as MenuCategory,
+    label: c.label,
+    image: c.image ?? "",
+    intro: c.intro as string | null,
+  }));
+  const categories =
+    liveCategories.length > 0
+      ? liveCategories
+      : MENU_CATEGORIES.map((c) => ({ ...c, intro: null as string | null }));
 
   const visibleCategories =
-    active === "all" ? MENU_CATEGORIES.map((c) => c.id) : [active];
+    active === "all" ? categories.map((c) => c.id) : [active];
 
   return (
     <div className="min-h-screen bg-white text-neutral-900">
@@ -66,7 +105,7 @@ function FullMenuPage() {
             selected={active === "all"}
             onClick={() => setActive("all")}
           />
-          {MENU_CATEGORIES.map((c) => (
+          {categories.map((c) => (
             <TabButton
               key={c.id}
               label={c.label}
@@ -81,18 +120,19 @@ function FullMenuPage() {
       {/* Sections per category */}
       <div className="mx-auto max-w-7xl px-4 pb-20 md:px-8">
         {visibleCategories.map((cat) => {
-          const meta = MENU_CATEGORIES.find((c) => c.id === cat)!;
-          const items = MENU_ITEMS.filter((i) => i.category === cat);
+          const meta = categories.find((c) => c.id === cat);
+          if (!meta) return null;
+          const catItems = items.filter((i) => i.category === cat);
           return (
             <section key={cat} id={cat} className="mt-16 md:mt-24">
               <Reveal as="h2" className="text-4xl font-extrabold tracking-tight md:text-6xl">
                 {meta.label}
               </Reveal>
               <Reveal as="p" delay={100} className="mt-5 max-w-4xl text-base text-neutral-700 md:text-lg">
-                {CATEGORY_INTRO[cat]}
+                {meta.intro ?? CATEGORY_INTRO[cat]}
               </Reveal>
               <div className="mt-6">
-                {items.map((item) => (
+                {catItems.map((item) => (
                   <MenuCard key={item.id} item={item} />
                 ))}
               </div>
