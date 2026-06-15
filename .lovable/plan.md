@@ -1,87 +1,52 @@
+# Admin Dashboard — Full Build Plan
 
-# Admin Portal & Dashboard — Phased Build Plan
+You picked all four phases (in order) + new tables OK + CSV/Excel/PDF exports + realtime on Orders, Notifications, Inventory. I'll deliver in **4 phases**, each phase shipped and verified before the next starts. This avoids one giant unreviewable change that ends up half-broken.
 
-This is a very large scope (auth portal + MFA + 12 dashboard modules). To ship something polished and stable rather than 12 shallow stubs, I'll build it in phases. Please confirm the plan and the **Phase 1** scope below — I'll then proceed phase by phase, checking in between each.
+## Shared foundation (built once at the start of Phase 1)
 
----
+- **Audit logging helper** — server-side `logAudit(action, entity, entity_id, meta)` writing to existing `audit_logs`, called from every admin mutation.
+- **Permissions** — new `app_permission` enum + `role_permissions` table + `has_permission(uid, perm)` security-definer function. `requireAdmin` / `requirePermission` server-fn middleware. UI gates buttons via a `usePermission` hook.
+- **Realtime channel hook** — `useRealtimeTable(table, queryKey)` that subscribes once and invalidates the matching React Query keys. Used only for Orders, Notifications, Inventory per your choice. All other tables use `refetchOnWindowFocus`.
+- **Reusable admin primitives** — `DataTable` (sorting, server-side pagination, search debounce, empty/loading/error states, mobile card fallback), `DateRangePicker`, `StatusBadge`, `ExportMenu` (CSV / XLSX via SheetJS / PDF via jsPDF + autotable).
+- **Server-fn pattern** — every admin read/write is a `createServerFn` with `requireSupabaseAuth` + role/permission check; admin-bypass writes use `supabaseAdmin` imported inside `.handler()`.
 
-## Design language (applies to every screen)
+## Phase 1 — Core commerce (this PR)
 
-Inherit the existing Sweet & Lovely / Pepper-template visual language already in the app:
+Tables: `products`, `categories`, `orders`, `order_items`, `reviews` already exist. Adds: `inventory_movements`, optional `product_images` (using existing `image_url` for now + array column if missing).
 
-- **Logo/wordmark:** Cherry Bomb One, `rgb(255, 0, 60)` (Fire Red) — same as homepage and current auth.
-- **Type:** existing display + body pair already loaded in `__root.tsx`.
-- **Surfaces:** warm off-white background, soft cream cards, large rounded corners (`rounded-3xl`), generous whitespace, subtle shadows, soft red→peach gradient accents, faint grain/glass overlay on hero panels.
-- **Motion:** Framer Motion — quiet fade/slide-up entrances, 200–400ms, no bounce. Counter tween on KPIs.
-- **Tokens:** all colors via existing `src/styles.css` semantic tokens; no raw hex in components.
-- **A11y:** semantic HTML, aria-labels on icon buttons, focus rings, 44px tap targets.
+Modules:
+1. **Orders** — list w/ search, status filter, date range, sort, pagination; detail drawer; status transitions (Pending → Processing → Completed / Cancelled / Refunded) with audit; refund action; realtime new-order toast.
+2. **Products** — CRUD, category assignment, price, stock, availability toggle, image URL upload (Supabase Storage bucket `product-images` created via migration), search/filter, mini sparkline of sales.
+3. **Categories** — CRUD, parent_id self-ref, drag-to-reorder via `sort_order`, visibility toggle, product counts.
+4. **Inventory** — derived from `products.stock` + new `inventory_movements` ledger (type: restock/sale/adjustment, qty, reason, user, created_at). Low-stock threshold per product, low-stock realtime alerts, adjustment modal writes a movement + updates stock atomically via RPC.
+5. **Reviews** — list, filter by status (pending/approved/rejected), moderate (approve/reject), per-product rating summary widget.
 
----
+## Phase 2 — People & access
 
-## Architecture
+- **Users** — list from `auth.users` via admin API in server fn (joined to `profiles`), search, filter by role, suspend (ban_duration), activate, delete; profile drawer with order history, last_sign_in_at, created_at, role chips, activity from `audit_logs`.
+- **Roles & Permissions** — UI to manage `user_roles` + new `role_permissions` matrix; assign roles to users; audit every change.
+- **Audit Logs** — searchable/filterable table over existing `audit_logs`, export CSV/XLSX/PDF.
 
-- All admin routes under `src/routes/_authenticated/admin/` (already gated; admin role check via existing `has_role` + `useAuth.isAdmin`).
-- Login + MFA stay public at `/auth/admin` and `/auth/admin/mfa`.
-- Reusable shell: `AdminAuthLayout`, `AdminShell` (sidebar + topbar + content), `KpiCard`, `SectionCard`, `DataTable`, `EmptyState`.
-- Sidebar: collapsible, mobile drawer via shadcn `Sheet`. Sections: Main / Management / Administration / Account.
-- Global ⌘K command palette (shadcn `Command` in a `Dialog`).
-- Data: Phase 1 uses well-typed mock fixtures in `src/data/admin/*.ts` so the UI is real and demonstrable; later phases wire real Supabase queries via `createServerFn` + `requireSupabaseAuth` with admin role check.
+## Phase 3 — Insights
 
----
+- **Analytics** — KPI cards (revenue, orders, AOV, new users, conversion if we have visits — otherwise order/user counts), revenue-over-time line, orders-by-status donut, top products bar, new-users line, date range filter, export. Recharts. Aggregated via SQL views or server fns with `GROUP BY date_trunc`.
+- **Reports** — pre-built report templates (Revenue, Sales, Products, Customers, Inventory, Orders) + simple custom builder (pick entity + date range + group-by). Export CSV/XLSX/PDF.
+- **Notifications Center** — uses existing `notifications` table; list/filter; new `notification_templates` table; "send notification" composer (in-app for now; email/SMS providers stubbed until Phase 4 integrations); realtime new-alert pings.
 
-## Phase 1 — Auth Portal + Dashboard Shell + Home (this turn)
+## Phase 4 — Platform
 
-1. **Admin Login (`/auth/admin`)** — redesign existing route with two-panel layout:
-   - Left: brand lockup, welcome copy, security statement, trust chips, animated soft-gradient blobs.
-   - Right: card with Email, Password, Remember device, Sign in; links for Forgot password, Contact support, Security info.
-2. **MFA screen (`/auth/admin/mfa`)** — 6-digit OTP (auto-focus, auto-paste, countdown, resend), method tabs (Authenticator / SMS / Email / Recovery), "Trust this device" toggle. Verification is mocked in Phase 1 (any 6 digits ⇒ success) and clearly noted; real TOTP enrollment ships in Phase 4.
-3. **Admin Shell** — collapsible sidebar (desktop) + mobile drawer, top bar with search trigger (⌘K), notifications bell, profile menu.
-4. **Dashboard Home (`/_authenticated/admin/`)** — KPI grid (Users, Active, Revenue, Orders, Conversions, Growth) with animated counters + sparklines, Revenue Trends area chart, Recent Orders table, Recent Signups list. Uses `recharts` (already a common dep; will install if missing).
-5. **Stub routes** for the other modules so the sidebar links work and route-not-found never fires: each renders the shell with a "Coming in next phase" empty state.
+- **Content (CMS)** — new `content_pages` table (slug, title, body markdown, status draft/published/scheduled, publish_at, seo_title, seo_description, og_image); rich text via `@tiptap/react`; media upload to `content-media` storage bucket.
+- **Integrations** — new `integrations` table (provider, status, config jsonb, last_tested_at); Paystack already wired — surface status + test ping; placeholders + key entry UI for email (Resend) and SMS (Twilio) that write to Secrets via guidance (we don't store secret values in DB).
+- **Security Center** — MFA enroll/manage via supabase.auth.mfa.*, active sessions list (from supabase admin), login history + failed logins from `auth_logs` analytics view, password policy toggle (HIBP), trusted devices table.
+- **System Settings** — new `system_settings` (key/value jsonb, singleton row per group) for branding (logo, colors), email-from, locale, business info, payment defaults, backup schedule. Logo upload to storage; theme tokens applied at runtime.
 
-## Phase 2 — Analytics, Users, Roles & Permissions
-Real charts (revenue, growth, funnels, geo), Users data table with filters/search/actions, Roles matrix UI backed by `user_roles` table.
+## What I need from you now
 
-## Phase 3 — Content, Orders, Products, Inventory, Reviews, Categories
-CMS-style list/detail screens, media manager, publish workflow.
+Approve this plan and I'll start with the **shared foundation + Phase 1 (Core commerce)** in the next turn. Phases 2–4 follow as separate PRs so each one stays reviewable.
 
-## Phase 4 — Security Center, MFA enrollment (real TOTP), Audit Logs, Notifications, System Monitoring, Settings, Profile, Integrations
-Server functions, database tables (`audit_logs`, `admin_notifications`, `admin_sessions`, `mfa_factors`), RLS, real auth flows.
+## Out of scope / honest caveats
 
----
-
-## Phase 1 — files to create/edit
-
-**New components**
-- `src/components/admin/admin-auth-layout.tsx`
-- `src/components/admin/mfa-input.tsx`
-- `src/components/admin/admin-shell.tsx`
-- `src/components/admin/admin-sidebar.tsx`
-- `src/components/admin/admin-topbar.tsx`
-- `src/components/admin/command-palette.tsx`
-- `src/components/admin/kpi-card.tsx`
-- `src/components/admin/section-card.tsx`
-- `src/components/admin/coming-soon.tsx`
-
-**New routes**
-- `src/routes/auth.admin.mfa.tsx`
-- `src/routes/_authenticated/admin.index.tsx` (dashboard home)
-- Stub routes: `admin.analytics.tsx`, `admin.users.tsx`, `admin.orders.tsx`, `admin.products.tsx`, `admin.content.tsx`, `admin.categories.tsx`, `admin.inventory.tsx`, `admin.reviews.tsx`, `admin.notifications.tsx`, `admin.reports.tsx`, `admin.roles.tsx`, `admin.security.tsx`, `admin.audit.tsx`, `admin.integrations.tsx`, `admin.settings.tsx`, `admin.profile.tsx`
-
-**Edits**
-- `src/routes/auth.admin.tsx` — replace with new two-panel layout; on submit, route to `/auth/admin/mfa`.
-- `src/routes/_authenticated/admin.tsx` — convert from current single page into the AdminShell layout that renders `<Outlet />`; move existing admin content into `admin.index.tsx`.
-
-**Mock data**
-- `src/data/admin/kpis.ts`, `src/data/admin/revenue.ts`, `src/data/admin/recent.ts`
-
-**Deps**
-- `recharts` (if not installed), `framer-motion` (already present).
-
----
-
-## What I need from you
-
-1. Confirm I should proceed with **Phase 1 only** in this turn (auth + MFA + shell + dashboard home + stubs), then continue phases on request.
-2. Confirm Phase 1 MFA can be **UI-only / mocked** (any 6 digits passes) with real TOTP/SMS coming in Phase 4 — implementing real MFA requires database tables and an MFA provider decision.
-3. Confirm KPIs/orders/users in Phase 1 use **mock fixtures** for demo, with real Supabase wiring in later phases.
+- "Email/SMS provider integrations" means we wire the config + test endpoint; actually sending requires you to provide Resend/Twilio API keys (Phase 4).
+- "Backup settings" will configure a daily pg_dump-style export schedule trigger, but full DB dumps are not available on Lovable Cloud — only per-table CSV exports.
+- "Push notifications" will be in-app realtime + email; web-push (service worker + VAPID) is a meaningful addition I'll flag if you want it.
+- Conversion tracking needs a `page_views` / `sessions` table — I'll add a lightweight pageview logger in Phase 3 if you want true conversion %, otherwise "conversion" = orders / unique users in range.
