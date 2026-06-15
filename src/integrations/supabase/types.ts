@@ -47,6 +47,54 @@ export type Database = {
         }
         Relationships: []
       }
+      banners: {
+        Row: {
+          created_at: string
+          cta_href: string | null
+          cta_label: string | null
+          ends_at: string | null
+          id: string
+          image: string | null
+          is_active: boolean
+          placement: string
+          sort_order: number
+          starts_at: string | null
+          subtitle: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          cta_href?: string | null
+          cta_label?: string | null
+          ends_at?: string | null
+          id?: string
+          image?: string | null
+          is_active?: boolean
+          placement?: string
+          sort_order?: number
+          starts_at?: string | null
+          subtitle?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          cta_href?: string | null
+          cta_label?: string | null
+          ends_at?: string | null
+          id?: string
+          image?: string | null
+          is_active?: boolean
+          placement?: string
+          sort_order?: number
+          starts_at?: string | null
+          subtitle?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       categories: {
         Row: {
           created_at: string
@@ -118,6 +166,131 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      delivery_zones: {
+        Row: {
+          created_at: string
+          eta_minutes: number
+          fee_zar: number
+          id: string
+          is_active: boolean
+          min_order_zar: number
+          name: string
+          postal_codes: string[]
+          slug: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          eta_minutes?: number
+          fee_zar?: number
+          id?: string
+          is_active?: boolean
+          min_order_zar?: number
+          name: string
+          postal_codes?: string[]
+          slug: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          eta_minutes?: number
+          fee_zar?: number
+          id?: string
+          is_active?: boolean
+          min_order_zar?: number
+          name?: string
+          postal_codes?: string[]
+          slug?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      discounts: {
+        Row: {
+          created_at: string
+          ends_at: string | null
+          id: string
+          is_active: boolean
+          name: string
+          percent_off: number
+          starts_at: string | null
+          target_slug: string
+          target_type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          ends_at?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          percent_off: number
+          starts_at?: string | null
+          target_slug: string
+          target_type: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          ends_at?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          percent_off?: number
+          starts_at?: string | null
+          target_slug?: string
+          target_type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      featured_items: {
+        Row: {
+          created_at: string
+          ends_at: string | null
+          id: string
+          is_active: boolean
+          placement: string
+          product_slug: string
+          sort_order: number
+          starts_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          ends_at?: string | null
+          id?: string
+          is_active?: boolean
+          placement?: string
+          product_slug: string
+          sort_order?: number
+          starts_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          ends_at?: string | null
+          id?: string
+          is_active?: boolean
+          placement?: string
+          product_slug?: string
+          sort_order?: number
+          starts_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "featured_items_product_slug_fkey"
+            columns: ["product_slug"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["slug"]
+          },
+        ]
       }
       integrations: {
         Row: {
@@ -208,6 +381,77 @@ export type Database = {
             referencedColumns: ["slug"]
           },
         ]
+      }
+      loyalty_accounts: {
+        Row: {
+          created_at: string
+          lifetime_points: number
+          points_balance: number
+          program_id: string | null
+          tier: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          lifetime_points?: number
+          points_balance?: number
+          program_id?: string | null
+          tier?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          lifetime_points?: number
+          points_balance?: number
+          program_id?: string | null
+          tier?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "loyalty_accounts_program_id_fkey"
+            columns: ["program_id"]
+            isOneToOne: false
+            referencedRelation: "loyalty_programs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      loyalty_programs: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          points_per_zar: number
+          redemption_rate_zar: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          points_per_zar?: number
+          redemption_rate_zar?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          points_per_zar?: number
+          redemption_rate_zar?: number
+          updated_at?: string
+        }
+        Relationships: []
       }
       notifications: {
         Row: {
@@ -430,6 +674,99 @@ export type Database = {
         }
         Relationships: []
       }
+      promotions: {
+        Row: {
+          code: string
+          created_at: string
+          description: string | null
+          ends_at: string | null
+          id: string
+          is_active: boolean
+          min_subtotal_zar: number
+          name: string
+          starts_at: string | null
+          times_used: number
+          type: string
+          updated_at: string
+          usage_limit: number | null
+          value: number
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          description?: string | null
+          ends_at?: string | null
+          id?: string
+          is_active?: boolean
+          min_subtotal_zar?: number
+          name: string
+          starts_at?: string | null
+          times_used?: number
+          type: string
+          updated_at?: string
+          usage_limit?: number | null
+          value?: number
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          description?: string | null
+          ends_at?: string | null
+          id?: string
+          is_active?: boolean
+          min_subtotal_zar?: number
+          name?: string
+          starts_at?: string | null
+          times_used?: number
+          type?: string
+          updated_at?: string
+          usage_limit?: number | null
+          value?: number
+        }
+        Relationships: []
+      }
+      reservations: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          name: string
+          notes: string | null
+          party_size: number
+          phone: string | null
+          reserved_at: string
+          status: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          name: string
+          notes?: string | null
+          party_size: number
+          phone?: string | null
+          reserved_at: string
+          status?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          name?: string
+          notes?: string | null
+          party_size?: number
+          phone?: string | null
+          reserved_at?: string
+          status?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       reviews: {
         Row: {
           author_name: string
@@ -492,6 +829,33 @@ export type Database = {
           id?: string
           permission?: Database["public"]["Enums"]["app_permission"]
           role?: Database["public"]["Enums"]["app_role"]
+        }
+        Relationships: []
+      }
+      store_hours: {
+        Row: {
+          closes_at: string | null
+          day_of_week: number
+          is_closed: boolean
+          note: string | null
+          opens_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          closes_at?: string | null
+          day_of_week: number
+          is_closed?: boolean
+          note?: string | null
+          opens_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          closes_at?: string | null
+          day_of_week?: number
+          is_closed?: boolean
+          note?: string | null
+          opens_at?: string | null
+          updated_at?: string
         }
         Relationships: []
       }
