@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { Fragment, useMemo } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -90,8 +90,8 @@ function RolesPage() {
               </thead>
               <tbody>
                 {grouped.map(([group, perms]) => (
-                  <>
-                    <tr key={`g-${group}`} className="bg-neutral-50/40">
+                  <Fragment key={group}>
+                    <tr className="bg-neutral-50/40">
                       <td colSpan={data.roles.length + 1} className="px-4 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-neutral-500">{group}</td>
                     </tr>
                     {perms.map((p) => (
@@ -113,7 +113,7 @@ function RolesPage() {
                         })}
                       </tr>
                     ))}
-                  </>
+                  </Fragment>
                 ))}
               </tbody>
             </table>
