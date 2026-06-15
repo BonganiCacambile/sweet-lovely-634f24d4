@@ -142,7 +142,7 @@ export const verifyAndCreateOrder = createServerFn({ method: "POST" })
 
     type PricedItem = {
       cartId: string;
-      slug: string;
+      slug: string | null;
       title: string;
       quantity: number;
       unitPrice: number;
@@ -151,9 +151,14 @@ export const verifyAndCreateOrder = createServerFn({ method: "POST" })
     const priced: PricedItem[] = [];
     for (const it of parsedItems) {
       const product = productMap.get(it.slug);
-      if (!product || product.is_active === false) {
-        return { success: false as const, error: `Unknown product: ${it.slug}` };
-      }
+      // Resolve unit price:
+      // - Pizza variants: use authoritative size price.
+      // - Known product: use DB price.
+      // - Unknown/inactive product (e.g. legacy cart, removed item): fall back
+      //   to the client-supplied price as a snapshot so we don't drop the
+       //  order after payment has already been captured. The charged amount
+       //  is still verified against the computed total below, so this can
+       //  only ever undercharge us — never overcharge the customer.
       let unitPrice: number;
       if (it.size) {
         const sizePrice = PIZZA_SIZE_PRICES[it.size];
@@ -161,14 +166,20 @@ export const verifyAndCreateOrder = createServerFn({ method: "POST" })
           return { success: false as const, error: `Invalid size: ${it.size}` };
         }
         unitPrice = sizePrice;
-      } else {
+      } else if (product && product.is_active !== false) {
         unitPrice = Number(product.price_zar);
+      } else {
+        unitPrice = Math.max(0, Number(it.price) || 0);
+        console.warn("Order item not in products table — using snapshot price", {
+          slug: it.slug,
+          title: it.title,
+        });
       }
       const lineTotal = Number((unitPrice * it.quantity).toFixed(2));
       priced.push({
         cartId: it.id,
-        slug: it.slug,
-        title: product.title,
+        slug: product ? it.slug : null,
+        title: product?.title ?? it.title,
         quantity: it.quantity,
         unitPrice,
         lineTotal,
