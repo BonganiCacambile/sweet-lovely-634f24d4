@@ -22,8 +22,8 @@ export async function logAudit(
   try {
     await supabase.rpc("log_audit_event", {
       _action: action,
-      _entity: entity ?? null,
-      _entity_id: entityId ?? null,
+      _entity: entity ?? undefined,
+      _entity_id: entityId ?? undefined,
       _metadata: metadata as never,
     });
   } catch (e) {
