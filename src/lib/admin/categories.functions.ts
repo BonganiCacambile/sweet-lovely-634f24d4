@@ -36,7 +36,7 @@ export const createCategory = createServerFn({ method: "POST" })
     await requireAdmin(context.supabase, context.userId);
     const { error } = await context.supabase.from("categories").insert(data);
     if (error) throw new Error(error.message);
-    await logAudit(context.supabase, "category.create", "category", data.slug);
+    await logAudit(context, "category.create", "category", data.slug);
     return { ok: true };
   });
 
@@ -52,7 +52,7 @@ export const updateCategory = createServerFn({ method: "POST" })
       .update(data.patch)
       .eq("slug", data.original_slug);
     if (error) throw new Error(error.message);
-    await logAudit(context.supabase, "category.update", "category", data.original_slug);
+    await logAudit(context, "category.update", "category", data.original_slug);
     return { ok: true };
   });
 
@@ -63,7 +63,7 @@ export const deleteCategory = createServerFn({ method: "POST" })
     await requireAdmin(context.supabase, context.userId);
     const { error } = await context.supabase.from("categories").delete().eq("slug", data.slug);
     if (error) throw new Error(`Cannot delete: ${error.message}`);
-    await logAudit(context.supabase, "category.delete", "category", data.slug);
+    await logAudit(context, "category.delete", "category", data.slug);
     return { ok: true };
   });
 
@@ -79,6 +79,6 @@ export const reorderCategories = createServerFn({ method: "POST" })
         .eq("slug", data.slugs[i]);
       if (error) throw new Error(error.message);
     }
-    await logAudit(context.supabase, "category.reorder", "category", null, { order: data.slugs });
+    await logAudit(context, "category.reorder", "category", null, { order: data.slugs });
     return { ok: true };
   });

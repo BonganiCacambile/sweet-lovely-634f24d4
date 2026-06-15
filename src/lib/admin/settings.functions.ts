@@ -34,6 +34,6 @@ export const updateSetting = createServerFn({ method: "POST" })
       .eq("group_key", data.group_key)
       .eq("key", data.key);
     if (error) throw new Error(error.message);
-    await logAudit(context.supabase, "settings.update", "system_setting", `${data.group_key}.${data.key}`, { value: data.value });
+    await logAudit(context, "settings.update", "system_setting", `${data.group_key}.${data.key}`, { value: data.value });
     return { ok: true };
   });

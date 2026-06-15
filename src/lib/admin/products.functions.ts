@@ -55,7 +55,7 @@ export const createProduct = createServerFn({ method: "POST" })
     await requireAdmin(context.supabase, context.userId);
     const { error } = await context.supabase.from("products").insert(data);
     if (error) throw new Error(error.message);
-    await logAudit(context.supabase, "product.create", "product", data.slug, { title: data.title });
+    await logAudit(context, "product.create", "product", data.slug, { title: data.title });
     return { ok: true };
   });
 
@@ -71,7 +71,7 @@ export const updateProduct = createServerFn({ method: "POST" })
       .update(data.patch)
       .eq("slug", data.original_slug);
     if (error) throw new Error(error.message);
-    await logAudit(context.supabase, "product.update", "product", data.original_slug, data.patch as Record<string, unknown>);
+    await logAudit(context, "product.update", "product", data.original_slug, data.patch as Record<string, unknown>);
     return { ok: true };
   });
 
@@ -82,7 +82,7 @@ export const deleteProduct = createServerFn({ method: "POST" })
     await requireAdmin(context.supabase, context.userId);
     const { error } = await context.supabase.from("products").delete().eq("slug", data.slug);
     if (error) throw new Error(error.message);
-    await logAudit(context.supabase, "product.delete", "product", data.slug);
+    await logAudit(context, "product.delete", "product", data.slug);
     return { ok: true };
   });
 

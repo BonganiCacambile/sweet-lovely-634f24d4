@@ -116,7 +116,7 @@ export const setUserBan = createServerFn({ method: "POST" })
       ban_duration: data.suspend ? "876000h" : "none",
     } as never);
     if (error) throw new Error(error.message);
-    await logAudit(context.supabase, data.suspend ? "user.suspend" : "user.activate", "user", data.id);
+    await logAudit(context, data.suspend ? "user.suspend" : "user.activate", "user", data.id);
     return { ok: true };
   });
 
@@ -129,7 +129,7 @@ export const deleteUser = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin.auth.admin.deleteUser(data.id);
     if (error) throw new Error(error.message);
-    await logAudit(context.supabase, "user.delete", "user", data.id);
+    await logAudit(context, "user.delete", "user", data.id);
     return { ok: true };
   });
 
@@ -156,7 +156,7 @@ export const setUserRole = createServerFn({ method: "POST" })
         .eq("role", data.role);
       if (error) throw new Error(error.message);
     }
-    await logAudit(context.supabase, data.enabled ? "user.role_grant" : "user.role_revoke", "user", data.userId, { role: data.role });
+    await logAudit(context, data.enabled ? "user.role_grant" : "user.role_revoke", "user", data.userId, { role: data.role });
     return { ok: true };
   });
 

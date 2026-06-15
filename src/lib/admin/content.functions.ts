@@ -70,7 +70,7 @@ export const upsertContent = createServerFn({ method: "POST" })
       if (error) throw new Error(error.message);
       id = row.id;
     }
-    await logAudit(context.supabase, data.id ? "content.update" : "content.create", "content_page", id, { slug: data.slug, status: data.status });
+    await logAudit(context, data.id ? "content.update" : "content.create", "content_page", id, { slug: data.slug, status: data.status });
     return { id };
   });
 
@@ -81,6 +81,6 @@ export const deleteContent = createServerFn({ method: "POST" })
     await requireAdmin(context.supabase, context.userId);
     const { error } = await context.supabase.from("content_pages").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
-    await logAudit(context.supabase, "content.delete", "content_page", data.id);
+    await logAudit(context, "content.delete", "content_page", data.id);
     return { ok: true };
   });

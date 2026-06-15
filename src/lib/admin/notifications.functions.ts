@@ -61,7 +61,7 @@ export const markNotifications = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin.from("notifications").update({ read: data.read }).in("id", data.ids);
     if (error) throw new Error(error.message);
-    await logAudit(context.supabase, "notifications.mark", "notification", null, { count: data.ids.length, read: data.read });
+    await logAudit(context, "notifications.mark", "notification", null, { count: data.ids.length, read: data.read });
     return { ok: true };
   });
 
@@ -74,7 +74,7 @@ export const deleteNotifications = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin.from("notifications").delete().in("id", data.ids);
     if (error) throw new Error(error.message);
-    await logAudit(context.supabase, "notifications.delete", "notification", null, { count: data.ids.length });
+    await logAudit(context, "notifications.delete", "notification", null, { count: data.ids.length });
     return { ok: true };
   });
 
@@ -116,7 +116,7 @@ export const broadcastNotification = createServerFn({ method: "POST" })
       const { error } = await supabaseAdmin.from("notifications").insert(payload.slice(i, i + chunk));
       if (error) throw new Error(error.message);
     }
-    await logAudit(context.supabase, "notifications.broadcast", "notification", null, {
+    await logAudit(context, "notifications.broadcast", "notification", null, {
       audience: data.audience, recipients: targetIds.length, category: data.category, title: data.title,
     });
     return { ok: true, sent: targetIds.length };

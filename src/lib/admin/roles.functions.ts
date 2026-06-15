@@ -66,7 +66,7 @@ export const setRolePermission = createServerFn({ method: "POST" })
         .eq("permission", data.permission);
       if (error) throw new Error(error.message);
     }
-    await logAudit(context.supabase, data.enabled ? "role.permission_grant" : "role.permission_revoke", "role", data.role, { permission: data.permission });
+    await logAudit(context, data.enabled ? "role.permission_grant" : "role.permission_revoke", "role", data.role, { permission: data.permission });
     return { ok: true };
   });
 

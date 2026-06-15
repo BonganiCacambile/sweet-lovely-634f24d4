@@ -81,7 +81,7 @@ export const updateOrderStatus = createServerFn({ method: "POST" })
       .update({ status: data.status })
       .eq("id", data.id);
     if (error) throw new Error(error.message);
-    await logAudit(context.supabase, "order.status_change", "order", data.id, { status: data.status });
+    await logAudit(context, "order.status_change", "order", data.id, { status: data.status });
     return { ok: true };
   });
 
