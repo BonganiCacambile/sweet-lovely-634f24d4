@@ -77,6 +77,60 @@ export type Database = {
         }
         Relationships: []
       }
+      inventory_movements: {
+        Row: {
+          actor_email: string | null
+          actor_id: string | null
+          balance_after: number
+          created_at: string
+          id: string
+          order_id: string | null
+          product_slug: string
+          quantity: number
+          reason: string | null
+          type: string
+        }
+        Insert: {
+          actor_email?: string | null
+          actor_id?: string | null
+          balance_after: number
+          created_at?: string
+          id?: string
+          order_id?: string | null
+          product_slug: string
+          quantity: number
+          reason?: string | null
+          type: string
+        }
+        Update: {
+          actor_email?: string | null
+          actor_id?: string | null
+          balance_after?: number
+          created_at?: string
+          id?: string
+          order_id?: string | null
+          product_slug?: string
+          quantity?: number
+          reason?: string | null
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_movements_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_movements_product_slug_fkey"
+            columns: ["product_slug"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["slug"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           body: string | null
@@ -217,11 +271,13 @@ export type Database = {
           description: string | null
           image: string | null
           is_active: boolean
+          low_stock_threshold: number
           nutrition: string | null
           portion: string | null
           price_zar: number
           slug: string
           sort_order: number
+          stock: number
           title: string
           updated_at: string
         }
@@ -232,11 +288,13 @@ export type Database = {
           description?: string | null
           image?: string | null
           is_active?: boolean
+          low_stock_threshold?: number
           nutrition?: string | null
           portion?: string | null
           price_zar?: number
           slug: string
           sort_order?: number
+          stock?: number
           title: string
           updated_at?: string
         }
@@ -247,11 +305,13 @@ export type Database = {
           description?: string | null
           image?: string | null
           is_active?: boolean
+          low_stock_threshold?: number
           nutrition?: string | null
           portion?: string | null
           price_zar?: number
           slug?: string
           sort_order?: number
+          stock?: number
           title?: string
           updated_at?: string
         }
@@ -336,6 +396,27 @@ export type Database = {
           },
         ]
       }
+      role_permissions: {
+        Row: {
+          created_at: string
+          id: string
+          permission: Database["public"]["Enums"]["app_permission"]
+          role: Database["public"]["Enums"]["app_role"]
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          permission: Database["public"]["Enums"]["app_permission"]
+          role: Database["public"]["Enums"]["app_role"]
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          permission?: Database["public"]["Enums"]["app_permission"]
+          role?: Database["public"]["Enums"]["app_role"]
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -362,6 +443,23 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      adjust_product_stock: {
+        Args: {
+          _delta: number
+          _order_id?: string
+          _reason?: string
+          _slug: string
+          _type: string
+        }
+        Returns: number
+      }
+      has_permission: {
+        Args: {
+          _permission: Database["public"]["Enums"]["app_permission"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -369,8 +467,46 @@ export type Database = {
         }
         Returns: boolean
       }
+      log_audit_event: {
+        Args: {
+          _action: string
+          _entity?: string
+          _entity_id?: string
+          _metadata?: Json
+        }
+        Returns: string
+      }
     }
     Enums: {
+      app_permission:
+        | "orders.read"
+        | "orders.write"
+        | "orders.refund"
+        | "products.read"
+        | "products.write"
+        | "categories.read"
+        | "categories.write"
+        | "inventory.read"
+        | "inventory.write"
+        | "reviews.read"
+        | "reviews.moderate"
+        | "users.read"
+        | "users.write"
+        | "roles.read"
+        | "roles.write"
+        | "audit.read"
+        | "content.read"
+        | "content.write"
+        | "notifications.read"
+        | "notifications.write"
+        | "reports.read"
+        | "analytics.read"
+        | "integrations.read"
+        | "integrations.write"
+        | "security.read"
+        | "security.write"
+        | "settings.read"
+        | "settings.write"
       app_role: "admin" | "user"
       order_status:
         | "pending"
@@ -378,6 +514,9 @@ export type Database = {
         | "out_for_delivery"
         | "delivered"
         | "cancelled"
+        | "processing"
+        | "completed"
+        | "refunded"
       review_status: "pending" | "approved" | "rejected"
     }
     CompositeTypes: {
@@ -506,6 +645,36 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      app_permission: [
+        "orders.read",
+        "orders.write",
+        "orders.refund",
+        "products.read",
+        "products.write",
+        "categories.read",
+        "categories.write",
+        "inventory.read",
+        "inventory.write",
+        "reviews.read",
+        "reviews.moderate",
+        "users.read",
+        "users.write",
+        "roles.read",
+        "roles.write",
+        "audit.read",
+        "content.read",
+        "content.write",
+        "notifications.read",
+        "notifications.write",
+        "reports.read",
+        "analytics.read",
+        "integrations.read",
+        "integrations.write",
+        "security.read",
+        "security.write",
+        "settings.read",
+        "settings.write",
+      ],
       app_role: ["admin", "user"],
       order_status: [
         "pending",
@@ -513,6 +682,9 @@ export const Constants = {
         "out_for_delivery",
         "delivered",
         "cancelled",
+        "processing",
+        "completed",
+        "refunded",
       ],
       review_status: ["pending", "approved", "rejected"],
     },
