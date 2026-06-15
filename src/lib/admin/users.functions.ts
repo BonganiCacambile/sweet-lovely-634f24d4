@@ -77,7 +77,7 @@ export const listUsers = createServerFn({ method: "POST" })
     }
     if (role) rows = rows.filter((r) => r.roles.includes(role));
 
-    const total = list.total ?? rows.length;
+    const total = (list as { total?: number }).total ?? rows.length;
     return { rows, total, page, pageSize };
   });
 
@@ -166,7 +166,7 @@ export const userStats = createServerFn({ method: "GET" })
     await requireAdmin(context.supabase, context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: list } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 1 });
-    const total = list?.total ?? 0;
+    const total = (list as { total?: number } | null)?.total ?? 0;
     const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
     const { count: newCount } = await supabaseAdmin
       .from("profiles")
