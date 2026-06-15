@@ -49,13 +49,30 @@ export const adjustStock = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     await requireAdmin(context.supabase, context.userId);
-    const { data: newBalance, error } = await context.supabase.rpc("adjust_product_stock", {
-      _slug: data.slug,
-      _delta: data.delta,
-      _type: data.type,
-      _reason: data.reason ?? undefined,
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: product, error: pErr } = await supabaseAdmin
+      .from("products")
+      .select("stock")
+      .eq("slug", data.slug)
+      .maybeSingle();
+    if (pErr) throw new Error(pErr.message);
+    if (!product) throw new Error(`Product not found: ${data.slug}`);
+    const newBalance = Math.max(0, product.stock + data.delta);
+    const { error: uErr } = await supabaseAdmin
+      .from("products")
+      .update({ stock: newBalance, updated_at: new Date().toISOString() })
+      .eq("slug", data.slug);
+    if (uErr) throw new Error(uErr.message);
+    const { error: mErr } = await supabaseAdmin.from("inventory_movements").insert({
+      product_slug: data.slug,
+      type: data.type,
+      quantity: data.delta,
+      balance_after: newBalance,
+      reason: data.reason ?? null,
+      actor_id: context.userId,
+      actor_email: (context.claims?.email as string | undefined) ?? null,
     });
-    if (error) throw new Error(error.message);
+    if (mErr) throw new Error(mErr.message);
     await logAudit(context, "inventory.adjust", "product", data.slug, {
       delta: data.delta,
       type: data.type,
