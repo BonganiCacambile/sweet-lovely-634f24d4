@@ -62,6 +62,7 @@ function AdminAuth() {
   const proceedToConsole = (_verifiedEmail: string) => {
     void _verifiedEmail;
     void remember;
+    setAuthTransition("signing-in");
     navigate({ to: "/admin" });
   };
 
@@ -104,7 +105,7 @@ function AdminAuth() {
   };
 
   const signOutAndSwitch = async () => {
-    await supabase.auth.signOut();
+    await signOut();
     setEmail("");
     setPassword("");
     toast.success("Signed out. Use a different administrator account.");
