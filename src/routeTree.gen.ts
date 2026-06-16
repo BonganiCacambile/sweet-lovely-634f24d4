@@ -44,6 +44,7 @@ import { Route as AuthenticatedAdminAuditRouteImport } from './routes/_authentic
 import { Route as AuthenticatedAdminAnalyticsRouteImport } from './routes/_authenticated/admin.analytics'
 import { Route as AuthenticatedAccountSecurityRouteImport } from './routes/_authenticated/account.security'
 import { Route as AuthenticatedAccountOrdersRouteImport } from './routes/_authenticated/account.orders'
+import { Route as AuthenticatedAccountNotificationsRouteImport } from './routes/_authenticated/account.notifications'
 import { Route as AuthenticatedAccountAddressesRouteImport } from './routes/_authenticated/account.addresses'
 import { Route as AuthenticatedAccountOrdersOrderIdRouteImport } from './routes/_authenticated/account.orders.$orderId'
 
@@ -236,6 +237,12 @@ const AuthenticatedAccountOrdersRoute =
     path: '/orders',
     getParentRoute: () => AuthenticatedAccountRoute,
   } as any)
+const AuthenticatedAccountNotificationsRoute =
+  AuthenticatedAccountNotificationsRouteImport.update({
+    id: '/notifications',
+    path: '/notifications',
+    getParentRoute: () => AuthenticatedAccountRoute,
+  } as any)
 const AuthenticatedAccountAddressesRoute =
   AuthenticatedAccountAddressesRouteImport.update({
     id: '/addresses',
@@ -266,6 +273,7 @@ export interface FileRoutesByFullPath {
   '/checkout/success': typeof CheckoutSuccessRoute
   '/menu/full-menu': typeof MenuFullMenuRoute
   '/account/addresses': typeof AuthenticatedAccountAddressesRoute
+  '/account/notifications': typeof AuthenticatedAccountNotificationsRoute
   '/account/orders': typeof AuthenticatedAccountOrdersRouteWithChildren
   '/account/security': typeof AuthenticatedAccountSecurityRoute
   '/admin/analytics': typeof AuthenticatedAdminAnalyticsRoute
@@ -303,6 +311,7 @@ export interface FileRoutesByTo {
   '/checkout/success': typeof CheckoutSuccessRoute
   '/menu/full-menu': typeof MenuFullMenuRoute
   '/account/addresses': typeof AuthenticatedAccountAddressesRoute
+  '/account/notifications': typeof AuthenticatedAccountNotificationsRoute
   '/account/orders': typeof AuthenticatedAccountOrdersRouteWithChildren
   '/account/security': typeof AuthenticatedAccountSecurityRoute
   '/admin/analytics': typeof AuthenticatedAdminAnalyticsRoute
@@ -343,6 +352,7 @@ export interface FileRoutesById {
   '/checkout/success': typeof CheckoutSuccessRoute
   '/menu/full-menu': typeof MenuFullMenuRoute
   '/_authenticated/account/addresses': typeof AuthenticatedAccountAddressesRoute
+  '/_authenticated/account/notifications': typeof AuthenticatedAccountNotificationsRoute
   '/_authenticated/account/orders': typeof AuthenticatedAccountOrdersRouteWithChildren
   '/_authenticated/account/security': typeof AuthenticatedAccountSecurityRoute
   '/_authenticated/admin/analytics': typeof AuthenticatedAdminAnalyticsRoute
@@ -383,6 +393,7 @@ export interface FileRouteTypes {
     | '/checkout/success'
     | '/menu/full-menu'
     | '/account/addresses'
+    | '/account/notifications'
     | '/account/orders'
     | '/account/security'
     | '/admin/analytics'
@@ -420,6 +431,7 @@ export interface FileRouteTypes {
     | '/checkout/success'
     | '/menu/full-menu'
     | '/account/addresses'
+    | '/account/notifications'
     | '/account/orders'
     | '/account/security'
     | '/admin/analytics'
@@ -459,6 +471,7 @@ export interface FileRouteTypes {
     | '/checkout/success'
     | '/menu/full-menu'
     | '/_authenticated/account/addresses'
+    | '/_authenticated/account/notifications'
     | '/_authenticated/account/orders'
     | '/_authenticated/account/security'
     | '/_authenticated/admin/analytics'
@@ -741,6 +754,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAccountOrdersRouteImport
       parentRoute: typeof AuthenticatedAccountRoute
     }
+    '/_authenticated/account/notifications': {
+      id: '/_authenticated/account/notifications'
+      path: '/notifications'
+      fullPath: '/account/notifications'
+      preLoaderRoute: typeof AuthenticatedAccountNotificationsRouteImport
+      parentRoute: typeof AuthenticatedAccountRoute
+    }
     '/_authenticated/account/addresses': {
       id: '/_authenticated/account/addresses'
       path: '/addresses'
@@ -775,12 +795,15 @@ const AuthenticatedAccountOrdersRouteWithChildren =
 
 interface AuthenticatedAccountRouteChildren {
   AuthenticatedAccountAddressesRoute: typeof AuthenticatedAccountAddressesRoute
+  AuthenticatedAccountNotificationsRoute: typeof AuthenticatedAccountNotificationsRoute
   AuthenticatedAccountOrdersRoute: typeof AuthenticatedAccountOrdersRouteWithChildren
   AuthenticatedAccountSecurityRoute: typeof AuthenticatedAccountSecurityRoute
 }
 
 const AuthenticatedAccountRouteChildren: AuthenticatedAccountRouteChildren = {
   AuthenticatedAccountAddressesRoute: AuthenticatedAccountAddressesRoute,
+  AuthenticatedAccountNotificationsRoute:
+    AuthenticatedAccountNotificationsRoute,
   AuthenticatedAccountOrdersRoute: AuthenticatedAccountOrdersRouteWithChildren,
   AuthenticatedAccountSecurityRoute: AuthenticatedAccountSecurityRoute,
 }
