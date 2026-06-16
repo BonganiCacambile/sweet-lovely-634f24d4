@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { useCart, formatPrice, computeTotals } from "@/lib/cart-context";
-import { getPaystackConfig, verifyAndCreateOrder } from "@/lib/paystack.functions";
+import { checkCartStock, getPaystackConfig, verifyAndCreateOrder } from "@/lib/paystack.functions";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/checkout")({
@@ -79,6 +79,7 @@ function CheckoutPage() {
 
   const fetchConfig = useServerFn(getPaystackConfig);
   const placeOrder = useServerFn(verifyAndCreateOrder);
+  const checkStock = useServerFn(checkCartStock);
 
   React.useEffect(() => {
     fetchConfig().then(setConfig).catch(() => setConfig({ publicKey: "", configured: false }));
@@ -132,7 +133,7 @@ function CheckoutPage() {
   };
   const back = () => setStep((s) => Math.max(0, s - 1));
 
-  const handlePay = () => {
+  const handlePay = async () => {
     if (!validateStep(0) || !validateStep(1)) {
       toast.error("Please complete all required fields");
       setStep(0);
@@ -143,6 +144,34 @@ function CheckoutPage() {
       return;
     }
     setPaying(true);
+    // Block oversells BEFORE we open Paystack.
+    try {
+      const stock = await checkStock({
+        data: {
+          items: items.map((it) => ({
+            id: it.id,
+            title: it.title,
+            price: it.price,
+            quantity: it.quantity,
+          })),
+        },
+      });
+      if (!stock.ok) {
+        const msg = stock.shortages?.length
+          ? `Out of stock: ${stock.shortages
+              .map((s) => `${s.slug} (have ${s.available}, need ${s.requested})`)
+              .join(", ")}`
+          : "One or more items are out of stock.";
+        toast.error(msg);
+        setPaying(false);
+        return;
+      }
+    } catch (err) {
+      console.error("Stock check failed:", err);
+      toast.error("Could not verify stock. Please try again.");
+      setPaying(false);
+      return;
+    }
     // Paystack amount: smallest unit (cents/kobo).
     const amount = Math.round(total * 100);
     const handler = window.PaystackPop.setup({

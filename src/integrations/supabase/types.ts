@@ -991,6 +991,7 @@ export type Database = {
         }
         Returns: number
       }
+      check_stock_availability: { Args: { _items: Json }; Returns: Json }
       has_permission: {
         Args: {
           _permission: Database["public"]["Enums"]["app_permission"]
@@ -1014,6 +1015,11 @@ export type Database = {
         }
         Returns: string
       }
+      process_order_stock_deduction: {
+        Args: { _items: Json; _order_id: string }
+        Returns: Json
+      }
+      rollback_order_stock: { Args: { _order_id: string }; Returns: Json }
     }
     Enums: {
       app_permission:
