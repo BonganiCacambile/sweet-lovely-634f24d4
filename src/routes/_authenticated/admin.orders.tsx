@@ -25,10 +25,10 @@ export const Route = createFileRoute("/_authenticated/admin/orders")({
 const STATUSES = ["pending","preparing","processing","out_for_delivery","completed","delivered","cancelled","refunded"] as const;
 
 function OrdersPage() {
-  const search = Route.useSearch();
+  const urlSearch = Route.useSearch();
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
-  const [zoneId, setZoneId] = useState(search.zoneId ?? "");
+  const [zoneId, setZoneId] = useState(urlSearch.zoneId ?? "");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
   const [sortBy, setSortBy] = useState<"created_at" | "total_zar" | "order_number">("created_at");
