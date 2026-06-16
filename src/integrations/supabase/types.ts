@@ -653,7 +653,11 @@ export type Database = {
           created_at: string
           full_name: string | null
           id: string
+          locale: string
+          marketing_opt_in: boolean
+          notification_prefs: Json
           phone: string | null
+          theme: string
           updated_at: string
         }
         Insert: {
@@ -661,7 +665,11 @@ export type Database = {
           created_at?: string
           full_name?: string | null
           id: string
+          locale?: string
+          marketing_opt_in?: boolean
+          notification_prefs?: Json
           phone?: string | null
+          theme?: string
           updated_at?: string
         }
         Update: {
@@ -669,7 +677,11 @@ export type Database = {
           created_at?: string
           full_name?: string | null
           id?: string
+          locale?: string
+          marketing_opt_in?: boolean
+          notification_prefs?: Json
           phone?: string | null
+          theme?: string
           updated_at?: string
         }
         Relationships: []
@@ -886,6 +898,60 @@ export type Database = {
           updated_at?: string
           updated_by?: string | null
           value?: Json
+        }
+        Relationships: []
+      }
+      user_addresses: {
+        Row: {
+          city: string
+          country: string
+          created_at: string
+          id: string
+          is_default: boolean
+          label: string
+          line1: string
+          line2: string | null
+          notes: string | null
+          phone: string | null
+          postal_code: string | null
+          province: string | null
+          recipient: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          city: string
+          country?: string
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          label?: string
+          line1: string
+          line2?: string | null
+          notes?: string | null
+          phone?: string | null
+          postal_code?: string | null
+          province?: string | null
+          recipient?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          city?: string
+          country?: string
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          label?: string
+          line1?: string
+          line2?: string | null
+          notes?: string | null
+          phone?: string | null
+          postal_code?: string | null
+          province?: string | null
+          recipient?: string | null
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }

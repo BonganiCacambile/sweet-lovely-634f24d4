@@ -1,12 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Loader2, ShieldCheck, KeyRound, Smartphone, Trash2, Lock } from "lucide-react";
+import { Loader2, ShieldCheck, KeyRound, Smartphone, Trash2, Lock, Activity, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { AccountShell, Card } from "@/components/auth/account-shell";
 import { Field, fieldCls } from "@/components/auth/login-form";
 import { OtpVerification } from "@/components/auth/otp-verification";
 import { supabase } from "@/integrations/supabase/client";
+import { useServerFn } from "@tanstack/react-start";
+import { useQuery } from "@tanstack/react-query";
+import { getMySecurityActivity } from "@/lib/account/account.functions";
+import { useAuth } from "@/lib/auth-context";
 
 export const Route = createFileRoute("/_authenticated/account/security")({
   head: () => ({ meta: [{ title: "Security — Sweet & Lovely" }] }),
@@ -21,6 +25,8 @@ function SecurityPage() {
         <TwoFactorCard />
         <SessionsCard />
         <RecoveryCard />
+        <PasswordStrengthHints />
+        <ActivityCard />
       </div>
     </AccountShell>
   );
@@ -30,6 +36,7 @@ function ChangePasswordCard() {
   const [pwd, setPwd] = useState("");
   const [confirm, setConfirm] = useState("");
   const [loading, setLoading] = useState(false);
+  const score = passwordScore(pwd);
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (pwd.length < 8) return toast.error("Min 8 characters");
@@ -49,6 +56,22 @@ function ChangePasswordCard() {
         <Field label="New password">
           <input type="password" required value={pwd} onChange={(e) => setPwd(e.target.value)} className={fieldCls} />
         </Field>
+        {pwd.length > 0 && (
+          <div>
+            <div className="flex h-1.5 w-full overflow-hidden rounded-full bg-neutral-100">
+              <div
+                className={
+                  "h-full transition-all " +
+                  (score < 2 ? "bg-rose-500" : score < 4 ? "bg-amber-500" : "bg-emerald-500")
+                }
+                style={{ width: `${(score / 5) * 100}%` }}
+              />
+            </div>
+            <p className="mt-1 text-[11px] text-neutral-500">
+              Strength: {["Very weak", "Weak", "Fair", "Good", "Strong", "Excellent"][score]}
+            </p>
+          </div>
+        )}
         <Field label="Confirm password">
           <input type="password" required value={confirm} onChange={(e) => setConfirm(e.target.value)} className={fieldCls} />
         </Field>
@@ -61,6 +84,75 @@ function ChangePasswordCard() {
           Update password
         </button>
       </form>
+    </Card>
+  );
+}
+
+function passwordScore(p: string): number {
+  let s = 0;
+  if (p.length >= 8) s++;
+  if (p.length >= 12) s++;
+  if (/[A-Z]/.test(p) && /[a-z]/.test(p)) s++;
+  if (/\d/.test(p)) s++;
+  if (/[^A-Za-z0-9]/.test(p)) s++;
+  return Math.min(5, s);
+}
+
+function PasswordStrengthHints() {
+  return (
+    <Card>
+      <Header icon={ShieldCheck} title="Security tips" subtitle="Reduce the chance of unauthorized access." />
+      <ul className="mt-3 space-y-2 text-sm">
+        {[
+          "Use a unique password not reused on other sites",
+          "Enable two-factor authentication",
+          "Sign out from devices you no longer use",
+          "Keep your contact email and phone up to date",
+        ].map((t) => (
+          <li key={t} className="flex items-start gap-2 text-neutral-700">
+            <CheckCircle2 className="mt-0.5 h-4 w-4 text-emerald-500" /> {t}
+          </li>
+        ))}
+      </ul>
+    </Card>
+  );
+}
+
+function ActivityCard() {
+  const { user } = useAuth();
+  const fetchActivity = useServerFn(getMySecurityActivity);
+  const { data, isLoading } = useQuery({
+    queryKey: ["my-security-activity"],
+    queryFn: () => fetchActivity(),
+  });
+  const lastSignIn = (user as any)?.last_sign_in_at;
+  const events = data?.events ?? [];
+  return (
+    <Card>
+      <Header icon={Activity} title="Recent activity" subtitle="Login history and account changes." />
+      <p className="mt-3 text-sm text-neutral-700">
+        Last sign-in:{" "}
+        <span className="font-medium text-neutral-900">
+          {lastSignIn ? new Date(lastSignIn).toLocaleString() : "—"}
+        </span>
+      </p>
+      {isLoading ? (
+        <div className="mt-3 flex items-center text-sm text-neutral-500"><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Loading…</div>
+      ) : events.length === 0 ? (
+        <p className="mt-3 text-xs text-neutral-500">No recorded events yet.</p>
+      ) : (
+        <ul className="mt-3 max-h-60 space-y-1.5 overflow-y-auto text-xs">
+          {events.map((e: any) => (
+            <li key={e.id} className="flex items-start justify-between gap-2 rounded-lg border border-neutral-100 px-2.5 py-1.5">
+              <span className="text-neutral-700">
+                <span className="font-medium text-neutral-900">{e.action}</span>
+                {e.entity ? <span className="ml-1 text-neutral-500">· {e.entity}</span> : null}
+              </span>
+              <span className="shrink-0 text-neutral-400">{new Date(e.created_at).toLocaleString()}</span>
+            </li>
+          ))}
+        </ul>
+      )}
     </Card>
   );
 }
