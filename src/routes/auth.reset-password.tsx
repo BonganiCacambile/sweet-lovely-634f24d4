@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { AuthLayout } from "@/components/auth/auth-layout";
 import { Field, fieldCls } from "@/components/auth/login-form";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/lib/auth-context";
 
 export const Route = createFileRoute("/auth/reset-password")({
   head: () => ({
