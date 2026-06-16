@@ -48,6 +48,7 @@ function OrdersPage() {
     { key: "customer_name", label: "Customer" },
     { key: "customer_email", label: "Email" },
     { key: "status", label: "Status" },
+    { key: "delivery_zone_name", label: "Zone" },
     { key: "total_zar", label: "Total (R)", map: (r: { total_zar: number }) => Number(r.total_zar).toFixed(2) },
     { key: "created_at", label: "Created", map: (r: { created_at: string }) => formatDateTime(r.created_at) },
   ]), []);
