@@ -7,6 +7,7 @@ import { AdminAuthLayout } from "@/components/admin/admin-auth-layout";
 import { Field, fieldCls } from "@/components/auth/login-form";
 import { GoogleButton } from "@/components/auth/social-buttons";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/lib/auth-context";
 
 export const Route = createFileRoute("/auth/admin")({
   head: () => ({
@@ -20,6 +21,7 @@ export const Route = createFileRoute("/auth/admin")({
 
 function AdminAuth() {
   const navigate = useNavigate();
+  const { setAuthTransition, signOut } = useAuth();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -60,6 +62,7 @@ function AdminAuth() {
   const proceedToConsole = (_verifiedEmail: string) => {
     void _verifiedEmail;
     void remember;
+    setAuthTransition("signing-in");
     navigate({ to: "/admin" });
   };
 
@@ -102,7 +105,7 @@ function AdminAuth() {
   };
 
   const signOutAndSwitch = async () => {
-    await supabase.auth.signOut();
+    await signOut();
     setEmail("");
     setPassword("");
     toast.success("Signed out. Use a different administrator account.");

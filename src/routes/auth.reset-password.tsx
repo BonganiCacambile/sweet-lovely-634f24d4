@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { AuthLayout } from "@/components/auth/auth-layout";
 import { Field, fieldCls } from "@/components/auth/login-form";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/lib/auth-context";
 
 export const Route = createFileRoute("/auth/reset-password")({
   head: () => ({
@@ -18,6 +19,7 @@ export const Route = createFileRoute("/auth/reset-password")({
 
 function ResetPassword() {
   const navigate = useNavigate();
+  const { setAuthTransition } = useAuth();
   const [pwd, setPwd] = useState("");
   const [confirm, setConfirm] = useState("");
   const [loading, setLoading] = useState(false);
@@ -39,6 +41,7 @@ function ResetPassword() {
     setLoading(false);
     if (error) return toast.error("Couldn't update password", { description: error.message });
     toast.success("Password updated");
+    setAuthTransition("signing-in");
     navigate({ to: "/" });
   };
 
