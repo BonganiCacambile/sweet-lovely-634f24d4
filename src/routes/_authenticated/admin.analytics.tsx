@@ -8,6 +8,8 @@ import { Card, ErrorPanel, LoadingRows } from "@/components/admin/data-shell";
 import { ExportMenu } from "@/components/admin/export-menu";
 import { formatZar } from "@/lib/admin/format";
 import { analyticsOverview } from "@/lib/admin/analytics.functions";
+import { listAllZones } from "@/lib/admin/zones.functions";
+import { useAuth } from "@/lib/auth-context";
 
 export const Route = createFileRoute("/_authenticated/admin/analytics")({
   component: AnalyticsPage,
@@ -26,10 +28,14 @@ function presetRange(days: number) {
 
 function AnalyticsPage() {
   const [range, setRange] = useState(presetRange(30));
+  const [zoneId, setZoneId] = useState("");
   const fn = useServerFn(analyticsOverview);
+  const zonesFn = useServerFn(listAllZones);
+  const { isMainAdmin } = useAuth();
+  const { data: zones } = useQuery({ queryKey: ["admin","zones","all"], queryFn: () => zonesFn(), enabled: isMainAdmin });
   const { data, isLoading, error, refetch } = useQuery({
-    queryKey: ["admin", "analytics", range],
-    queryFn: () => fn({ data: range }),
+    queryKey: ["admin", "analytics", range, zoneId],
+    queryFn: () => fn({ data: { ...range, zoneId } }),
     refetchOnWindowFocus: true,
   });
 
@@ -48,6 +54,12 @@ function AnalyticsPage() {
         description="Revenue, orders and customer activity across the selected period."
         actions={
           <div className="flex flex-wrap items-center gap-2">
+            {isMainAdmin && (
+              <select value={zoneId} onChange={(e) => setZoneId(e.target.value)} className="rounded-full border border-neutral-200 bg-white px-3 py-1.5 text-xs">
+                <option value="">All zones</option>
+                {(zones ?? []).map((z) => <option key={z.id} value={z.id}>{z.name}</option>)}
+              </select>
+            )}
             {[7, 30, 90].map(d => (
               <button key={d} onClick={() => setRange(presetRange(d))} className="rounded-full border border-neutral-200 bg-white px-3 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50">Last {d}d</button>
             ))}
