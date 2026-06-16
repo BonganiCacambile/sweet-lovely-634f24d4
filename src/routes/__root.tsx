@@ -151,7 +151,10 @@ function AuthGate({ children }: { children: ReactNode }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const isPublic = PUBLIC_PREFIXES.some((p) => pathname === p || pathname.startsWith(p + "/") || pathname.startsWith(p));
 
-  if (authTransition === "signing-out" || authTransition === "signing-in") {
+  if (authTransition === "signing-out") {
+    return <LoadingScreen />;
+  }
+  if (authTransition === "signing-in" && !user) {
     return <LoadingScreen />;
   }
   if (isPublic) return <>{children}</>;
