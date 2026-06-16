@@ -4,10 +4,12 @@ import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/lib/auth-context";
 import { GoogleButton } from "./social-buttons";
 
 export function LoginForm() {
   const navigate = useNavigate();
+  const { setAuthTransition } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [show, setShow] = useState(false);
@@ -24,6 +26,7 @@ export function LoginForm() {
       return;
     }
     toast.success("Welcome back");
+    setAuthTransition("signing-in");
     navigate({ to: "/" });
   };
 

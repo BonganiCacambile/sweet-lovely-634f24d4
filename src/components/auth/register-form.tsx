@@ -4,6 +4,7 @@ import { Eye, EyeOff, Loader2, Check } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/lib/auth-context";
 import { Field, fieldCls } from "./login-form";
 import { GoogleButton } from "./social-buttons";
 
@@ -18,6 +19,7 @@ function strength(p: string) {
 
 export function RegisterForm() {
   const navigate = useNavigate();
+  const { setAuthTransition } = useAuth();
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -63,6 +65,7 @@ export function RegisterForm() {
       return;
     }
     toast.success("Account created. Check your email to verify.");
+    setAuthTransition("signing-in");
     navigate({ to: "/" });
   };
 
