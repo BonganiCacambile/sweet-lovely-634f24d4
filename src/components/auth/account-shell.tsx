@@ -1,5 +1,5 @@
 import { Link, useRouter } from "@tanstack/react-router";
-import { LogOut, User as UserIcon, ShieldCheck, Bell, Settings, ShoppingBag, LayoutDashboard } from "lucide-react";
+import { LogOut, User as UserIcon, ShieldCheck, Bell, Settings, ShoppingBag, LayoutDashboard, MapPin } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import type { ReactNode } from "react";
 import { motion } from "framer-motion";
@@ -8,6 +8,7 @@ const NAV = [
   { to: "/account", label: "Overview", icon: UserIcon },
   { to: "/account/security", label: "Security", icon: ShieldCheck },
   { to: "/account/orders", label: "Orders", icon: ShoppingBag },
+  { to: "/account/addresses", label: "Addresses", icon: MapPin },
   { to: "/account/notifications", label: "Notifications", icon: Bell },
   { to: "/account/preferences", label: "Preferences", icon: Settings },
 ] as const;
