@@ -43,6 +43,7 @@ import { Route as AuthenticatedAdminCategoriesRouteImport } from './routes/_auth
 import { Route as AuthenticatedAdminAuditRouteImport } from './routes/_authenticated/admin.audit'
 import { Route as AuthenticatedAdminAnalyticsRouteImport } from './routes/_authenticated/admin.analytics'
 import { Route as AuthenticatedAccountSecurityRouteImport } from './routes/_authenticated/account.security'
+import { Route as AuthenticatedAccountPreferencesRouteImport } from './routes/_authenticated/account.preferences'
 import { Route as AuthenticatedAccountOrdersRouteImport } from './routes/_authenticated/account.orders'
 import { Route as AuthenticatedAccountNotificationsRouteImport } from './routes/_authenticated/account.notifications'
 import { Route as AuthenticatedAccountAddressesRouteImport } from './routes/_authenticated/account.addresses'
@@ -231,6 +232,12 @@ const AuthenticatedAccountSecurityRoute =
     path: '/security',
     getParentRoute: () => AuthenticatedAccountRoute,
   } as any)
+const AuthenticatedAccountPreferencesRoute =
+  AuthenticatedAccountPreferencesRouteImport.update({
+    id: '/preferences',
+    path: '/preferences',
+    getParentRoute: () => AuthenticatedAccountRoute,
+  } as any)
 const AuthenticatedAccountOrdersRoute =
   AuthenticatedAccountOrdersRouteImport.update({
     id: '/orders',
@@ -275,6 +282,7 @@ export interface FileRoutesByFullPath {
   '/account/addresses': typeof AuthenticatedAccountAddressesRoute
   '/account/notifications': typeof AuthenticatedAccountNotificationsRoute
   '/account/orders': typeof AuthenticatedAccountOrdersRouteWithChildren
+  '/account/preferences': typeof AuthenticatedAccountPreferencesRoute
   '/account/security': typeof AuthenticatedAccountSecurityRoute
   '/admin/analytics': typeof AuthenticatedAdminAnalyticsRoute
   '/admin/audit': typeof AuthenticatedAdminAuditRoute
@@ -313,6 +321,7 @@ export interface FileRoutesByTo {
   '/account/addresses': typeof AuthenticatedAccountAddressesRoute
   '/account/notifications': typeof AuthenticatedAccountNotificationsRoute
   '/account/orders': typeof AuthenticatedAccountOrdersRouteWithChildren
+  '/account/preferences': typeof AuthenticatedAccountPreferencesRoute
   '/account/security': typeof AuthenticatedAccountSecurityRoute
   '/admin/analytics': typeof AuthenticatedAdminAnalyticsRoute
   '/admin/audit': typeof AuthenticatedAdminAuditRoute
@@ -354,6 +363,7 @@ export interface FileRoutesById {
   '/_authenticated/account/addresses': typeof AuthenticatedAccountAddressesRoute
   '/_authenticated/account/notifications': typeof AuthenticatedAccountNotificationsRoute
   '/_authenticated/account/orders': typeof AuthenticatedAccountOrdersRouteWithChildren
+  '/_authenticated/account/preferences': typeof AuthenticatedAccountPreferencesRoute
   '/_authenticated/account/security': typeof AuthenticatedAccountSecurityRoute
   '/_authenticated/admin/analytics': typeof AuthenticatedAdminAnalyticsRoute
   '/_authenticated/admin/audit': typeof AuthenticatedAdminAuditRoute
@@ -395,6 +405,7 @@ export interface FileRouteTypes {
     | '/account/addresses'
     | '/account/notifications'
     | '/account/orders'
+    | '/account/preferences'
     | '/account/security'
     | '/admin/analytics'
     | '/admin/audit'
@@ -433,6 +444,7 @@ export interface FileRouteTypes {
     | '/account/addresses'
     | '/account/notifications'
     | '/account/orders'
+    | '/account/preferences'
     | '/account/security'
     | '/admin/analytics'
     | '/admin/audit'
@@ -473,6 +485,7 @@ export interface FileRouteTypes {
     | '/_authenticated/account/addresses'
     | '/_authenticated/account/notifications'
     | '/_authenticated/account/orders'
+    | '/_authenticated/account/preferences'
     | '/_authenticated/account/security'
     | '/_authenticated/admin/analytics'
     | '/_authenticated/admin/audit'
@@ -747,6 +760,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAccountSecurityRouteImport
       parentRoute: typeof AuthenticatedAccountRoute
     }
+    '/_authenticated/account/preferences': {
+      id: '/_authenticated/account/preferences'
+      path: '/preferences'
+      fullPath: '/account/preferences'
+      preLoaderRoute: typeof AuthenticatedAccountPreferencesRouteImport
+      parentRoute: typeof AuthenticatedAccountRoute
+    }
     '/_authenticated/account/orders': {
       id: '/_authenticated/account/orders'
       path: '/orders'
@@ -797,6 +817,7 @@ interface AuthenticatedAccountRouteChildren {
   AuthenticatedAccountAddressesRoute: typeof AuthenticatedAccountAddressesRoute
   AuthenticatedAccountNotificationsRoute: typeof AuthenticatedAccountNotificationsRoute
   AuthenticatedAccountOrdersRoute: typeof AuthenticatedAccountOrdersRouteWithChildren
+  AuthenticatedAccountPreferencesRoute: typeof AuthenticatedAccountPreferencesRoute
   AuthenticatedAccountSecurityRoute: typeof AuthenticatedAccountSecurityRoute
 }
 
@@ -805,6 +826,7 @@ const AuthenticatedAccountRouteChildren: AuthenticatedAccountRouteChildren = {
   AuthenticatedAccountNotificationsRoute:
     AuthenticatedAccountNotificationsRoute,
   AuthenticatedAccountOrdersRoute: AuthenticatedAccountOrdersRouteWithChildren,
+  AuthenticatedAccountPreferencesRoute: AuthenticatedAccountPreferencesRoute,
   AuthenticatedAccountSecurityRoute: AuthenticatedAccountSecurityRoute,
 }
 
