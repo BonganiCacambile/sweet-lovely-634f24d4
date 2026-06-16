@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import loadingBg from "@/assets/loading-bg.png.asset.json";
+import splashAsset from "@/assets/sweet-n-lovely-splash.png.asset.json";
 
 export function LoadingScreen({
   message = "Fresh Ingredients. Perfectly Baked. Made with Love.",
