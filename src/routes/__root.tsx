@@ -18,6 +18,8 @@ import { CartDrawer } from "@/components/cart/cart-drawer";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider, useAuth } from "@/lib/auth-context";
 import { LoadingScreen } from "@/components/loading-screen";
+import { ZoneProvider } from "@/lib/zone-context";
+import { ZonePicker, ZoneChip } from "@/components/zone-picker";
 
 function NotFoundComponent() {
   return (
@@ -131,16 +133,35 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <CartProvider>
-          <AuthGate>
-            {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-            <Outlet />
-            <CartFab />
-            <CartDrawer />
-          </AuthGate>
+          <ZoneProvider>
+            <AuthGate>
+              {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+              <Outlet />
+              <CartFab />
+              <CartDrawer />
+              <ZonePicker />
+              <FloatingZoneChip />
+            </AuthGate>
+          </ZoneProvider>
           <Toaster position="top-center" richColors />
         </CartProvider>
       </AuthProvider>
     </QueryClientProvider>
+  );
+}
+
+function FloatingZoneChip() {
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const hide =
+    pathname.startsWith("/admin") ||
+    pathname.startsWith("/auth") ||
+    pathname.startsWith("/loading") ||
+    pathname.startsWith("/checkout");
+  if (hide) return null;
+  return (
+    <div className="pointer-events-none fixed bottom-5 left-4 z-40 sm:left-6">
+      <ZoneChip />
+    </div>
   );
 }
 
