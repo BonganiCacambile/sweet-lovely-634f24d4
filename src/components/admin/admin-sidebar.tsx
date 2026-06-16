@@ -8,7 +8,7 @@ import { BrandMark } from "./brand-mark";
 import { useAuth } from "@/lib/auth-context";
 import { useRouter } from "@tanstack/react-router";
 
-type Item = { to: string; label: string; icon: React.ComponentType<{ className?: string }> };
+type Item = { to: string; label: string; icon: React.ComponentType<{ className?: string }>; mainOnly?: boolean };
 
 const SECTIONS: Array<{ heading: string; items: Item[] }> = [
   {
@@ -16,31 +16,31 @@ const SECTIONS: Array<{ heading: string; items: Item[] }> = [
     items: [
       { to: "/admin", label: "Dashboard", icon: LayoutDashboard },
       { to: "/admin/analytics", label: "Analytics", icon: BarChart3 },
-      { to: "/admin/users", label: "Users", icon: Users },
+      { to: "/admin/users", label: "Users", icon: Users, mainOnly: true },
       { to: "/admin/orders", label: "Orders", icon: ShoppingBag },
-      { to: "/admin/products", label: "Products", icon: Package },
-      { to: "/admin/content", label: "Content", icon: FileText },
+      { to: "/admin/products", label: "Products", icon: Package, mainOnly: true },
+      { to: "/admin/content", label: "Content", icon: FileText, mainOnly: true },
     ],
   },
   {
     heading: "Management",
     items: [
-      { to: "/admin/categories", label: "Categories", icon: Tags },
+      { to: "/admin/categories", label: "Categories", icon: Tags, mainOnly: true },
       { to: "/admin/inventory", label: "Inventory", icon: Boxes },
       { to: "/admin/delivery-zones", label: "Delivery Zones", icon: MapPin },
-      { to: "/admin/reviews", label: "Reviews", icon: Star },
-      { to: "/admin/notifications", label: "Notifications", icon: Bell },
-      { to: "/admin/reports", label: "Reports", icon: FileBarChart2 },
+      { to: "/admin/reviews", label: "Reviews", icon: Star, mainOnly: true },
+      { to: "/admin/notifications", label: "Notifications", icon: Bell, mainOnly: true },
+      { to: "/admin/reports", label: "Reports", icon: FileBarChart2, mainOnly: true },
     ],
   },
   {
     heading: "Administration",
     items: [
-      { to: "/admin/roles", label: "Roles & Permissions", icon: ShieldCheck },
-      { to: "/admin/security", label: "Security Center", icon: Lock },
-      { to: "/admin/audit", label: "Audit Logs", icon: ScrollText },
-      { to: "/admin/integrations", label: "Integrations", icon: Plug },
-      { to: "/admin/settings", label: "System Settings", icon: Settings },
+      { to: "/admin/roles", label: "Roles & Permissions", icon: ShieldCheck, mainOnly: true },
+      { to: "/admin/security", label: "Security Center", icon: Lock, mainOnly: true },
+      { to: "/admin/audit", label: "Audit Logs", icon: ScrollText, mainOnly: true },
+      { to: "/admin/integrations", label: "Integrations", icon: Plug, mainOnly: true },
+      { to: "/admin/settings", label: "System Settings", icon: Settings, mainOnly: true },
     ],
   },
   {
@@ -61,7 +61,7 @@ export function AdminSidebar({
   mobile?: boolean;
 }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const { signOut } = useAuth();
+  const { signOut, isMainAdmin, assignedZoneName } = useAuth();
   const router = useRouter();
 
   const onSignOut = async () => {
@@ -98,15 +98,50 @@ export function AdminSidebar({
       </div>
 
       <nav className="flex-1 overflow-y-auto px-2 py-2">
+        {!collapsed && !isMainAdmin && assignedZoneName && (
+          <div className="mx-2 mb-3 rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] font-medium text-amber-900">
+            Zone Admin · {assignedZoneName}
+          </div>
+        )}
         {SECTIONS.map((section) => (
-          <div key={section.heading} className="mb-4">
+          <SidebarSection key={section.heading} section={section} collapsed={collapsed} pathname={pathname} onClose={onCloseMobile} isMain={isMainAdmin} />
+        ))}
+      </nav>
+
+      <div className="border-t border-neutral-200/70 p-3">
+        <button
+          type="button"
+          onClick={onSignOut}
+          className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-neutral-200 bg-white px-3 py-2.5 text-sm font-medium text-neutral-700 hover:bg-neutral-50"
+        >
+          <LogOut className="h-4 w-4" />
+          {!collapsed && "Sign out"}
+        </button>
+      </div>
+    </aside>
+  );
+}
+
+function SidebarSection({
+  section, collapsed, pathname, onClose, isMain,
+}: {
+  section: { heading: string; items: Item[] };
+  collapsed?: boolean;
+  pathname: string;
+  onClose?: () => void;
+  isMain: boolean;
+}) {
+  const items = section.items.filter((i) => isMain || !i.mainOnly);
+  if (items.length === 0) return null;
+  return (
+    <div className="mb-4">
             {!collapsed && (
               <p className="px-3 pb-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-neutral-400">
                 {section.heading}
               </p>
             )}
             <ul className="space-y-0.5">
-              {section.items.map((item) => {
+              {items.map((item) => {
                 const active =
                   item.to === "/admin"
                     ? pathname === "/admin"
@@ -116,7 +151,7 @@ export function AdminSidebar({
                   <li key={item.to}>
                     <Link
                       to={item.to}
-                      onClick={onCloseMobile}
+                      onClick={onClose}
                       title={collapsed ? item.label : undefined}
                       className={
                         "group relative flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm transition-colors " +
@@ -136,19 +171,5 @@ export function AdminSidebar({
               })}
             </ul>
           </div>
-        ))}
-      </nav>
-
-      <div className="border-t border-neutral-200/70 p-3">
-        <button
-          type="button"
-          onClick={onSignOut}
-          className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-neutral-200 bg-white px-3 py-2.5 text-sm font-medium text-neutral-700 hover:bg-neutral-50"
-        >
-          <LogOut className="h-4 w-4" />
-          {!collapsed && "Sign out"}
-        </button>
-      </div>
-    </aside>
   );
 }
