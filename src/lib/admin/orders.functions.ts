@@ -18,6 +18,7 @@ export type OrderStatus = (typeof ORDER_STATUSES)[number];
 const listInput = z.object({
   search: z.string().optional().default(""),
   status: z.string().optional().default(""),
+  zoneId: z.string().optional().default(""),
   fromDate: z.string().optional().default(""),
   toDate: z.string().optional().default(""),
   sortBy: z.enum(["created_at", "total_zar", "order_number"]).optional().default("created_at"),
@@ -31,14 +32,15 @@ export const listOrders = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => listInput.parse(d))
   .handler(async ({ data, context }) => {
     await requireAdmin(context.supabase, context.userId);
-    const { search, status, fromDate, toDate, sortBy, sortDir, page, pageSize } = data;
+    const { search, status, zoneId, fromDate, toDate, sortBy, sortDir, page, pageSize } = data;
     let q = context.supabase
       .from("orders")
       .select(
-        "id, order_number, status, customer_name, customer_email, total_zar, subtotal_zar, delivery_zar, created_at, user_id, paystack_reference",
+        "id, order_number, status, customer_name, customer_email, total_zar, subtotal_zar, delivery_zar, created_at, user_id, paystack_reference, delivery_zone_id, delivery_zone_name",
         { count: "exact" },
       );
     if (status) q = q.eq("status", status as never);
+    if (zoneId) q = q.eq("delivery_zone_id", zoneId);
     if (fromDate) q = q.gte("created_at", fromDate);
     if (toDate) q = q.lte("created_at", toDate);
     if (search) {
