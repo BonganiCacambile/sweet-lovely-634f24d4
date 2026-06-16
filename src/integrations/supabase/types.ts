@@ -169,9 +169,14 @@ export type Database = {
       }
       delivery_zones: {
         Row: {
+          color: string | null
+          contact_email: string | null
+          contact_phone: string | null
           created_at: string
+          description: string | null
           eta_minutes: number
           fee_zar: number
+          hours_text: string | null
           id: string
           is_active: boolean
           min_order_zar: number
@@ -182,9 +187,14 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          color?: string | null
+          contact_email?: string | null
+          contact_phone?: string | null
           created_at?: string
+          description?: string | null
           eta_minutes?: number
           fee_zar?: number
+          hours_text?: string | null
           id?: string
           is_active?: boolean
           min_order_zar?: number
@@ -195,9 +205,14 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          color?: string | null
+          contact_email?: string | null
+          contact_phone?: string | null
           created_at?: string
+          description?: string | null
           eta_minutes?: number
           fee_zar?: number
+          hours_text?: string | null
           id?: string
           is_active?: boolean
           min_order_zar?: number
@@ -539,6 +554,8 @@ export type Database = {
           customer_name: string
           customer_phone: string | null
           delivery_zar: number
+          delivery_zone_id: string | null
+          delivery_zone_name: string | null
           id: string
           notes: string | null
           order_number: string
@@ -556,6 +573,8 @@ export type Database = {
           customer_name: string
           customer_phone?: string | null
           delivery_zar?: number
+          delivery_zone_id?: string | null
+          delivery_zone_name?: string | null
           id?: string
           notes?: string | null
           order_number?: string
@@ -573,6 +592,8 @@ export type Database = {
           customer_name?: string
           customer_phone?: string | null
           delivery_zar?: number
+          delivery_zone_id?: string | null
+          delivery_zone_name?: string | null
           id?: string
           notes?: string | null
           order_number?: string
@@ -583,7 +604,15 @@ export type Database = {
           updated_at?: string
           user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "orders_delivery_zone_id_fkey"
+            columns: ["delivery_zone_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_zones"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       products: {
         Row: {
