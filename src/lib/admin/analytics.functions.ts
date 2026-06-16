@@ -6,6 +6,7 @@ import { requireAdminScope } from "./server-helpers.server";
 const rangeInput = z.object({
   fromDate: z.string().optional().default(""),
   toDate: z.string().optional().default(""),
+  zoneId: z.string().optional().default(""),
 });
 
 function defaultRange(fromDate: string, toDate: string) {
@@ -21,20 +22,26 @@ export const analyticsOverview = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => rangeInput.parse(d))
   .handler(async ({ data, context }) => {
-    await requireAdminScope(context.supabase, context.userId);
+    const scope = await requireAdminScope(context.supabase, context.userId);
+    // Zone admins are pinned to their own zone; main admin may pick any (or all)
+    const zoneId = scope.isMain ? data.zoneId : scope.zoneId ?? "";
     const { fromIso, toIso, from, to } = defaultRange(data.fromDate, data.toDate);
     const spanMs = to.getTime() - from.getTime();
     const prevTo = new Date(from.getTime() - 1).toISOString();
     const prevFrom = new Date(from.getTime() - spanMs - 1).toISOString();
 
     const sb = context.supabase;
+    const applyZone = <T extends { eq: (c: string, v: string) => T }>(q: T, col = "delivery_zone_id") =>
+      zoneId ? q.eq(col, zoneId) : q;
     const [curOrders, prevOrders, curUsers, prevUsers, items, statusRows] = await Promise.all([
-      sb.from("orders").select("id, total_zar, status, created_at, user_id").gte("created_at", fromIso).lte("created_at", toIso),
-      sb.from("orders").select("id, total_zar").gte("created_at", prevFrom).lte("created_at", prevTo),
+      applyZone(sb.from("orders").select("id, total_zar, status, created_at, user_id").gte("created_at", fromIso).lte("created_at", toIso)),
+      applyZone(sb.from("orders").select("id, total_zar").gte("created_at", prevFrom).lte("created_at", prevTo)),
       sb.from("profiles").select("id", { count: "exact", head: true }).gte("created_at", fromIso).lte("created_at", toIso),
       sb.from("profiles").select("id", { count: "exact", head: true }).gte("created_at", prevFrom).lte("created_at", prevTo),
-      sb.from("order_items").select("product_slug, title_snapshot, quantity, line_total_zar, orders!inner(created_at)").gte("orders.created_at", fromIso).lte("orders.created_at", toIso),
-      sb.from("orders").select("status").gte("created_at", fromIso).lte("created_at", toIso),
+      (zoneId
+        ? sb.from("order_items").select("product_slug, title_snapshot, quantity, line_total_zar, orders!inner(created_at, delivery_zone_id)").gte("orders.created_at", fromIso).lte("orders.created_at", toIso).eq("orders.delivery_zone_id", zoneId)
+        : sb.from("order_items").select("product_slug, title_snapshot, quantity, line_total_zar, orders!inner(created_at)").gte("orders.created_at", fromIso).lte("orders.created_at", toIso)),
+      applyZone(sb.from("orders").select("status").gte("created_at", fromIso).lte("created_at", toIso)),
     ]);
     if (curOrders.error) throw new Error(curOrders.error.message);
     if (items.error) throw new Error(items.error.message);
