@@ -43,14 +43,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => {
+    const { data: sub } = supabase.auth.onAuthStateChange((event, s) => {
       setSession(s);
       setUser(s?.user ?? null);
       if (s?.user) {
-        setTimeout(() => loadExtras(s.user.id), 0);
+        setTimeout(() => {
+          loadExtras(s.user!.id).finally(() => {
+            if (event === "SIGNED_IN") setAuthTransition("idle");
+          });
+        }, 0);
       } else {
         setProfile(null);
         setIsAdmin(false);
+        if (event === "SIGNED_OUT") setAuthTransition("idle");
       }
     });
     supabase.auth.getSession().then(({ data }) => {
