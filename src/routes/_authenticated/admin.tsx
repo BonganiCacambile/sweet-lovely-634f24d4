@@ -9,10 +9,12 @@ export const Route = createFileRoute("/_authenticated/admin")({
     if (!data.user) throw redirect({ to: "/auth/admin" });
     const { data: roles } = await supabase
       .from("user_roles")
-      .select("role")
+      .select("role, assigned_zone_id")
       .eq("user_id", data.user.id);
-    const isAdmin = roles?.some((r: { role: string }) => r.role === "admin");
-    if (!isAdmin) throw redirect({ to: "/account" });
+    const rows = (roles ?? []) as Array<{ role: string; assigned_zone_id: string | null }>;
+    const isMain = rows.some((r) => r.role === "admin");
+    const isZone = rows.some((r) => r.assigned_zone_id);
+    if (!isMain && !isZone) throw redirect({ to: "/account" });
   },
   component: AdminShell,
 });
