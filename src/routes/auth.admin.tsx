@@ -7,6 +7,7 @@ import { AdminAuthLayout } from "@/components/admin/admin-auth-layout";
 import { Field, fieldCls } from "@/components/auth/login-form";
 import { GoogleButton } from "@/components/auth/social-buttons";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/lib/auth-context";
 
 export const Route = createFileRoute("/auth/admin")({
   head: () => ({
