@@ -12,6 +12,9 @@ import { listAllZones } from "@/lib/admin/zones.functions";
 import { useAuth } from "@/lib/auth-context";
 
 export const Route = createFileRoute("/_authenticated/admin/analytics")({
+  validateSearch: (s: Record<string, unknown>) => ({
+    zoneId: typeof s.zoneId === "string" ? s.zoneId : "",
+  }),
   component: AnalyticsPage,
 });
 
@@ -27,8 +30,9 @@ function presetRange(days: number) {
 }
 
 function AnalyticsPage() {
+  const urlSearch = Route.useSearch();
   const [range, setRange] = useState(presetRange(30));
-  const [zoneId, setZoneId] = useState("");
+  const [zoneId, setZoneId] = useState(urlSearch.zoneId ?? "");
   const fn = useServerFn(analyticsOverview);
   const zonesFn = useServerFn(listAllZones);
   const { isMainAdmin } = useAuth();
