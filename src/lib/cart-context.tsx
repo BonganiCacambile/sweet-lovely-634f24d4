@@ -119,9 +119,16 @@ export const SHIPPING_FLAT = 3.99;
 export const FREE_SHIPPING_THRESHOLD = 40;
 export const TAX_RATE = 0.08;
 
-export function computeTotals(subtotal: number, discount = 0) {
+export function computeTotals(subtotal: number, discount = 0, shippingOverride?: number) {
   const discounted = Math.max(0, subtotal - discount);
-  const shipping = discounted === 0 ? 0 : discounted >= FREE_SHIPPING_THRESHOLD ? 0 : SHIPPING_FLAT;
+  const shipping =
+    discounted === 0
+      ? 0
+      : typeof shippingOverride === "number"
+        ? shippingOverride
+        : discounted >= FREE_SHIPPING_THRESHOLD
+          ? 0
+          : SHIPPING_FLAT;
   const tax = discounted * TAX_RATE;
   const total = discounted + shipping + tax;
   return { discounted, shipping, tax, total };
