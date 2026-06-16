@@ -24,7 +24,6 @@ import { Route as AuthResetPasswordRouteImport } from './routes/auth.reset-passw
 import { Route as AuthForgotPasswordRouteImport } from './routes/auth.forgot-password'
 import { Route as AuthAdminRouteImport } from './routes/auth.admin'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
-import { Route as AuthenticatedAccountRouteImport } from './routes/_authenticated/account'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
 import { Route as AuthenticatedAdminUsersRouteImport } from './routes/_authenticated/admin.users'
 import { Route as AuthenticatedAdminSettingsRouteImport } from './routes/_authenticated/admin.settings'
@@ -43,9 +42,6 @@ import { Route as AuthenticatedAdminCategoriesRouteImport } from './routes/_auth
 import { Route as AuthenticatedAdminAuditRouteImport } from './routes/_authenticated/admin.audit'
 import { Route as AuthenticatedAdminAnalyticsRouteImport } from './routes/_authenticated/admin.analytics'
 import { Route as AuthenticatedAccountSecurityRouteImport } from './routes/_authenticated/account.security'
-import { Route as AuthenticatedAccountPreferencesRouteImport } from './routes/_authenticated/account.preferences'
-import { Route as AuthenticatedAccountOrdersRouteImport } from './routes/_authenticated/account.orders'
-import { Route as AuthenticatedAccountNotificationsRouteImport } from './routes/_authenticated/account.notifications'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -119,11 +115,6 @@ const AuthAdminRoute = AuthAdminRouteImport.update({
 const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   id: '/admin',
   path: '/admin',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedAccountRoute = AuthenticatedAccountRouteImport.update({
-  id: '/account',
-  path: '/account',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
@@ -226,27 +217,9 @@ const AuthenticatedAdminAnalyticsRoute =
   } as any)
 const AuthenticatedAccountSecurityRoute =
   AuthenticatedAccountSecurityRouteImport.update({
-    id: '/security',
-    path: '/security',
-    getParentRoute: () => AuthenticatedAccountRoute,
-  } as any)
-const AuthenticatedAccountPreferencesRoute =
-  AuthenticatedAccountPreferencesRouteImport.update({
-    id: '/preferences',
-    path: '/preferences',
-    getParentRoute: () => AuthenticatedAccountRoute,
-  } as any)
-const AuthenticatedAccountOrdersRoute =
-  AuthenticatedAccountOrdersRouteImport.update({
-    id: '/orders',
-    path: '/orders',
-    getParentRoute: () => AuthenticatedAccountRoute,
-  } as any)
-const AuthenticatedAccountNotificationsRoute =
-  AuthenticatedAccountNotificationsRouteImport.update({
-    id: '/notifications',
-    path: '/notifications',
-    getParentRoute: () => AuthenticatedAccountRoute,
+    id: '/account/security',
+    path: '/account/security',
+    getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
@@ -258,16 +231,12 @@ export interface FileRoutesByFullPath {
   '/loading': typeof LoadingRoute
   '/locations': typeof LocationsRoute
   '/login': typeof LoginRoute
-  '/account': typeof AuthenticatedAccountRouteWithChildren
   '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/auth/admin': typeof AuthAdminRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
   '/checkout/success': typeof CheckoutSuccessRoute
   '/menu/full-menu': typeof MenuFullMenuRoute
-  '/account/notifications': typeof AuthenticatedAccountNotificationsRoute
-  '/account/orders': typeof AuthenticatedAccountOrdersRoute
-  '/account/preferences': typeof AuthenticatedAccountPreferencesRoute
   '/account/security': typeof AuthenticatedAccountSecurityRoute
   '/admin/analytics': typeof AuthenticatedAdminAnalyticsRoute
   '/admin/audit': typeof AuthenticatedAdminAuditRoute
@@ -296,15 +265,11 @@ export interface FileRoutesByTo {
   '/loading': typeof LoadingRoute
   '/locations': typeof LocationsRoute
   '/login': typeof LoginRoute
-  '/account': typeof AuthenticatedAccountRouteWithChildren
   '/auth/admin': typeof AuthAdminRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
   '/checkout/success': typeof CheckoutSuccessRoute
   '/menu/full-menu': typeof MenuFullMenuRoute
-  '/account/notifications': typeof AuthenticatedAccountNotificationsRoute
-  '/account/orders': typeof AuthenticatedAccountOrdersRoute
-  '/account/preferences': typeof AuthenticatedAccountPreferencesRoute
   '/account/security': typeof AuthenticatedAccountSecurityRoute
   '/admin/analytics': typeof AuthenticatedAdminAnalyticsRoute
   '/admin/audit': typeof AuthenticatedAdminAuditRoute
@@ -335,16 +300,12 @@ export interface FileRoutesById {
   '/loading': typeof LoadingRoute
   '/locations': typeof LocationsRoute
   '/login': typeof LoginRoute
-  '/_authenticated/account': typeof AuthenticatedAccountRouteWithChildren
   '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
   '/auth/admin': typeof AuthAdminRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
   '/checkout/success': typeof CheckoutSuccessRoute
   '/menu/full-menu': typeof MenuFullMenuRoute
-  '/_authenticated/account/notifications': typeof AuthenticatedAccountNotificationsRoute
-  '/_authenticated/account/orders': typeof AuthenticatedAccountOrdersRoute
-  '/_authenticated/account/preferences': typeof AuthenticatedAccountPreferencesRoute
   '/_authenticated/account/security': typeof AuthenticatedAccountSecurityRoute
   '/_authenticated/admin/analytics': typeof AuthenticatedAdminAnalyticsRoute
   '/_authenticated/admin/audit': typeof AuthenticatedAdminAuditRoute
@@ -375,16 +336,12 @@ export interface FileRouteTypes {
     | '/loading'
     | '/locations'
     | '/login'
-    | '/account'
     | '/admin'
     | '/auth/admin'
     | '/auth/forgot-password'
     | '/auth/reset-password'
     | '/checkout/success'
     | '/menu/full-menu'
-    | '/account/notifications'
-    | '/account/orders'
-    | '/account/preferences'
     | '/account/security'
     | '/admin/analytics'
     | '/admin/audit'
@@ -413,15 +370,11 @@ export interface FileRouteTypes {
     | '/loading'
     | '/locations'
     | '/login'
-    | '/account'
     | '/auth/admin'
     | '/auth/forgot-password'
     | '/auth/reset-password'
     | '/checkout/success'
     | '/menu/full-menu'
-    | '/account/notifications'
-    | '/account/orders'
-    | '/account/preferences'
     | '/account/security'
     | '/admin/analytics'
     | '/admin/audit'
@@ -451,16 +404,12 @@ export interface FileRouteTypes {
     | '/loading'
     | '/locations'
     | '/login'
-    | '/_authenticated/account'
     | '/_authenticated/admin'
     | '/auth/admin'
     | '/auth/forgot-password'
     | '/auth/reset-password'
     | '/checkout/success'
     | '/menu/full-menu'
-    | '/_authenticated/account/notifications'
-    | '/_authenticated/account/orders'
-    | '/_authenticated/account/preferences'
     | '/_authenticated/account/security'
     | '/_authenticated/admin/analytics'
     | '/_authenticated/admin/audit'
@@ -601,13 +550,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/account': {
-      id: '/_authenticated/account'
-      path: '/account'
-      fullPath: '/account'
-      preLoaderRoute: typeof AuthenticatedAccountRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/admin/': {
       id: '/_authenticated/admin/'
       path: '/'
@@ -729,52 +671,13 @@ declare module '@tanstack/react-router' {
     }
     '/_authenticated/account/security': {
       id: '/_authenticated/account/security'
-      path: '/security'
+      path: '/account/security'
       fullPath: '/account/security'
       preLoaderRoute: typeof AuthenticatedAccountSecurityRouteImport
-      parentRoute: typeof AuthenticatedAccountRoute
-    }
-    '/_authenticated/account/preferences': {
-      id: '/_authenticated/account/preferences'
-      path: '/preferences'
-      fullPath: '/account/preferences'
-      preLoaderRoute: typeof AuthenticatedAccountPreferencesRouteImport
-      parentRoute: typeof AuthenticatedAccountRoute
-    }
-    '/_authenticated/account/orders': {
-      id: '/_authenticated/account/orders'
-      path: '/orders'
-      fullPath: '/account/orders'
-      preLoaderRoute: typeof AuthenticatedAccountOrdersRouteImport
-      parentRoute: typeof AuthenticatedAccountRoute
-    }
-    '/_authenticated/account/notifications': {
-      id: '/_authenticated/account/notifications'
-      path: '/notifications'
-      fullPath: '/account/notifications'
-      preLoaderRoute: typeof AuthenticatedAccountNotificationsRouteImport
-      parentRoute: typeof AuthenticatedAccountRoute
+      parentRoute: typeof AuthenticatedRouteRoute
     }
   }
 }
-
-interface AuthenticatedAccountRouteChildren {
-  AuthenticatedAccountNotificationsRoute: typeof AuthenticatedAccountNotificationsRoute
-  AuthenticatedAccountOrdersRoute: typeof AuthenticatedAccountOrdersRoute
-  AuthenticatedAccountPreferencesRoute: typeof AuthenticatedAccountPreferencesRoute
-  AuthenticatedAccountSecurityRoute: typeof AuthenticatedAccountSecurityRoute
-}
-
-const AuthenticatedAccountRouteChildren: AuthenticatedAccountRouteChildren = {
-  AuthenticatedAccountNotificationsRoute:
-    AuthenticatedAccountNotificationsRoute,
-  AuthenticatedAccountOrdersRoute: AuthenticatedAccountOrdersRoute,
-  AuthenticatedAccountPreferencesRoute: AuthenticatedAccountPreferencesRoute,
-  AuthenticatedAccountSecurityRoute: AuthenticatedAccountSecurityRoute,
-}
-
-const AuthenticatedAccountRouteWithChildren =
-  AuthenticatedAccountRoute._addFileChildren(AuthenticatedAccountRouteChildren)
 
 interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminAnalyticsRoute: typeof AuthenticatedAdminAnalyticsRoute
@@ -820,13 +723,13 @@ const AuthenticatedAdminRouteWithChildren =
   AuthenticatedAdminRoute._addFileChildren(AuthenticatedAdminRouteChildren)
 
 interface AuthenticatedRouteRouteChildren {
-  AuthenticatedAccountRoute: typeof AuthenticatedAccountRouteWithChildren
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRouteWithChildren
+  AuthenticatedAccountSecurityRoute: typeof AuthenticatedAccountSecurityRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
-  AuthenticatedAccountRoute: AuthenticatedAccountRouteWithChildren,
   AuthenticatedAdminRoute: AuthenticatedAdminRouteWithChildren,
+  AuthenticatedAccountSecurityRoute: AuthenticatedAccountSecurityRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
