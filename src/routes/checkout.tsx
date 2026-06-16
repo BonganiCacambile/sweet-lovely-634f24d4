@@ -9,6 +9,7 @@ import { SiteFooter } from "@/components/site-footer";
 import { useCart, formatPrice, computeTotals } from "@/lib/cart-context";
 import { checkCartStock, getPaystackConfig, verifyAndCreateOrder } from "@/lib/paystack.functions";
 import { supabase } from "@/integrations/supabase/client";
+import { useZone } from "@/lib/zone-context";
 
 export const Route = createFileRoute("/checkout")({
   head: () => ({
@@ -68,7 +69,12 @@ const initialForm: FormState = {
 function CheckoutPage() {
   const navigate = useNavigate();
   const { items, subtotal, clear } = useCart();
-  const { shipping, tax, total } = computeTotals(subtotal);
+  const { selected: zone, openPicker } = useZone();
+  // Zone delivery fee replaces the default flat shipping. Free over the
+  // standard FREE_SHIPPING_THRESHOLD still applies.
+  const zoneFee = zone ? zone.fee_zar : 0;
+  const { shipping, tax, total } = computeTotals(subtotal, 0, zoneFee);
+  const belowMin = !!zone && subtotal < zone.min_order_zar;
   const [step, setStep] = React.useState(0);
   const [form, setForm] = React.useState<FormState>(initialForm);
   const [errors, setErrors] = React.useState<Partial<Record<keyof FormState, string>>>({});
@@ -137,6 +143,15 @@ function CheckoutPage() {
     if (!validateStep(0) || !validateStep(1)) {
       toast.error("Please complete all required fields");
       setStep(0);
+      return;
+    }
+    if (!zone) {
+      toast.error("Please choose a delivery zone");
+      openPicker();
+      return;
+    }
+    if (subtotal < zone.min_order_zar) {
+      toast.error(`Order below ${zone.name} minimum (${formatPrice(zone.min_order_zar)})`);
       return;
     }
     if (!config?.configured || !window.PaystackPop) {
@@ -229,6 +244,7 @@ function CheckoutPage() {
                 tax,
                 total,
                 userId,
+                deliveryZoneId: zone.id,
               },
             });
             if (res.success) {
