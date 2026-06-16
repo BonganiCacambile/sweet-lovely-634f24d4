@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -9,12 +9,16 @@ type Profile = {
   avatar_url: string | null;
 };
 
+type AuthTransition = "idle" | "signing-in" | "signing-out";
+
 type AuthCtx = {
   user: User | null;
   session: Session | null;
   profile: Profile | null;
   isAdmin: boolean;
   loading: boolean;
+  authTransition: AuthTransition;
+  setAuthTransition: (t: AuthTransition) => void;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
 };
@@ -27,6 +31,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [authTransition, setAuthTransition] = useState<AuthTransition>("idle");
 
   const loadExtras = async (uid: string) => {
     const [{ data: p }, { data: r }] = await Promise.all([
@@ -61,12 +66,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (user) await loadExtras(user.id);
   };
 
-  const signOut = async () => {
+  const signOut = useCallback(async () => {
+    setAuthTransition("signing-out");
     await supabase.auth.signOut();
-  };
+    setAuthTransition("idle");
+  }, []);
 
   return (
-    <Ctx.Provider value={{ user, session, profile, isAdmin, loading, signOut, refreshProfile }}>
+    <Ctx.Provider value={{ user, session, profile, isAdmin, loading, authTransition, setAuthTransition, signOut, refreshProfile }}>
       {children}
     </Ctx.Provider>
   );

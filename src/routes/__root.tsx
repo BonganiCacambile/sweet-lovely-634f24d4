@@ -147,10 +147,13 @@ function RootComponent() {
 const PUBLIC_PREFIXES = ["/auth"];
 
 function AuthGate({ children }: { children: ReactNode }) {
-  const { user, loading } = useAuth();
+  const { user, loading, authTransition } = useAuth();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const isPublic = PUBLIC_PREFIXES.some((p) => pathname === p || pathname.startsWith(p + "/") || pathname.startsWith(p));
 
+  if (authTransition === "signing-out" || authTransition === "signing-in") {
+    return <LoadingScreen />;
+  }
   if (isPublic) return <>{children}</>;
   if (loading) {
     return <LoadingScreen />;
