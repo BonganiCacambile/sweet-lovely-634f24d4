@@ -43,6 +43,7 @@ import { Route as AuthenticatedAdminCategoriesRouteImport } from './routes/_auth
 import { Route as AuthenticatedAdminAuditRouteImport } from './routes/_authenticated/admin.audit'
 import { Route as AuthenticatedAdminAnalyticsRouteImport } from './routes/_authenticated/admin.analytics'
 import { Route as AuthenticatedAccountSecurityRouteImport } from './routes/_authenticated/account.security'
+import { Route as AuthenticatedAccountOrdersRouteImport } from './routes/_authenticated/account.orders'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -227,6 +228,12 @@ const AuthenticatedAccountSecurityRoute =
     path: '/security',
     getParentRoute: () => AuthenticatedAccountRoute,
   } as any)
+const AuthenticatedAccountOrdersRoute =
+  AuthenticatedAccountOrdersRouteImport.update({
+    id: '/orders',
+    path: '/orders',
+    getParentRoute: () => AuthenticatedAccountRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -244,6 +251,7 @@ export interface FileRoutesByFullPath {
   '/auth/reset-password': typeof AuthResetPasswordRoute
   '/checkout/success': typeof CheckoutSuccessRoute
   '/menu/full-menu': typeof MenuFullMenuRoute
+  '/account/orders': typeof AuthenticatedAccountOrdersRoute
   '/account/security': typeof AuthenticatedAccountSecurityRoute
   '/admin/analytics': typeof AuthenticatedAdminAnalyticsRoute
   '/admin/audit': typeof AuthenticatedAdminAuditRoute
@@ -278,6 +286,7 @@ export interface FileRoutesByTo {
   '/auth/reset-password': typeof AuthResetPasswordRoute
   '/checkout/success': typeof CheckoutSuccessRoute
   '/menu/full-menu': typeof MenuFullMenuRoute
+  '/account/orders': typeof AuthenticatedAccountOrdersRoute
   '/account/security': typeof AuthenticatedAccountSecurityRoute
   '/admin/analytics': typeof AuthenticatedAdminAnalyticsRoute
   '/admin/audit': typeof AuthenticatedAdminAuditRoute
@@ -315,6 +324,7 @@ export interface FileRoutesById {
   '/auth/reset-password': typeof AuthResetPasswordRoute
   '/checkout/success': typeof CheckoutSuccessRoute
   '/menu/full-menu': typeof MenuFullMenuRoute
+  '/_authenticated/account/orders': typeof AuthenticatedAccountOrdersRoute
   '/_authenticated/account/security': typeof AuthenticatedAccountSecurityRoute
   '/_authenticated/admin/analytics': typeof AuthenticatedAdminAnalyticsRoute
   '/_authenticated/admin/audit': typeof AuthenticatedAdminAuditRoute
@@ -352,6 +362,7 @@ export interface FileRouteTypes {
     | '/auth/reset-password'
     | '/checkout/success'
     | '/menu/full-menu'
+    | '/account/orders'
     | '/account/security'
     | '/admin/analytics'
     | '/admin/audit'
@@ -386,6 +397,7 @@ export interface FileRouteTypes {
     | '/auth/reset-password'
     | '/checkout/success'
     | '/menu/full-menu'
+    | '/account/orders'
     | '/account/security'
     | '/admin/analytics'
     | '/admin/audit'
@@ -422,6 +434,7 @@ export interface FileRouteTypes {
     | '/auth/reset-password'
     | '/checkout/success'
     | '/menu/full-menu'
+    | '/_authenticated/account/orders'
     | '/_authenticated/account/security'
     | '/_authenticated/admin/analytics'
     | '/_authenticated/admin/audit'
@@ -695,14 +708,23 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAccountSecurityRouteImport
       parentRoute: typeof AuthenticatedAccountRoute
     }
+    '/_authenticated/account/orders': {
+      id: '/_authenticated/account/orders'
+      path: '/orders'
+      fullPath: '/account/orders'
+      preLoaderRoute: typeof AuthenticatedAccountOrdersRouteImport
+      parentRoute: typeof AuthenticatedAccountRoute
+    }
   }
 }
 
 interface AuthenticatedAccountRouteChildren {
+  AuthenticatedAccountOrdersRoute: typeof AuthenticatedAccountOrdersRoute
   AuthenticatedAccountSecurityRoute: typeof AuthenticatedAccountSecurityRoute
 }
 
 const AuthenticatedAccountRouteChildren: AuthenticatedAccountRouteChildren = {
+  AuthenticatedAccountOrdersRoute: AuthenticatedAccountOrdersRoute,
   AuthenticatedAccountSecurityRoute: AuthenticatedAccountSecurityRoute,
 }
 
