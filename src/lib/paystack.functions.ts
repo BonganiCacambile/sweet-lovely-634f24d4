@@ -72,6 +72,7 @@ const createOrderSchema = z.object({
   tax: z.number().nonnegative(),
   total: z.number().nonnegative(),
   userId: z.string().uuid().nullable().optional(),
+  deliveryZoneId: z.string().uuid(),
 });
 
 const stockCheckSchema = z.object({
@@ -240,6 +241,26 @@ export const verifyAndCreateOrder = createServerFn({ method: "POST" })
     const { customer } = data;
     const fullAddress = `${customer.address}, ${customer.city}, ${customer.state}, ${customer.country} ${customer.postal}`;
 
+    // Look up the selected delivery zone for snapshot + fee validation.
+    const { data: zone, error: zoneErr } = await supabaseAdmin
+      .from("delivery_zones")
+      .select("id, name, fee_zar, min_order_zar, is_active")
+      .eq("id", data.deliveryZoneId)
+      .maybeSingle();
+    if (zoneErr || !zone) {
+      console.error("Zone lookup error:", zoneErr);
+      return { success: false as const, error: "Selected delivery zone is unavailable" };
+    }
+    if (!zone.is_active) {
+      return { success: false as const, error: "Selected delivery zone is no longer active" };
+    }
+    if (serverSubtotal < Number(zone.min_order_zar)) {
+      return {
+        success: false as const,
+        error: `Order below ${zone.name} minimum (R${Number(zone.min_order_zar).toFixed(2)})`,
+      };
+    }
+
     const { data: order, error: orderErr } = await supabaseAdmin
       .from("orders")
       .insert({
@@ -254,6 +275,8 @@ export const verifyAndCreateOrder = createServerFn({ method: "POST" })
         delivery_zar: shipping,
         total_zar: serverTotal,
         paystack_reference: data.reference,
+        delivery_zone_id: zone.id,
+        delivery_zone_name: zone.name,
       })
       .select("id, order_number")
       .single();

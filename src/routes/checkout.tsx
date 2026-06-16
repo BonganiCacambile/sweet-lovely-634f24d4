@@ -9,6 +9,7 @@ import { SiteFooter } from "@/components/site-footer";
 import { useCart, formatPrice, computeTotals } from "@/lib/cart-context";
 import { checkCartStock, getPaystackConfig, verifyAndCreateOrder } from "@/lib/paystack.functions";
 import { supabase } from "@/integrations/supabase/client";
+import { useZone } from "@/lib/zone-context";
 
 export const Route = createFileRoute("/checkout")({
   head: () => ({
@@ -68,7 +69,12 @@ const initialForm: FormState = {
 function CheckoutPage() {
   const navigate = useNavigate();
   const { items, subtotal, clear } = useCart();
-  const { shipping, tax, total } = computeTotals(subtotal);
+  const { selected: zone, openPicker } = useZone();
+  // Zone delivery fee replaces the default flat shipping. Free over the
+  // standard FREE_SHIPPING_THRESHOLD still applies.
+  const zoneFee = zone ? zone.fee_zar : 0;
+  const { shipping, tax, total } = computeTotals(subtotal, 0, zoneFee);
+  const belowMin = !!zone && subtotal < zone.min_order_zar;
   const [step, setStep] = React.useState(0);
   const [form, setForm] = React.useState<FormState>(initialForm);
   const [errors, setErrors] = React.useState<Partial<Record<keyof FormState, string>>>({});
@@ -137,6 +143,15 @@ function CheckoutPage() {
     if (!validateStep(0) || !validateStep(1)) {
       toast.error("Please complete all required fields");
       setStep(0);
+      return;
+    }
+    if (!zone) {
+      toast.error("Please choose a delivery zone");
+      openPicker();
+      return;
+    }
+    if (subtotal < zone.min_order_zar) {
+      toast.error(`Order below ${zone.name} minimum (${formatPrice(zone.min_order_zar)})`);
       return;
     }
     if (!config?.configured || !window.PaystackPop) {
@@ -229,6 +244,7 @@ function CheckoutPage() {
                 tax,
                 total,
                 userId,
+                deliveryZoneId: zone.id,
               },
             });
             if (res.success) {
@@ -352,6 +368,27 @@ function CheckoutPage() {
           {/* Summary */}
           <aside className="lg:sticky lg:top-24 lg:self-start">
             <div className="rounded-3xl border border-neutral-100 bg-white p-6 shadow-[0_10px_40px_-20px_rgba(0,0,0,0.1)]">
+              <div className="mb-4 flex items-start justify-between gap-3 rounded-2xl bg-neutral-50 p-3">
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-neutral-500">Delivery zone</p>
+                  <p className="mt-0.5 text-sm font-semibold text-neutral-900">
+                    {zone ? zone.name : "Not selected"}
+                  </p>
+                  {zone && (
+                    <p className="text-[11px] text-neutral-500">
+                      {formatPrice(zone.fee_zar)} · ~{zone.eta_minutes} min · min {formatPrice(zone.min_order_zar)}
+                    </p>
+                  )}
+                </div>
+                <button type="button" onClick={openPicker} className="rounded-full border border-neutral-200 bg-white px-3 py-1.5 text-xs font-medium hover:bg-neutral-50">
+                  {zone ? "Change" : "Choose"}
+                </button>
+              </div>
+              {belowMin && zone && (
+                <p className="mb-3 rounded-xl bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                  Add {formatPrice(zone.min_order_zar - subtotal)} more to reach the {zone.name} minimum order.
+                </p>
+              )}
               <h2 className="text-lg font-bold">In your bag</h2>
               <ul className="mt-4 space-y-4">
                 {items.map((it) => (

@@ -2,7 +2,7 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import {
   LayoutDashboard, BarChart3, Users, ShoppingBag, Package, FileText,
   Tags, Boxes, Star, Bell, FileBarChart2, ShieldCheck, Lock, ScrollText,
-  Plug, Settings, UserCircle2, LogOut, X,
+  Plug, Settings, UserCircle2, LogOut, X, MapPin,
 } from "lucide-react";
 import { BrandMark } from "./brand-mark";
 import { useAuth } from "@/lib/auth-context";
@@ -27,6 +27,7 @@ const SECTIONS: Array<{ heading: string; items: Item[] }> = [
     items: [
       { to: "/admin/categories", label: "Categories", icon: Tags },
       { to: "/admin/inventory", label: "Inventory", icon: Boxes },
+      { to: "/admin/delivery-zones", label: "Delivery Zones", icon: MapPin },
       { to: "/admin/reviews", label: "Reviews", icon: Star },
       { to: "/admin/notifications", label: "Notifications", icon: Bell },
       { to: "/admin/reports", label: "Reports", icon: FileBarChart2 },
