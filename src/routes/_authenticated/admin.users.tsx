@@ -17,8 +17,11 @@ import {
   setUserBan,
   deleteUser,
   setUserRole,
+  assignZoneAdmin,
+  revokeZoneAdmin,
   type AdminUserRow,
 } from "@/lib/admin/users.functions";
+import { listAllZones } from "@/lib/admin/zones.functions";
 
 export const Route = createFileRoute("/_authenticated/admin/users")({
   component: () => (
@@ -231,13 +234,36 @@ function UserDrawer({ id, onClose, onSuspend, onDelete }: { id: string; onClose:
   const qc = useQueryClient();
   const getFn = useServerFn(getUserDetail);
   const roleFn = useServerFn(setUserRole);
+  const zonesFn = useServerFn(listAllZones);
+  const assignFn = useServerFn(assignZoneAdmin);
+  const revokeFn = useServerFn(revokeZoneAdmin);
   const { data, isLoading } = useQuery({
     queryKey: ["admin", "users", "detail", id],
     queryFn: () => getFn({ data: { id } }),
   });
+  const { data: zones } = useQuery({
+    queryKey: ["admin", "zones", "for-assign"],
+    queryFn: () => zonesFn(),
+  });
   const role = useMutation({
     mutationFn: (v: { role: "admin" | "user"; enabled: boolean }) => roleFn({ data: { userId: id, ...v } }),
     onSuccess: () => { toast.success("Role updated"); qc.invalidateQueries({ queryKey: ["admin", "users"] }); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const assign = useMutation({
+    mutationFn: (zoneId: string) => assignFn({ data: { userId: id, zoneId } }),
+    onSuccess: () => {
+      toast.success("Zone admin assigned");
+      qc.invalidateQueries({ queryKey: ["admin", "users"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const revoke = useMutation({
+    mutationFn: () => revokeFn({ data: { userId: id } }),
+    onSuccess: () => {
+      toast.success("Zone admin revoked");
+      qc.invalidateQueries({ queryKey: ["admin", "users"] });
+    },
     onError: (e: Error) => toast.error(e.message),
   });
 
@@ -288,6 +314,40 @@ function UserDrawer({ id, onClose, onSuspend, onDelete }: { id: string; onClose:
                   );
                 })}
               </div>
+            </Section>
+
+            <Section title="Zone admin">
+              {data.assignedZoneId ? (
+                <div className="flex items-center justify-between gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs">
+                  <span className="font-medium text-amber-900">
+                    Scoped to {data.assignedZoneName ?? "zone"}
+                  </span>
+                  <button
+                    onClick={() => revoke.mutate()}
+                    disabled={revoke.isPending}
+                    className="rounded-full border border-amber-300 bg-white px-3 py-1 text-xs font-medium text-amber-900 hover:bg-amber-100"
+                  >
+                    Revoke
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <select
+                    defaultValue=""
+                    onChange={(e) => { if (e.target.value) assign.mutate(e.target.value); }}
+                    disabled={assign.isPending}
+                    className="h-8 flex-1 rounded-full border border-neutral-200 bg-white px-3 text-xs"
+                  >
+                    <option value="" disabled>Assign to a zone…</option>
+                    {(zones ?? []).map((z) => (
+                      <option key={z.id} value={z.id}>{z.name}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+              <p className="mt-1.5 text-[11px] text-neutral-500">
+                Zone admins can only manage orders, inventory, and the zone entry for their assigned area.
+              </p>
             </Section>
 
             <Section title="Recent orders">
