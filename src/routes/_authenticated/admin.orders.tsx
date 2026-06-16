@@ -9,6 +9,8 @@ import { StatusBadge } from "@/components/admin/status-badge";
 import { Card, EmptyState, ErrorPanel, LoadingRows, Pagination } from "@/components/admin/data-shell";
 import { ExportMenu } from "@/components/admin/export-menu";
 import { listOrders, getOrder, updateOrderStatus, orderStats } from "@/lib/admin/orders.functions";
+import { listAllZones } from "@/lib/admin/zones.functions";
+import { useAuth } from "@/lib/auth-context";
 import { useDebounced } from "@/hooks/use-debounced";
 import { useRealtimeTable } from "@/hooks/use-realtime-table";
 import { formatRelative, formatZar, formatDateTime } from "@/lib/admin/format";
@@ -22,6 +24,7 @@ const STATUSES = ["pending","preparing","processing","out_for_delivery","complet
 function OrdersPage() {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
+  const [zoneId, setZoneId] = useState("");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
   const [sortBy, setSortBy] = useState<"created_at" | "total_zar" | "order_number">("created_at");
@@ -32,10 +35,13 @@ function OrdersPage() {
 
   const listFn = useServerFn(listOrders);
   const statsFn = useServerFn(orderStats);
-  const queryKey = ["admin","orders","list",{ search: debounced, status, fromDate, toDate, sortBy, sortDir, page }] as const;
+  const zonesFn = useServerFn(listAllZones);
+  const { isMainAdmin } = useAuth();
+  const { data: zones } = useQuery({ queryKey: ["admin","zones","all"], queryFn: () => zonesFn(), enabled: isMainAdmin });
+  const queryKey = ["admin","orders","list",{ search: debounced, status, zoneId, fromDate, toDate, sortBy, sortDir, page }] as const;
   const { data, isLoading, error, refetch } = useQuery({
     queryKey,
-    queryFn: () => listFn({ data: { search: debounced, status, fromDate, toDate, sortBy, sortDir, page, pageSize: 25 } }),
+    queryFn: () => listFn({ data: { search: debounced, status, zoneId, fromDate, toDate, sortBy, sortDir, page, pageSize: 25 } }),
   });
   const { data: stats } = useQuery({ queryKey: ["admin","orders","stats"], queryFn: () => statsFn() });
 
@@ -84,6 +90,12 @@ function OrdersPage() {
             <option value="">All statuses</option>
             {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
           </select>
+          {isMainAdmin && (
+            <select value={zoneId} onChange={(e) => { setPage(1); setZoneId(e.target.value); }} className="h-9 rounded-full border border-neutral-200 bg-white px-3 text-sm">
+              <option value="">All zones</option>
+              {(zones ?? []).map((z) => <option key={z.id} value={z.id}>{z.name}</option>)}
+            </select>
+          )}
           <input type="date" value={fromDate.slice(0,10)} onChange={(e) => { setPage(1); setFromDate(e.target.value ? new Date(e.target.value).toISOString() : ""); }} className="h-9 rounded-full border border-neutral-200 bg-white px-3 text-sm" />
           <input type="date" value={toDate.slice(0,10)} onChange={(e) => { setPage(1); setToDate(e.target.value ? new Date(e.target.value + "T23:59:59").toISOString() : ""); }} className="h-9 rounded-full border border-neutral-200 bg-white px-3 text-sm" />
           <select value={`${sortBy}:${sortDir}`} onChange={(e) => { const [a,b] = e.target.value.split(":"); setSortBy(a as never); setSortDir(b as never); }} className="h-9 rounded-full border border-neutral-200 bg-white px-3 text-sm">
