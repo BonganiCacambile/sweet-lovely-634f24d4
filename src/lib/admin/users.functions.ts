@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { requireAdmin, logAudit } from "./server-helpers.server";
+import { requireAdmin, requireMainAdmin, logAudit } from "./server-helpers.server";
 
 const listInput = z.object({
   search: z.string().optional().default(""),
@@ -139,7 +139,7 @@ export const setUserRole = createServerFn({ method: "POST" })
     z.object({ userId: z.string().uuid(), role: z.enum(["admin", "user"]), enabled: z.boolean() }).parse(d),
   )
   .handler(async ({ data, context }) => {
-    await requireAdmin(context.supabase, context.userId);
+    await requireMainAdmin(context.supabase, context.userId);
     if (data.userId === context.userId && data.role === "admin" && !data.enabled) {
       throw new Error("You cannot remove your own admin role");
     }
@@ -157,6 +157,45 @@ export const setUserRole = createServerFn({ method: "POST" })
       if (error) throw new Error(error.message);
     }
     await logAudit(context, data.enabled ? "user.role_grant" : "user.role_revoke", "user", data.userId, { role: data.role });
+    return { ok: true };
+  });
+
+export const assignZoneAdmin = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ userId: z.string().uuid(), zoneId: z.string().uuid() }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    await requireMainAdmin(context.supabase, context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    // Clear any existing zone_admin row (one zone per user), then insert.
+    const { error: delErr } = await supabaseAdmin
+      .from("user_roles")
+      .delete()
+      .eq("user_id", data.userId)
+      .not("assigned_zone_id", "is", null);
+    if (delErr) throw new Error(delErr.message);
+    const { error } = await supabaseAdmin
+      .from("user_roles")
+      .insert({ user_id: data.userId, role: "zone_admin" as never, assigned_zone_id: data.zoneId });
+    if (error) throw new Error(error.message);
+    await logAudit(context, "user.zone_admin_assign", "user", data.userId, { zone_id: data.zoneId });
+    return { ok: true };
+  });
+
+export const revokeZoneAdmin = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ userId: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    await requireMainAdmin(context.supabase, context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin
+      .from("user_roles")
+      .delete()
+      .eq("user_id", data.userId)
+      .not("assigned_zone_id", "is", null);
+    if (error) throw new Error(error.message);
+    await logAudit(context, "user.zone_admin_revoke", "user", data.userId);
     return { ok: true };
   });
 
