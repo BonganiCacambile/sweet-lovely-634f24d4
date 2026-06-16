@@ -76,12 +76,34 @@ export const updateOrderStatus = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     await requireAdmin(context.supabase, context.userId);
+    const { data: prev } = await context.supabase
+      .from("orders")
+      .select("user_id, order_number, status")
+      .eq("id", data.id)
+      .maybeSingle();
     const { error } = await context.supabase
       .from("orders")
       .update({ status: data.status })
       .eq("id", data.id);
     if (error) throw new Error(error.message);
     await logAudit(context, "order.status_change", "order", data.id, { status: data.status });
+
+    // Notify the customer when their order is ready for pickup.
+    if (
+      prev?.user_id &&
+      prev.status !== data.status &&
+      (data.status === "completed" || data.status === "delivered")
+    ) {
+      const isPickup = data.status === "completed";
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      await supabaseAdmin.from("notifications").insert({
+        user_id: prev.user_id,
+        title: isPickup ? "Your order is ready for pickup" : "Your order has been delivered",
+        body: `Order ${prev.order_number} ${isPickup ? "is ready for pickup. See you soon!" : "has been delivered. Enjoy!"}`,
+        category: "order",
+        read: false,
+      });
+    }
     return { ok: true };
   });
 
