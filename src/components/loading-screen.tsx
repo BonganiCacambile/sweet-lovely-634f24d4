@@ -12,9 +12,9 @@ export function LoadingScreen({
       role="status"
       aria-label={message}
     >
-      {/* Full-bleed background image */}
+      {/* Full-bleed background image — displayed exactly as uploaded */}
       <img
-        src={loadingBg.url}
+        src={splashAsset.url}
         alt=""
         aria-hidden
         className="pointer-events-none absolute inset-0 -z-10 h-full w-full object-cover"
