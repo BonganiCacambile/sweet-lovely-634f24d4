@@ -1,6 +1,6 @@
 import { createFileRoute, Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Loader2, ShieldCheck, Eye, EyeOff, LifeBuoy, KeyRound, LogOut, ArrowRight } from "lucide-react";
+import { Loader2, ShieldCheck, Eye, EyeOff, LifeBuoy, KeyRound, LogOut, ArrowRight, ArrowLeft, Crown, Users } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { AdminAuthLayout } from "@/components/admin/admin-auth-layout";
@@ -23,6 +23,7 @@ function AdminAuth() {
   const navigate = useNavigate();
   const { setAuthTransition, signOut } = useAuth();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const [kind, setKind] = useState<"main" | "zone" | null>(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [show, setShow] = useState(false);
@@ -31,7 +32,7 @@ function AdminAuth() {
   const [existing, setExisting] = useState<
     | { state: "loading" }
     | { state: "none" }
-    | { state: "signed-in"; email: string; isAdmin: boolean }
+    | { state: "signed-in"; email: string; isMainAdmin: boolean; isZoneAdmin: boolean }
   >({ state: "loading" });
 
   const checkExistingSession = async () => {
@@ -43,10 +44,12 @@ function AdminAuth() {
     }
     const { data: roles } = await supabase
       .from("user_roles")
-      .select("role")
+      .select("role, assigned_zone_id")
       .eq("user_id", u.id);
-    const isAdmin = Boolean(roles?.some((r: { role: string }) => r.role === "admin"));
-    setExisting({ state: "signed-in", email: u.email ?? "", isAdmin });
+    const rows = roles ?? [];
+    const isMainAdmin = rows.some((r: { role: string }) => r.role === "admin");
+    const isZoneAdmin = !isMainAdmin && rows.some((r: { assigned_zone_id: string | null }) => r.assigned_zone_id);
+    setExisting({ state: "signed-in", email: u.email ?? "", isMainAdmin, isZoneAdmin });
   };
 
   useEffect(() => {
@@ -68,6 +71,7 @@ function AdminAuth() {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!kind) return;
     setLoading(true);
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error || !data.user) {
@@ -81,13 +85,25 @@ function AdminAuth() {
     }
     const { data: roles } = await supabase
       .from("user_roles")
-      .select("role")
+      .select("role, assigned_zone_id")
       .eq("user_id", data.user.id);
     setLoading(false);
-    const isAdmin = roles?.some((r: { role: string }) => r.role === "admin");
-    if (!isAdmin) {
+    const rows = roles ?? [];
+    const isMainAdmin = rows.some((r: { role: string }) => r.role === "admin");
+    const isZoneAdmin = !isMainAdmin && rows.some((r: { assigned_zone_id: string | null }) => r.assigned_zone_id);
+    if (!isMainAdmin && !isZoneAdmin) {
       await supabase.auth.signOut();
       toast.error("Access denied", { description: "This account isn't an administrator." });
+      return;
+    }
+    if (kind === "main" && !isMainAdmin) {
+      await supabase.auth.signOut();
+      toast.error("Wrong sign-in type", { description: "This account is an Admin Employee, not a Main Admin." });
+      return;
+    }
+    if (kind === "zone" && !isZoneAdmin) {
+      await supabase.auth.signOut();
+      toast.error("Wrong sign-in type", { description: "This account is a Main Admin. Choose Main Admin to continue." });
       return;
     }
     toast.success("Credentials verified", { description: "Complete two-factor verification." });
@@ -96,7 +112,7 @@ function AdminAuth() {
 
   const useThisAccount = async () => {
     if (existing.state !== "signed-in") return;
-    if (!existing.isAdmin) {
+    if (!existing.isMainAdmin && !existing.isZoneAdmin) {
       toast.error("This account isn't an administrator.");
       return;
     }
@@ -113,17 +129,49 @@ function AdminAuth() {
 
   if (pathname !== "/auth/admin") return <Outlet />;
 
+  // Step 1: ask which kind of admin is signing in (unless already signed in).
+  if (existing.state !== "signed-in" && !kind) {
+    return (
+      <AdminAuthLayout
+        eyebrow="Restricted area"
+        title="How are you signing in?"
+        subtitle="Choose the type of admin account you'll use. You can switch back any time."
+      >
+        <KindChooser onPick={setKind} />
+        <div className="mt-6 flex items-center justify-between text-xs text-neutral-500">
+          <Link to="/auth" className="inline-flex items-center gap-1 hover:text-neutral-700">
+            <ArrowLeft className="h-3.5 w-3.5" /> Back
+          </Link>
+          <Link to="/" className="hover:text-neutral-700">Home</Link>
+        </div>
+      </AdminAuthLayout>
+    );
+  }
+
   return (
     <AdminAuthLayout
       eyebrow="Restricted area"
-      title="Welcome back, Administrator"
-      subtitle="Elevated access to the Sweet & Lovely control center. Every sign-in is verified, encrypted and logged."
+      title={kind === "zone" ? "Admin Employee sign-in" : "Main Admin sign-in"}
+      subtitle={
+        kind === "zone"
+          ? "Restricted access for delivery-zone admins. You'll only see data for your assigned zone."
+          : "Elevated access to the Sweet & Lovely control center. Every sign-in is verified, encrypted and logged."
+      }
     >
       <motion.div
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         className="space-y-4"
       >
+        {existing.state !== "signed-in" && kind && (
+          <button
+            type="button"
+            onClick={() => setKind(null)}
+            className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-3 py-1 text-xs font-medium text-neutral-600 hover:bg-neutral-50"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" /> Change admin type
+          </button>
+        )}
         {existing.state === "signed-in" ? (
           <div className="space-y-3 rounded-2xl border border-emerald-200/70 bg-emerald-50/60 p-4 text-sm text-emerald-900">
             <div className="flex items-start gap-3">
@@ -131,7 +179,13 @@ function AdminAuth() {
               <div className="min-w-0">
                 <p className="font-semibold">You&rsquo;re signed in as</p>
                 <p className="truncate text-xs text-emerald-800/80">{existing.email}</p>
-                {!existing.isAdmin && (
+                {existing.isMainAdmin && (
+                  <p className="mt-1 text-xs text-emerald-800/80">Main Admin · full access</p>
+                )}
+                {existing.isZoneAdmin && (
+                  <p className="mt-1 text-xs text-emerald-800/80">Admin Employee · zone-scoped access</p>
+                )}
+                {!existing.isMainAdmin && !existing.isZoneAdmin && (
                   <p className="mt-1 text-xs text-rose-700">
                     This account isn&rsquo;t an administrator.
                   </p>
@@ -139,7 +193,7 @@ function AdminAuth() {
               </div>
             </div>
             <div className="flex flex-wrap gap-2">
-              {existing.isAdmin && (
+              {(existing.isMainAdmin || existing.isZoneAdmin) && (
                 <button
                   type="button"
                   onClick={useThisAccount}
@@ -256,5 +310,55 @@ function AdminAuth() {
         </div>
       </motion.div>
     </AdminAuthLayout>
+  );
+}
+
+function KindChooser({ onPick }: { onPick: (k: "main" | "zone") => void }) {
+  const options = [
+    {
+      id: "main" as const,
+      title: "Main Admin",
+      desc: "Full access across all delivery zones, products, users and settings.",
+      icon: Crown,
+      accent: "from-[#ff003c] to-[#ff5a36]",
+    },
+    {
+      id: "zone" as const,
+      title: "Admin Employee",
+      desc: "Zone-restricted access to orders and operations for your assigned area.",
+      icon: Users,
+      accent: "from-neutral-800 to-neutral-600",
+    },
+  ];
+  return (
+    <div className="grid gap-3 sm:grid-cols-2">
+      {options.map((o, i) => {
+        const Icon = o.icon;
+        return (
+          <motion.button
+            key={o.id}
+            type="button"
+            onClick={() => onPick(o.id)}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.2, delay: i * 0.05 }}
+            whileHover={{ y: -2 }}
+            whileTap={{ scale: 0.98 }}
+            className="group relative overflow-hidden rounded-2xl border border-neutral-200 bg-white p-4 text-left shadow-sm transition-all hover:border-neutral-300 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900"
+          >
+            <div className={`mb-3 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br ${o.accent} text-white shadow-sm`}>
+              <Icon className="h-5 w-5" />
+            </div>
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <div className="text-sm font-semibold text-neutral-900">{o.title}</div>
+                <p className="mt-0.5 text-xs leading-relaxed text-neutral-500">{o.desc}</p>
+              </div>
+              <ArrowRight className="mt-0.5 h-4 w-4 shrink-0 text-neutral-400 transition-transform group-hover:translate-x-0.5 group-hover:text-neutral-700" />
+            </div>
+          </motion.button>
+        );
+      })}
+    </div>
   );
 }
