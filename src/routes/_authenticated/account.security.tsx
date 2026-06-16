@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Loader2, ShieldCheck, KeyRound, Smartphone, Trash2, Lock, Activity, CheckCircle2, XCircle } from "lucide-react";
+import { Loader2, ShieldCheck, KeyRound, Smartphone, Trash2, Lock, Activity, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { AccountShell, Card } from "@/components/auth/account-shell";
