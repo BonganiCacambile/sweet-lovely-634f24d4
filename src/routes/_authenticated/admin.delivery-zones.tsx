@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { PageHeader } from "@/components/admin/page-header";
 import { Card, EmptyState, ErrorPanel, LoadingRows } from "@/components/admin/data-shell";
 import { useRealtimeTable } from "@/hooks/use-realtime-table";
+import { useAuth } from "@/lib/auth-context";
 import { formatZar } from "@/lib/admin/format";
 import {
   listAllZones,
@@ -56,6 +57,7 @@ interface ZoneDraft {
 
 function DeliveryZonesPage() {
   const qc = useQueryClient();
+  const { isMainAdmin, assignedZoneName } = useAuth();
   const listFn = useServerFn(listAllZones);
   const saveFn = useServerFn(upsertZone);
   const toggleFn = useServerFn(toggleZoneActive);
@@ -130,15 +132,19 @@ function DeliveryZonesPage() {
     <div className="space-y-6">
       <PageHeader
         eyebrow="Operations"
-        title="Delivery zones"
-        description="Manage your delivery areas, fees, minimums and service status."
+        title={isMainAdmin ? "Delivery zones" : `Delivery zone · ${assignedZoneName ?? "Assigned"}`}
+        description={isMainAdmin
+          ? "Manage your delivery areas, fees, minimums and service status."
+          : "You can manage fees, minimums and service status for your assigned zone only."}
         actions={
-          <button
-            onClick={() => setDraft({ ...empty })}
-            className="inline-flex items-center gap-2 rounded-full bg-[#ff003c] px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-[#e6003a]"
-          >
-            <Plus className="h-4 w-4" /> New zone
-          </button>
+          isMainAdmin ? (
+            <button
+              onClick={() => setDraft({ ...empty })}
+              className="inline-flex items-center gap-2 rounded-full bg-[#ff003c] px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-[#e6003a]"
+            >
+              <Plus className="h-4 w-4" /> New zone
+            </button>
+          ) : null
         }
       />
 
