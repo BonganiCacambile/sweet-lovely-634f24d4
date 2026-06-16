@@ -16,15 +16,19 @@ import { useRealtimeTable } from "@/hooks/use-realtime-table";
 import { formatRelative, formatZar, formatDateTime } from "@/lib/admin/format";
 
 export const Route = createFileRoute("/_authenticated/admin/orders")({
+  validateSearch: (s: Record<string, unknown>) => ({
+    zoneId: typeof s.zoneId === "string" ? s.zoneId : "",
+  }),
   component: OrdersPage,
 });
 
 const STATUSES = ["pending","preparing","processing","out_for_delivery","completed","delivered","cancelled","refunded"] as const;
 
 function OrdersPage() {
+  const search = Route.useSearch();
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
-  const [zoneId, setZoneId] = useState("");
+  const [zoneId, setZoneId] = useState(search.zoneId ?? "");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
   const [sortBy, setSortBy] = useState<"created_at" | "total_zar" | "order_number">("created_at");
