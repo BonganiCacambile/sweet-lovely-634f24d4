@@ -368,6 +368,27 @@ function CheckoutPage() {
           {/* Summary */}
           <aside className="lg:sticky lg:top-24 lg:self-start">
             <div className="rounded-3xl border border-neutral-100 bg-white p-6 shadow-[0_10px_40px_-20px_rgba(0,0,0,0.1)]">
+              <div className="mb-4 flex items-start justify-between gap-3 rounded-2xl bg-neutral-50 p-3">
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-neutral-500">Delivery zone</p>
+                  <p className="mt-0.5 text-sm font-semibold text-neutral-900">
+                    {zone ? zone.name : "Not selected"}
+                  </p>
+                  {zone && (
+                    <p className="text-[11px] text-neutral-500">
+                      {formatPrice(zone.fee_zar)} · ~{zone.eta_minutes} min · min {formatPrice(zone.min_order_zar)}
+                    </p>
+                  )}
+                </div>
+                <button type="button" onClick={openPicker} className="rounded-full border border-neutral-200 bg-white px-3 py-1.5 text-xs font-medium hover:bg-neutral-50">
+                  {zone ? "Change" : "Choose"}
+                </button>
+              </div>
+              {belowMin && zone && (
+                <p className="mb-3 rounded-xl bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                  Add {formatPrice(zone.min_order_zar - subtotal)} more to reach the {zone.name} minimum order.
+                </p>
+              )}
               <h2 className="text-lg font-bold">In your bag</h2>
               <ul className="mt-4 space-y-4">
                 {items.map((it) => (
