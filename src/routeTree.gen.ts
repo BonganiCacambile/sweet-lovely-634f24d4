@@ -24,6 +24,7 @@ import { Route as AuthResetPasswordRouteImport } from './routes/auth.reset-passw
 import { Route as AuthForgotPasswordRouteImport } from './routes/auth.forgot-password'
 import { Route as AuthAdminRouteImport } from './routes/auth.admin'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
+import { Route as AuthenticatedAccountRouteImport } from './routes/_authenticated/account'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
 import { Route as AuthenticatedAdminUsersRouteImport } from './routes/_authenticated/admin.users'
 import { Route as AuthenticatedAdminSettingsRouteImport } from './routes/_authenticated/admin.settings'
@@ -115,6 +116,11 @@ const AuthAdminRoute = AuthAdminRouteImport.update({
 const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   id: '/admin',
   path: '/admin',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedAccountRoute = AuthenticatedAccountRouteImport.update({
+  id: '/account',
+  path: '/account',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
@@ -217,9 +223,9 @@ const AuthenticatedAdminAnalyticsRoute =
   } as any)
 const AuthenticatedAccountSecurityRoute =
   AuthenticatedAccountSecurityRouteImport.update({
-    id: '/account/security',
-    path: '/account/security',
-    getParentRoute: () => AuthenticatedRouteRoute,
+    id: '/security',
+    path: '/security',
+    getParentRoute: () => AuthenticatedAccountRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
@@ -231,6 +237,7 @@ export interface FileRoutesByFullPath {
   '/loading': typeof LoadingRoute
   '/locations': typeof LocationsRoute
   '/login': typeof LoginRoute
+  '/account': typeof AuthenticatedAccountRouteWithChildren
   '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/auth/admin': typeof AuthAdminRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
@@ -265,6 +272,7 @@ export interface FileRoutesByTo {
   '/loading': typeof LoadingRoute
   '/locations': typeof LocationsRoute
   '/login': typeof LoginRoute
+  '/account': typeof AuthenticatedAccountRouteWithChildren
   '/auth/admin': typeof AuthAdminRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
@@ -300,6 +308,7 @@ export interface FileRoutesById {
   '/loading': typeof LoadingRoute
   '/locations': typeof LocationsRoute
   '/login': typeof LoginRoute
+  '/_authenticated/account': typeof AuthenticatedAccountRouteWithChildren
   '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
   '/auth/admin': typeof AuthAdminRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
@@ -336,6 +345,7 @@ export interface FileRouteTypes {
     | '/loading'
     | '/locations'
     | '/login'
+    | '/account'
     | '/admin'
     | '/auth/admin'
     | '/auth/forgot-password'
@@ -370,6 +380,7 @@ export interface FileRouteTypes {
     | '/loading'
     | '/locations'
     | '/login'
+    | '/account'
     | '/auth/admin'
     | '/auth/forgot-password'
     | '/auth/reset-password'
@@ -404,6 +415,7 @@ export interface FileRouteTypes {
     | '/loading'
     | '/locations'
     | '/login'
+    | '/_authenticated/account'
     | '/_authenticated/admin'
     | '/auth/admin'
     | '/auth/forgot-password'
@@ -550,6 +562,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/account': {
+      id: '/_authenticated/account'
+      path: '/account'
+      fullPath: '/account'
+      preLoaderRoute: typeof AuthenticatedAccountRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/admin/': {
       id: '/_authenticated/admin/'
       path: '/'
@@ -671,13 +690,24 @@ declare module '@tanstack/react-router' {
     }
     '/_authenticated/account/security': {
       id: '/_authenticated/account/security'
-      path: '/account/security'
+      path: '/security'
       fullPath: '/account/security'
       preLoaderRoute: typeof AuthenticatedAccountSecurityRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+      parentRoute: typeof AuthenticatedAccountRoute
     }
   }
 }
+
+interface AuthenticatedAccountRouteChildren {
+  AuthenticatedAccountSecurityRoute: typeof AuthenticatedAccountSecurityRoute
+}
+
+const AuthenticatedAccountRouteChildren: AuthenticatedAccountRouteChildren = {
+  AuthenticatedAccountSecurityRoute: AuthenticatedAccountSecurityRoute,
+}
+
+const AuthenticatedAccountRouteWithChildren =
+  AuthenticatedAccountRoute._addFileChildren(AuthenticatedAccountRouteChildren)
 
 interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminAnalyticsRoute: typeof AuthenticatedAdminAnalyticsRoute
@@ -723,13 +753,13 @@ const AuthenticatedAdminRouteWithChildren =
   AuthenticatedAdminRoute._addFileChildren(AuthenticatedAdminRouteChildren)
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAccountRoute: typeof AuthenticatedAccountRouteWithChildren
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRouteWithChildren
-  AuthenticatedAccountSecurityRoute: typeof AuthenticatedAccountSecurityRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedAccountRoute: AuthenticatedAccountRouteWithChildren,
   AuthenticatedAdminRoute: AuthenticatedAdminRouteWithChildren,
-  AuthenticatedAccountSecurityRoute: AuthenticatedAccountSecurityRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
