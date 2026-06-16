@@ -12,5 +12,5 @@ export const Route = createFileRoute("/loading")({
 });
 
 function LoadingRoute() {
-  return <LoadingScreen message="Preparing something delicious" />;
+  return <LoadingScreen />;
 }

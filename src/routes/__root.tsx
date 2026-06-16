@@ -153,7 +153,7 @@ function AuthGate({ children }: { children: ReactNode }) {
 
   if (isPublic) return <>{children}</>;
   if (loading) {
-    return <LoadingScreen message="Signing you in" />;
+    return <LoadingScreen />;
   }
   if (!user) {
     return <Navigate to="/auth" search={{ redirect: pathname } as never} replace />;
