@@ -1,8 +1,8 @@
 import * as React from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { MapPin, Plus, Pencil, Power, X } from "lucide-react";
+import { MapPin, Plus, Pencil, Power, X, BarChart3, ShoppingBag } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/admin/page-header";
 import { Card, EmptyState, ErrorPanel, LoadingRows } from "@/components/admin/data-shell";
@@ -196,6 +196,26 @@ function DeliveryZonesPage() {
                     </td>
                     <td className="px-3 py-3 text-right">
                       <div className="inline-flex items-center gap-1">
+                        {isMainAdmin && (
+                          <>
+                            <Link
+                              to="/admin/analytics"
+                              search={{ zoneId: z.id }}
+                              className="inline-flex items-center gap-1 rounded-full bg-neutral-100 px-2.5 py-1 text-xs font-medium text-neutral-700 hover:bg-neutral-200"
+                              title="View sales for this zone"
+                            >
+                              <BarChart3 className="h-3.5 w-3.5" /> Sales
+                            </Link>
+                            <Link
+                              to="/admin/orders"
+                              search={{ zoneId: z.id }}
+                              className="inline-flex items-center gap-1 rounded-full bg-neutral-100 px-2.5 py-1 text-xs font-medium text-neutral-700 hover:bg-neutral-200"
+                              title="View orders for this zone"
+                            >
+                              <ShoppingBag className="h-3.5 w-3.5" /> Orders
+                            </Link>
+                          </>
+                        )}
                         <button onClick={() => openEdit(z)} className="rounded-full p-2 text-neutral-500 hover:bg-neutral-100" aria-label="Edit">
                           <Pencil className="h-4 w-4" />
                         </button>
