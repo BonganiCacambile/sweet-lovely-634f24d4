@@ -19,6 +19,7 @@ export const Route = createFileRoute("/auth/reset-password")({
 
 function ResetPassword() {
   const navigate = useNavigate();
+  const { setAuthTransition } = useAuth();
   const [pwd, setPwd] = useState("");
   const [confirm, setConfirm] = useState("");
   const [loading, setLoading] = useState(false);
@@ -40,6 +41,7 @@ function ResetPassword() {
     setLoading(false);
     if (error) return toast.error("Couldn't update password", { description: error.message });
     toast.success("Password updated");
+    setAuthTransition("signing-in");
     navigate({ to: "/" });
   };
 
