@@ -312,3 +312,53 @@ function AdminAuth() {
     </AdminAuthLayout>
   );
 }
+
+function KindChooser({ onPick }: { onPick: (k: "main" | "zone") => void }) {
+  const options = [
+    {
+      id: "main" as const,
+      title: "Main Admin",
+      desc: "Full access across all delivery zones, products, users and settings.",
+      icon: Crown,
+      accent: "from-[#ff003c] to-[#ff5a36]",
+    },
+    {
+      id: "zone" as const,
+      title: "Admin Employee",
+      desc: "Zone-restricted access to orders and operations for your assigned area.",
+      icon: Users,
+      accent: "from-neutral-800 to-neutral-600",
+    },
+  ];
+  return (
+    <div className="grid gap-3 sm:grid-cols-2">
+      {options.map((o, i) => {
+        const Icon = o.icon;
+        return (
+          <motion.button
+            key={o.id}
+            type="button"
+            onClick={() => onPick(o.id)}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.2, delay: i * 0.05 }}
+            whileHover={{ y: -2 }}
+            whileTap={{ scale: 0.98 }}
+            className="group relative overflow-hidden rounded-2xl border border-neutral-200 bg-white p-4 text-left shadow-sm transition-all hover:border-neutral-300 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900"
+          >
+            <div className={`mb-3 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br ${o.accent} text-white shadow-sm`}>
+              <Icon className="h-5 w-5" />
+            </div>
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <div className="text-sm font-semibold text-neutral-900">{o.title}</div>
+                <p className="mt-0.5 text-xs leading-relaxed text-neutral-500">{o.desc}</p>
+              </div>
+              <ArrowRight className="mt-0.5 h-4 w-4 shrink-0 text-neutral-400 transition-transform group-hover:translate-x-0.5 group-hover:text-neutral-700" />
+            </div>
+          </motion.button>
+        );
+      })}
+    </div>
+  );
+}
