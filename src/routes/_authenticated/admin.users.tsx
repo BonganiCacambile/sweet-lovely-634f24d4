@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
+import { MainAdminGuard } from "@/components/admin/main-admin-guard";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Search, ShieldCheck, UserX, UserCheck, Trash2, X, ChevronRight } from "lucide-react";
@@ -20,7 +21,11 @@ import {
 } from "@/lib/admin/users.functions";
 
 export const Route = createFileRoute("/_authenticated/admin/users")({
-  component: UsersPage,
+  component: () => (
+    <MainAdminGuard>
+      <UsersPage />
+    </MainAdminGuard>
+  ),
 });
 
 function UsersPage() {

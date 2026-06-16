@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { createFileRoute } from "@tanstack/react-router";
+import { MainAdminGuard } from "@/components/admin/main-admin-guard";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Tags, Plus, X, Pencil, Trash2, ArrowUp, ArrowDown } from "lucide-react";
@@ -10,7 +11,11 @@ import { ExportMenu } from "@/components/admin/export-menu";
 import { listCategories, createCategory, updateCategory, deleteCategory, reorderCategories } from "@/lib/admin/categories.functions";
 
 export const Route = createFileRoute("/_authenticated/admin/categories")({
-  component: CategoriesPage,
+  component: () => (
+    <MainAdminGuard>
+      <CategoriesPage />
+    </MainAdminGuard>
+  ),
 });
 
 type CatRow = Awaited<ReturnType<typeof listCategories>>[number];

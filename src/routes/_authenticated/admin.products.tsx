@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { createFileRoute } from "@tanstack/react-router";
+import { MainAdminGuard } from "@/components/admin/main-admin-guard";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Package, Search, Plus, X, Pencil, Trash2 } from "lucide-react";
@@ -15,7 +16,11 @@ import { listProducts, createProduct, updateProduct, deleteProduct, productSales
 import { listCategories } from "@/lib/admin/categories.functions";
 
 export const Route = createFileRoute("/_authenticated/admin/products")({
-  component: ProductsPage,
+  component: () => (
+    <MainAdminGuard>
+      <ProductsPage />
+    </MainAdminGuard>
+  ),
 });
 
 type ProductRow = Awaited<ReturnType<typeof listProducts>>["rows"][number];

@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { MainAdminGuard } from "@/components/admin/main-admin-guard";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { CheckCircle2, Plug, XCircle } from "lucide-react";
@@ -9,7 +10,11 @@ import { formatRelative } from "@/lib/admin/format";
 import { listIntegrations, updateIntegration } from "@/lib/admin/integrations.functions";
 
 export const Route = createFileRoute("/_authenticated/admin/integrations")({
-  component: IntegrationsPage,
+  component: () => (
+    <MainAdminGuard>
+      <IntegrationsPage />
+    </MainAdminGuard>
+  ),
 });
 
 function IntegrationsPage() {

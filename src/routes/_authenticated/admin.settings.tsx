@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
+import { MainAdminGuard } from "@/components/admin/main-admin-guard";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Save, Settings as SettingsIcon } from "lucide-react";
@@ -9,7 +10,11 @@ import { Card, EmptyState, ErrorPanel, LoadingRows } from "@/components/admin/da
 import { listSettings, updateSetting } from "@/lib/admin/settings.functions";
 
 export const Route = createFileRoute("/_authenticated/admin/settings")({
-  component: SettingsPage,
+  component: () => (
+    <MainAdminGuard>
+      <SettingsPage />
+    </MainAdminGuard>
+  ),
 });
 
 type Row = { group_key: string; key: string; value: unknown; description: string | null; updated_at: string };

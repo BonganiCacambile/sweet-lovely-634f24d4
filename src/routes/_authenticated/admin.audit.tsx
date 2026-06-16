@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
+import { MainAdminGuard } from "@/components/admin/main-admin-guard";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Search } from "lucide-react";
@@ -11,7 +12,11 @@ import { formatDateTime, formatRelative } from "@/lib/admin/format";
 import { listAudit, auditFacets } from "@/lib/admin/audit.functions";
 
 export const Route = createFileRoute("/_authenticated/admin/audit")({
-  component: AuditPage,
+  component: () => (
+    <MainAdminGuard>
+      <AuditPage />
+    </MainAdminGuard>
+  ),
 });
 
 function AuditPage() {

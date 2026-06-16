@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
+import { MainAdminGuard } from "@/components/admin/main-admin-guard";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { PageHeader } from "@/components/admin/page-header";
@@ -8,7 +9,11 @@ import { ExportMenu } from "@/components/admin/export-menu";
 import { REPORT_TYPES, runReport } from "@/lib/admin/reports.functions";
 
 export const Route = createFileRoute("/_authenticated/admin/reports")({
-  component: ReportsPage,
+  component: () => (
+    <MainAdminGuard>
+      <ReportsPage />
+    </MainAdminGuard>
+  ),
 });
 
 type ReportId = typeof REPORT_TYPES[number]["id"];
