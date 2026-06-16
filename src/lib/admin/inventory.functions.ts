@@ -48,7 +48,7 @@ export const adjustStock = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
-    await requireAdminScope(context.supabase, context.userId);
+    await requireAdmin(context.supabase, context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: product, error: pErr } = await supabaseAdmin
       .from("products")
@@ -88,7 +88,7 @@ export const setLowStockThreshold = createServerFn({ method: "POST" })
     z.object({ slug: z.string(), threshold: z.number().int().min(0) }).parse(d),
   )
   .handler(async ({ data, context }) => {
-    await requireAdminScope(context.supabase, context.userId);
+    await requireAdmin(context.supabase, context.userId);
     const { error } = await context.supabase
       .from("products")
       .update({ low_stock_threshold: data.threshold })
