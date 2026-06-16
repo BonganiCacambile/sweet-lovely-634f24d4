@@ -91,14 +91,23 @@ export const getUserDetail = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     const [{ data: profile }, { data: roles }, { data: orders }, { data: activity }] = await Promise.all([
       supabaseAdmin.from("profiles").select("*").eq("id", data.id).maybeSingle(),
-      supabaseAdmin.from("user_roles").select("role").eq("user_id", data.id),
+      supabaseAdmin.from("user_roles").select("role, assigned_zone_id").eq("user_id", data.id),
       supabaseAdmin.from("orders").select("id, order_number, status, total_zar, created_at").eq("user_id", data.id).order("created_at", { ascending: false }).limit(20),
       supabaseAdmin.from("audit_logs").select("id, action, entity, entity_id, created_at, metadata").eq("actor_id", data.id).order("created_at", { ascending: false }).limit(20),
     ]);
+    const zoneRow = (roles ?? []).find((r) => r.assigned_zone_id);
+    const assignedZoneId = (zoneRow?.assigned_zone_id as string | null) ?? null;
+    let assignedZoneName: string | null = null;
+    if (assignedZoneId) {
+      const { data: z } = await supabaseAdmin.from("delivery_zones").select("name").eq("id", assignedZoneId).maybeSingle();
+      assignedZoneName = (z?.name as string | null) ?? null;
+    }
     return {
       user: user.user,
       profile: profile ?? null,
       roles: (roles ?? []).map((r) => r.role as string),
+      assignedZoneId,
+      assignedZoneName,
       orders: orders ?? [],
       activity: activity ?? [],
     };
