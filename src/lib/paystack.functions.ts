@@ -74,6 +74,39 @@ const createOrderSchema = z.object({
   userId: z.string().uuid().nullable().optional(),
 });
 
+const stockCheckSchema = z.object({
+  items: z.array(cartItemSchema).min(1).max(100),
+});
+
+/**
+ * Pre-payment stock availability check. Aggregates pizza variants by base
+ * slug so two size lines of the same pizza count against one stock pool.
+ * Returns shortages (if any) so the client can block before opening Paystack.
+ */
+export const checkCartStock = createServerFn({ method: "POST" })
+  .inputValidator((input) => stockCheckSchema.parse(input))
+  .handler(async ({ data }) => {
+    const totals = new Map<string, number>();
+    for (const it of data.items) {
+      const { slug } = splitPizzaId(it.id);
+      totals.set(slug, (totals.get(slug) ?? 0) + it.quantity);
+    }
+    const payload = Array.from(totals.entries()).map(([slug, quantity]) => ({
+      slug,
+      quantity,
+    }));
+    const { data: result, error } = await supabaseAdmin.rpc(
+      "check_stock_availability",
+      { _items: payload as unknown as never },
+    );
+    if (error) {
+      console.error("checkCartStock error:", error);
+      return { ok: false as const, error: "Could not verify stock availability" };
+    }
+    const r = result as { ok: boolean; shortages: Array<{ slug: string; requested: number; available: number }> };
+    return { ok: r.ok, shortages: r.shortages ?? [] };
+  });
+
 // Server-authoritative pizza size prices (must match PIZZA_SIZES in
 // src/components/cart/add-to-cart-button.tsx). Cart ids for pizzas are
 // `${slug}-medium` / `${slug}-large`.
@@ -256,6 +289,36 @@ export const verifyAndCreateOrder = createServerFn({ method: "POST" })
         reference: data.reference,
         warning: "Items not saved — please contact support",
       };
+    }
+
+    // 4) Atomic stock deduction with per-line audit log. Aggregate variants
+    // (e.g. medium/large pizzas) so a single product only deducts once per slug.
+    const stockTotals = new Map<string, number>();
+    for (const it of priced) {
+      if (!it.slug) continue;
+      stockTotals.set(it.slug, (stockTotals.get(it.slug) ?? 0) + it.quantity);
+    }
+    if (stockTotals.size > 0) {
+      const stockPayload = Array.from(stockTotals.entries()).map(
+        ([slug, quantity]) => ({ slug, quantity }),
+      );
+      const { error: stockErr } = await supabaseAdmin.rpc(
+        "process_order_stock_deduction",
+        {
+          _order_id: order.id,
+          _items: stockPayload as unknown as never,
+        },
+      );
+      if (stockErr) {
+        console.error("Stock deduction failed:", stockErr, { orderId: order.id });
+        return {
+          success: true as const,
+          orderNumber: order.order_number,
+          reference: data.reference,
+          warning:
+            "Order saved but inventory could not be updated — please contact support",
+        };
+      }
     }
 
     return {
