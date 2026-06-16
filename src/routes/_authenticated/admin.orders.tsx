@@ -184,6 +184,12 @@ function OrderDrawer({ id, onClose }: { id: string; onClose: () => void }) {
                 {data.customer_phone && <p className="text-neutral-600">{data.customer_phone}</p>}
                 {data.address && <p className="mt-1 text-neutral-600">{data.address}</p>}
               </section>
+              {data.delivery_zone_name && (
+                <section>
+                  <p className="text-[11px] uppercase tracking-wider text-neutral-500">Delivery zone</p>
+                  <p className="font-medium">{data.delivery_zone_name}</p>
+                </section>
+              )}
               <section>
                 <p className="text-[11px] uppercase tracking-wider text-neutral-500">Status</p>
                 <div className="mt-1 flex flex-wrap gap-2">
