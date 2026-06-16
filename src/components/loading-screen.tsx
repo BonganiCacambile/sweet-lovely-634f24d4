@@ -1,154 +1,146 @@
 import { motion } from "framer-motion";
-import { LogoImage } from "./logo";
+import loadingBg from "@/assets/loading-bg.png.asset.json";
 
 export function LoadingScreen({
-  message = "Preparing something delicious",
+  message = "Fresh Ingredients. Perfectly Baked. Made with Love.",
 }: {
   message?: string;
 }) {
   return (
-    <div className="relative flex min-h-dvh w-full items-center justify-center overflow-hidden bg-white">
-      {/* Soft brand gradient backdrop */}
+    <div
+      className="relative flex min-h-dvh w-full items-center justify-center overflow-hidden bg-black"
+      role="status"
+      aria-label={message}
+    >
+      {/* Full-bleed background image */}
+      <img
+        src={loadingBg.url}
+        alt=""
+        aria-hidden
+        className="pointer-events-none absolute inset-0 -z-10 h-full w-full object-cover"
+      />
+      {/* Subtle vignette for legibility */}
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 -z-10"
         style={{
           background:
-            "radial-gradient(800px 500px at 50% -20%, rgba(255,0,60,0.08), transparent 60%), radial-gradient(600px 400px at 50% 120%, rgba(255,153,0,0.06), transparent 60%)",
+            "radial-gradient(60% 50% at 50% 35%, transparent 0%, rgba(0,0,0,0.35) 100%)",
         }}
       />
 
-      <div className="flex flex-col items-center text-center px-4">
-        {/* Logo with breathing animation */}
+      {/* Glow + pulse ring radiating from logo (top portion) */}
+      <motion.div
+        aria-hidden
+        className="pointer-events-none absolute left-1/2 top-[26%] -translate-x-1/2 -translate-y-1/2"
+        animate={{ scale: [1, 1.15, 1], opacity: [0.45, 0.15, 0.45] }}
+        transition={{ duration: 3, ease: "easeInOut", repeat: Infinity }}
+        style={{
+          width: 520,
+          height: 520,
+          borderRadius: "9999px",
+          background:
+            "radial-gradient(circle, rgba(255,60,80,0.35) 0%, rgba(255,60,80,0.0) 60%)",
+          filter: "blur(8px)",
+        }}
+      />
+      {[0, 1, 2].map((i) => (
         <motion.div
-          animate={{ scale: [1, 1.06, 1] }}
+          key={i}
+          aria-hidden
+          className="pointer-events-none absolute left-1/2 top-[26%] -translate-x-1/2 -translate-y-1/2 rounded-full border border-[#ff3c50]/40"
+          style={{ width: 360, height: 360 }}
+          animate={{ scale: [0.9, 1.35], opacity: [0.6, 0] }}
           transition={{
-            duration: 2.4,
-            ease: "easeInOut",
+            duration: 3,
+            ease: "easeOut",
             repeat: Infinity,
+            delay: i * 1,
           }}
-        >
-          <LogoImage height={80} className="drop-shadow-[0_8px_24px_rgba(255,0,60,0.15)]" />
-        </motion.div>
+        />
+      ))}
+      {/* Sparkles around the logo */}
+      <Sparkles />
 
-        {/* Brand name */}
-        <motion.h1
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2, duration: 0.5 }}
-          className="mt-6 text-2xl font-semibold tracking-tight text-neutral-900"
-        >
-          Sweet &amp; Lovely
-        </motion.h1>
-
-        {/* Loading message with animated dots */}
-        <motion.p
-          initial={{ opacity: 0, y: 6 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.35, duration: 0.5 }}
-          className="mt-2 text-sm text-neutral-500"
-        >
-          <AnimatedDots text={message} />
-        </motion.p>
-
-        {/* Progress bar */}
+      {/* Bottom HUD: progress bar + tagline */}
+      <div className="absolute inset-x-0 bottom-[6%] flex flex-col items-center px-6">
         <motion.div
-          initial={{ opacity: 0, scaleX: 0 }}
-          animate={{ opacity: 1, scaleX: 1 }}
-          transition={{ delay: 0.5, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-          className="mt-8 h-1 w-48 overflow-hidden rounded-full bg-neutral-100 origin-left"
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+          className="relative h-3 w-[min(420px,80vw)] overflow-hidden rounded-full border border-[#f3d9a4]/70 bg-black/60 shadow-[0_0_24px_rgba(255,60,80,0.35)]"
         >
+          {/* Animated fill */}
           <motion.div
-            className="h-full rounded-full bg-[#ff003c]"
+            className="absolute inset-y-0 left-0 rounded-full"
+            style={{
+              backgroundImage:
+                "repeating-linear-gradient(45deg, #ff3c50 0 10px, #e02338 10px 20px)",
+              boxShadow: "0 0 18px rgba(255,60,80,0.7)",
+            }}
             initial={{ width: "0%" }}
-            animate={{ width: ["0%", "40%", "70%", "100%"] }}
+            animate={{ width: ["0%", "65%", "92%", "100%", "0%"] }}
             transition={{
-              duration: 3.5,
+              duration: 3.6,
               ease: "easeInOut",
               repeat: Infinity,
-              times: [0, 0.4, 0.7, 1],
+              times: [0, 0.45, 0.75, 0.95, 1],
             }}
+          />
+          {/* Shimmer sweep */}
+          <motion.div
+            aria-hidden
+            className="absolute inset-y-0 w-1/3"
+            style={{
+              background:
+                "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.55) 50%, transparent 100%)",
+              mixBlendMode: "overlay",
+            }}
+            animate={{ x: ["-50%", "350%"] }}
+            transition={{ duration: 1.8, ease: "easeInOut", repeat: Infinity }}
           />
         </motion.div>
 
-        {/* Floating ingredient decorations */}
-        <FloatingIngredients />
+        <motion.p
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.25, duration: 0.5 }}
+          className="mt-4 text-center text-sm italic tracking-wide text-[#ff8896] drop-shadow"
+        >
+          {message}
+        </motion.p>
       </div>
     </div>
   );
 }
 
-function AnimatedDots({ text }: { text: string }) {
-  return (
-    <span className="inline-flex items-center gap-0.5">
-      {text}
-      <motion.span
-        animate={{ opacity: [0, 1, 0] }}
-        transition={{ duration: 1.2, repeat: Infinity, delay: 0 }}
-        className="inline-block w-1"
-      >
-        .
-      </motion.span>
-      <motion.span
-        animate={{ opacity: [0, 1, 0] }}
-        transition={{ duration: 1.2, repeat: Infinity, delay: 0.2 }}
-        className="inline-block w-1"
-      >
-        .
-      </motion.span>
-      <motion.span
-        animate={{ opacity: [0, 1, 0] }}
-        transition={{ duration: 1.2, repeat: Infinity, delay: 0.4 }}
-        className="inline-block w-1"
-      >
-        .
-      </motion.span>
-    </span>
-  );
-}
-
-function FloatingIngredients() {
-  const items = [
-    {
-      src: "https://framerusercontent.com/images/kP2NqpJxzs3mxd89TNdxyZvyms.png?scale-down-to=512",
-      alt: "basil",
-      className: "left-[6%] top-[20%] h-16 w-16 md:h-20 md:w-20",
-      delay: 0,
-    },
-    {
-      src: "https://framerusercontent.com/images/4PC0Gy5LJt9gx1LT596KEeOxVk0.png?scale-down-to=512",
-      alt: "mushroom",
-      className: "right-[8%] top-[15%] h-14 w-14 md:h-16 md:w-16",
-      delay: 0.6,
-    },
-    {
-      src: "https://framerusercontent.com/images/Oh7T6jN4XYvDVriZHd3zwKwGrUs.png?scale-down-to=512",
-      alt: "jalapeño",
-      className: "left-[8%] bottom-[18%] h-16 w-16 md:h-20 md:w-20 rotate-[-12deg]",
-      delay: 1.2,
-    },
-    {
-      src: "https://framerusercontent.com/images/bvrc0x9pG8w1OtGBtKBKRFnW4cM.png?scale-down-to=512",
-      alt: "cherry tomato",
-      className: "right-[6%] bottom-[22%] h-14 w-14 md:h-18 md:w-18",
-      delay: 0.8,
-    },
-  ];
-
+function Sparkles() {
+  const sparks = Array.from({ length: 14 }).map((_, i) => ({
+    left: `${(i * 137) % 100}%`,
+    top: `${10 + ((i * 53) % 45)}%`,
+    size: 3 + (i % 4),
+    delay: (i % 7) * 0.3,
+    duration: 2.4 + (i % 5) * 0.4,
+  }));
   return (
     <div className="pointer-events-none absolute inset-0" aria-hidden>
-      {items.map((it, i) => (
-        <motion.img
+      {sparks.map((s, i) => (
+        <motion.span
           key={i}
-          src={it.src}
-          alt=""
-          className={`absolute select-none object-contain opacity-40 ${it.className}`}
-          animate={{ y: [0, -12, 0] }}
+          className="absolute rounded-full bg-[#ffd27a]"
+          style={{
+            left: s.left,
+            top: s.top,
+            width: s.size,
+            height: s.size,
+            boxShadow: "0 0 8px rgba(255,210,122,0.9)",
+          }}
+          animate={{ opacity: [0, 1, 0], scale: [0.6, 1.2, 0.6] }}
           transition={{
-            duration: 4 + i * 0.5,
-            ease: "easeInOut",
+            duration: s.duration,
             repeat: Infinity,
-            delay: it.delay,
+            delay: s.delay,
+            ease: "easeInOut",
           }}
         />
       ))}
