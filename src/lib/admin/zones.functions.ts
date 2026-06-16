@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { requireAdmin, logAudit } from "./server-helpers.server";
+import { requireAdmin, requireAdminScope, requireMainAdmin, logAudit } from "./server-helpers.server";
 
 const upsertSchema = z.object({
   id: z.string().uuid().nullable().optional(),
@@ -23,11 +23,13 @@ const upsertSchema = z.object({
 export const listAllZones = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    await requireAdmin(context.supabase, context.userId);
-    const { data, error } = await context.supabase
+    const scope = await requireAdminScope(context.supabase, context.userId);
+    let q = context.supabase
       .from("delivery_zones")
       .select("*")
       .order("sort_order", { ascending: true });
+    if (!scope.isMain && scope.zoneId) q = q.eq("id", scope.zoneId);
+    const { data, error } = await q;
     if (error) throw new Error(error.message);
     return data ?? [];
   });
@@ -36,7 +38,12 @@ export const upsertZone = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => upsertSchema.parse(d))
   .handler(async ({ data, context }) => {
-    await requireAdmin(context.supabase, context.userId);
+    const scope = await requireAdminScope(context.supabase, context.userId);
+    if (!scope.isMain) {
+      // Zone admins may only update their own zone, and never create new ones
+      if (!data.id) throw new Error("Forbidden: only main admin can create zones");
+      if (data.id !== scope.zoneId) throw new Error("Forbidden: zone admins may only edit their own zone");
+    }
     const row = {
       slug: data.slug,
       name: data.name,
@@ -77,7 +84,10 @@ export const toggleZoneActive = createServerFn({ method: "POST" })
     z.object({ id: z.string().uuid(), is_active: z.boolean() }).parse(d),
   )
   .handler(async ({ data, context }) => {
-    await requireAdmin(context.supabase, context.userId);
+    const scope = await requireAdminScope(context.supabase, context.userId);
+    if (!scope.isMain && data.id !== scope.zoneId) {
+      throw new Error("Forbidden: zone admins may only toggle their own zone");
+    }
     const { error } = await context.supabase
       .from("delivery_zones")
       .update({ is_active: data.is_active })
@@ -93,7 +103,7 @@ export const deleteZone = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
-    await requireAdmin(context.supabase, context.userId);
+    await requireMainAdmin(context.supabase, context.userId);
     // Soft-delete via deactivate to preserve historical orders & analytics.
     const { error } = await context.supabase
       .from("delivery_zones")
