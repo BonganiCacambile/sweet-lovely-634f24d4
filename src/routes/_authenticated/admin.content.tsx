@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
+import { MainAdminGuard } from "@/components/admin/main-admin-guard";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { FileText, Pencil, Plus, Trash2 } from "lucide-react";
@@ -12,7 +13,11 @@ import { formatDateTime, formatRelative } from "@/lib/admin/format";
 import { deleteContent, getContent, listContent, upsertContent } from "@/lib/admin/content.functions";
 
 export const Route = createFileRoute("/_authenticated/admin/content")({
-  component: ContentPage,
+  component: () => (
+    <MainAdminGuard>
+      <ContentPage />
+    </MainAdminGuard>
+  ),
 });
 
 type Status = "all" | "draft" | "published" | "archived";

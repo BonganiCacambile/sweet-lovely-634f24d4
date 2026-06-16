@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { requireAdmin, logAudit } from "./server-helpers.server";
+import { requireAdmin, requireAdminScope, logAudit } from "./server-helpers.server";
 
 const ORDER_STATUSES = [
   "pending",
@@ -31,8 +31,10 @@ export const listOrders = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => listInput.parse(d))
   .handler(async ({ data, context }) => {
-    await requireAdmin(context.supabase, context.userId);
-    const { search, status, zoneId, fromDate, toDate, sortBy, sortDir, page, pageSize } = data;
+    const scope = await requireAdminScope(context.supabase, context.userId);
+    const { search, status, fromDate, toDate, sortBy, sortDir, page, pageSize } = data;
+    // Zone admins are locked to their own zone; ignore any client-supplied zoneId.
+    const zoneId = scope.isMain ? data.zoneId : scope.zoneId ?? "";
     let q = context.supabase
       .from("orders")
       .select(
@@ -58,7 +60,7 @@ export const getOrder = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
-    await requireAdmin(context.supabase, context.userId);
+    await requireAdminScope(context.supabase, context.userId);
     const { data: order, error } = await context.supabase
       .from("orders")
       .select(
@@ -77,7 +79,7 @@ export const updateOrderStatus = createServerFn({ method: "POST" })
     z.object({ id: z.string().uuid(), status: z.enum(ORDER_STATUSES) }).parse(d),
   )
   .handler(async ({ data, context }) => {
-    await requireAdmin(context.supabase, context.userId);
+    await requireAdminScope(context.supabase, context.userId);
     const { data: prev } = await context.supabase
       .from("orders")
       .select("user_id, order_number, status")
@@ -112,7 +114,7 @@ export const updateOrderStatus = createServerFn({ method: "POST" })
 export const orderStats = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    await requireAdmin(context.supabase, context.userId);
+    await requireAdminScope(context.supabase, context.userId);
     const { data, error } = await context.supabase
       .from("orders")
       .select("status, total_zar, created_at");

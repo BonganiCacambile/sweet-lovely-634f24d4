@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
+import { MainAdminGuard } from "@/components/admin/main-admin-guard";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Bell, CheckCheck, Send, Trash2 } from "lucide-react";
@@ -15,7 +16,11 @@ import {
 } from "@/lib/admin/notifications.functions";
 
 export const Route = createFileRoute("/_authenticated/admin/notifications")({
-  component: NotificationsPage,
+  component: () => (
+    <MainAdminGuard>
+      <NotificationsPage />
+    </MainAdminGuard>
+  ),
 });
 
 function NotificationsPage() {

@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { createFileRoute } from "@tanstack/react-router";
+import { MainAdminGuard } from "@/components/admin/main-admin-guard";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Star, Search, Check, Ban, Trash2 } from "lucide-react";
@@ -13,7 +14,11 @@ import { formatRelative } from "@/lib/admin/format";
 import { listReviews, moderateReview, deleteReview, reviewStats } from "@/lib/admin/reviews.functions";
 
 export const Route = createFileRoute("/_authenticated/admin/reviews")({
-  component: ReviewsPage,
+  component: () => (
+    <MainAdminGuard>
+      <ReviewsPage />
+    </MainAdminGuard>
+  ),
 });
 
 function ReviewsPage() {

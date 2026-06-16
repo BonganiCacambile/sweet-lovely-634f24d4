@@ -1,52 +1,74 @@
-# Admin Dashboard — Full Build Plan
+## Goal
 
-You picked all four phases (in order) + new tables OK + CSV/Excel/PDF exports + realtime on Orders, Notifications, Inventory. I'll deliver in **4 phases**, each phase shipped and verified before the next starts. This avoids one giant unreviewable change that ends up half-broken.
+Add a **Zone Admin** role alongside the existing **Main Admin** (super) so a user can be scoped to exactly one delivery zone. Main Admin keeps full cross-zone access; Zone Admin sees only their assigned zone's orders, analytics/dashboard, inventory view, and their own zone entry in Delivery Zones. Unauthorized navigation redirects to their zone dashboard with an "Access Restricted" toast. RLS enforces isolation server-side — UI guards alone are not enough.
 
-## Shared foundation (built once at the start of Phase 1)
+## Database (one migration)
 
-- **Audit logging helper** — server-side `logAudit(action, entity, entity_id, meta)` writing to existing `audit_logs`, called from every admin mutation.
-- **Permissions** — new `app_permission` enum + `role_permissions` table + `has_permission(uid, perm)` security-definer function. `requireAdmin` / `requirePermission` server-fn middleware. UI gates buttons via a `usePermission` hook.
-- **Realtime channel hook** — `useRealtimeTable(table, queryKey)` that subscribes once and invalidates the matching React Query keys. Used only for Orders, Notifications, Inventory per your choice. All other tables use `refetchOnWindowFocus`.
-- **Reusable admin primitives** — `DataTable` (sorting, server-side pagination, search debounce, empty/loading/error states, mobile card fallback), `DateRangePicker`, `StatusBadge`, `ExportMenu` (CSV / XLSX via SheetJS / PDF via jsPDF + autotable).
-- **Server-fn pattern** — every admin read/write is a `createServerFn` with `requireSupabaseAuth` + role/permission check; admin-bypass writes use `supabaseAdmin` imported inside `.handler()`.
+1. `ALTER TYPE app_role ADD VALUE 'zone_admin'`.
+2. `ALTER TABLE user_roles ADD COLUMN assigned_zone_id uuid REFERENCES delivery_zones(id) ON DELETE SET NULL`.
+   - Partial unique index: one zone_admin row per user.
+   - Trigger: if `role = 'zone_admin'`, `assigned_zone_id` must be NOT NULL; for other roles it must be NULL.
+3. Security-definer helpers (search_path = public):
+   - `is_main_admin(uid uuid) returns boolean` — `has_role(uid, 'admin')`.
+   - `get_user_zone(uid uuid) returns uuid` — assigned_zone_id of zone_admin row, else NULL.
+   - `can_access_zone(uid uuid, zid uuid) returns boolean` — true if main admin, or zone_admin and `zid = assigned`.
+   - `GRANT EXECUTE ... TO authenticated`.
+4. RLS policy updates (drop & recreate; keep existing admin policies as `is_main_admin` checks):
+   - `delivery_zones`: zone_admin can `SELECT` and `UPDATE` (fee_zar/min_order_zar/hours_text/active only — enforced via column grants + a `WITH CHECK` keeping name/slug unchanged) where `id = get_user_zone(auth.uid())`. Only main admin can `INSERT`/`DELETE`.
+   - `orders`: zone_admin can `SELECT`/`UPDATE` where `delivery_zone_id = get_user_zone(auth.uid())`.
+   - `order_items`: zone_admin can `SELECT` where parent order's zone matches.
+   - `inventory_movements`: zone_admin can `SELECT` rows whose `order_id` belongs to their zone (NULL order_id rows hidden).
+   - `products`/`categories`: zone_admin can `SELECT` (stock is global per current schema; read-only for them).
+   - `user_roles`: only main admin can mutate; zone_admin can read only their own row.
+   - `audit_logs`, `system_settings`, `integrations`, `discounts`, `promotions`, `banners`, `content_pages`, `featured_items`, `loyalty_*`, `reviews`, `reservations`, `store_hours`, `notifications`: main-admin-only writes; zone_admin no access (existing admin-only policies remain).
 
-## Phase 1 — Core commerce (this PR)
+## Server functions
 
-Tables: `products`, `categories`, `orders`, `order_items`, `reviews` already exist. Adds: `inventory_movements`, optional `product_images` (using existing `image_url` for now + array column if missing).
+- `src/lib/admin/server-helpers.server.ts`: add `requireMainAdmin(supabase, userId)` and `getCallerZone(supabase, userId)` → `{ isMain: boolean, zoneId: string | null }`.
+- Update zone-scopable server fns to enforce the scope (defense-in-depth on top of RLS):
+  - `admin/orders.functions.ts` (list/get/update): inject zone filter if caller is zone_admin.
+  - `admin/zones.functions.ts`: list returns only caller's zone for zone_admin; create/delete throw Forbidden; update allowed only for own zone.
+  - `admin/analytics.functions.ts` + `admin-dashboard.functions.ts`: zone-filter all KPI queries when caller is zone_admin.
+  - `admin/inventory.functions.ts`: read-only for zone_admin (block `adjust_product_stock` calls).
+  - `admin/users.functions.ts` + `admin/roles.functions.ts`: main-admin-only; add `assignZoneAdmin(userId, zoneId)` and `revokeZoneAdmin(userId)`.
 
-Modules:
-1. **Orders** — list w/ search, status filter, date range, sort, pagination; detail drawer; status transitions (Pending → Processing → Completed / Cancelled / Refunded) with audit; refund action; realtime new-order toast.
-2. **Products** — CRUD, category assignment, price, stock, availability toggle, image URL upload (Supabase Storage bucket `product-images` created via migration), search/filter, mini sparkline of sales.
-3. **Categories** — CRUD, parent_id self-ref, drag-to-reorder via `sort_order`, visibility toggle, product counts.
-4. **Inventory** — derived from `products.stock` + new `inventory_movements` ledger (type: restock/sale/adjustment, qty, reason, user, created_at). Low-stock threshold per product, low-stock realtime alerts, adjustment modal writes a movement + updates stock atomically via RPC.
-5. **Reviews** — list, filter by status (pending/approved/rejected), moderate (approve/reject), per-product rating summary widget.
+## Client / routing
 
-## Phase 2 — People & access
+- `src/lib/auth-context.tsx`: extend with `role: 'admin' | 'zone_admin' | 'user' | null`, `assignedZoneId: string | null`, `isMainAdmin`, `canAccessZone(id)`. Fetch on session change via a new `getCallerRole` server fn.
+- New `src/components/admin/zone-admin-guard.tsx`: wraps admin routes; if caller is zone_admin and the route is global-only, `navigate('/admin')` + toast "Access Restricted — showing your zone".
+- `src/routes/_authenticated/admin.tsx` (admin shell):
+  - On mount, if zone_admin, force the global zone filter to their zone and lock the zone switcher (disabled select showing their zone name).
+  - Hide nav items zone_admin shouldn't see: Users, Roles/Permissions, Audit, Integrations, Settings, Content, Promotions, Discounts, Reviews, Reservations, Loyalty. Keep: Dashboard, Orders, Delivery Zones (their zone only), Inventory (read), Analytics (their zone).
+- Per-route guards using the new component:
+  - `admin.users.tsx`, `admin.audit.tsx`, `admin.integrations.tsx`, `admin.settings.tsx`, `admin.content.tsx`, `admin.security.tsx`, `admin.notifications.tsx`, `admin.reviews.tsx`, `admin.reports.tsx`, `admin.categories.tsx`, `admin.products.tsx`: **main-admin only** → redirect.
+  - `admin.delivery-zones.tsx`: render only the caller's zone card with edit (fee/min/hours/active); hide "Add Zone" and delete actions for zone_admin.
+  - `admin.orders.tsx`: hide zone filter for zone_admin (show static badge); list already RLS-filtered.
+  - `admin.analytics.tsx` / `admin.index.tsx`: show a "Viewing: <Zone>" badge for zone_admin.
+- `admin.users.tsx` (main admin only): add a "Role" column with a row action **"Make Zone Admin"** that opens a dialog to pick one zone, and **"Revoke Zone Admin"**. Reflects in `user_roles`.
 
-- **Users** — list from `auth.users` via admin API in server fn (joined to `profiles`), search, filter by role, suspend (ban_duration), activate, delete; profile drawer with order history, last_sign_in_at, created_at, role chips, activity from `audit_logs`.
-- **Roles & Permissions** — UI to manage `user_roles` + new `role_permissions` matrix; assign roles to users; audit every change.
-- **Audit Logs** — searchable/filterable table over existing `audit_logs`, export CSV/XLSX/PDF.
+## Auth gate behavior
 
-## Phase 3 — Insights
+- Existing managed `_authenticated/route.tsx` handles sign-in.
+- New behavior in admin shell: if `role` is neither `admin` nor `zone_admin`, redirect to `/` with toast "Admin access required".
+- Zone Admins landing on `/admin` default to their zone dashboard (filter pre-applied) — never the global aggregate.
 
-- **Analytics** — KPI cards (revenue, orders, AOV, new users, conversion if we have visits — otherwise order/user counts), revenue-over-time line, orders-by-status donut, top products bar, new-users line, date range filter, export. Recharts. Aggregated via SQL views or server fns with `GROUP BY date_trunc`.
-- **Reports** — pre-built report templates (Revenue, Sales, Products, Customers, Inventory, Orders) + simple custom builder (pick entity + date range + group-by). Export CSV/XLSX/PDF.
-- **Notifications Center** — uses existing `notifications` table; list/filter; new `notification_templates` table; "send notification" composer (in-app for now; email/SMS providers stubbed until Phase 4 integrations); realtime new-alert pings.
+## Files
 
-## Phase 4 — Platform
+**New**
+- `supabase/migrations/<ts>_zone_admin_role.sql`
+- `src/components/admin/zone-admin-guard.tsx`
+- `src/lib/admin/role-context.ts` (server fn `getCallerRole`)
 
-- **Content (CMS)** — new `content_pages` table (slug, title, body markdown, status draft/published/scheduled, publish_at, seo_title, seo_description, og_image); rich text via `@tiptap/react`; media upload to `content-media` storage bucket.
-- **Integrations** — new `integrations` table (provider, status, config jsonb, last_tested_at); Paystack already wired — surface status + test ping; placeholders + key entry UI for email (Resend) and SMS (Twilio) that write to Secrets via guidance (we don't store secret values in DB).
-- **Security Center** — MFA enroll/manage via supabase.auth.mfa.*, active sessions list (from supabase admin), login history + failed logins from `auth_logs` analytics view, password policy toggle (HIBP), trusted devices table.
-- **System Settings** — new `system_settings` (key/value jsonb, singleton row per group) for branding (logo, colors), email-from, locale, business info, payment defaults, backup schedule. Logo upload to storage; theme tokens applied at runtime.
+**Edited**
+- `src/lib/auth-context.tsx`
+- `src/components/admin/admin-sidebar.tsx`
+- `src/lib/admin/server-helpers.server.ts`
+- `src/lib/admin/{orders,zones,analytics,inventory,users,roles}.functions.ts`
+- `src/lib/admin-dashboard.functions.ts`
+- `src/routes/_authenticated/admin.tsx` + the per-module admin route files listed above
 
-## What I need from you now
+## Security notes
 
-Approve this plan and I'll start with the **shared foundation + Phase 1 (Core commerce)** in the next turn. Phases 2–4 follow as separate PRs so each one stays reviewable.
-
-## Out of scope / honest caveats
-
-- "Email/SMS provider integrations" means we wire the config + test endpoint; actually sending requires you to provide Resend/Twilio API keys (Phase 4).
-- "Backup settings" will configure a daily pg_dump-style export schedule trigger, but full DB dumps are not available on Lovable Cloud — only per-table CSV exports.
-- "Push notifications" will be in-app realtime + email; web-push (service worker + VAPID) is a meaningful addition I'll flag if you want it.
-- Conversion tracking needs a `page_views` / `sessions` table — I'll add a lightweight pageview logger in Phase 3 if you want true conversion %, otherwise "conversion" = orders / unique users in range.
+- All zone scoping enforced in **RLS first**, server fns second, UI third. A compromised client cannot read another zone's data.
+- Zone Admins cannot grant roles, cannot create/delete zones, cannot mutate products/inventory, cannot view audit/users/settings.
+- Main Admin promotion still requires existing main admin to perform; no self-elevation path.

@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { requireAdmin, logAudit } from "./server-helpers.server";
+import { requireAdmin, requireAdminScope, logAudit } from "./server-helpers.server";
 
 export const listInventory = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -18,7 +18,7 @@ export const listInventory = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
-    await requireAdmin(context.supabase, context.userId);
+    await requireAdminScope(context.supabase, context.userId);
     let q = context.supabase
       .from("products")
       .select("slug, title, category_slug, stock, low_stock_threshold, is_active, updated_at", { count: "exact" });
@@ -110,7 +110,7 @@ export const listMovements = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
-    await requireAdmin(context.supabase, context.userId);
+    await requireAdminScope(context.supabase, context.userId);
     let q = context.supabase
       .from("inventory_movements")
       .select("id, product_slug, type, quantity, balance_after, reason, actor_email, created_at", { count: "exact" })

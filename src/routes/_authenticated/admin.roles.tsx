@@ -1,5 +1,6 @@
 import { Fragment, useMemo } from "react";
 import { createFileRoute } from "@tanstack/react-router";
+import { MainAdminGuard } from "@/components/admin/main-admin-guard";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { ShieldCheck, Check, Minus } from "lucide-react";
@@ -11,7 +12,11 @@ import { formatRelative } from "@/lib/admin/format";
 import { getRoleMatrix, setRolePermission, listRoleAssignments } from "@/lib/admin/roles.functions";
 
 export const Route = createFileRoute("/_authenticated/admin/roles")({
-  component: RolesPage,
+  component: () => (
+    <MainAdminGuard>
+      <RolesPage />
+    </MainAdminGuard>
+  ),
 });
 
 function RolesPage() {

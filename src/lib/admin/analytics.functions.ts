@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { requireAdmin } from "./server-helpers.server";
+import { requireAdminScope } from "./server-helpers.server";
 
 const rangeInput = z.object({
   fromDate: z.string().optional().default(""),
@@ -21,7 +21,7 @@ export const analyticsOverview = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => rangeInput.parse(d))
   .handler(async ({ data, context }) => {
-    await requireAdmin(context.supabase, context.userId);
+    await requireAdminScope(context.supabase, context.userId);
     const { fromIso, toIso, from, to } = defaultRange(data.fromDate, data.toDate);
     const spanMs = to.getTime() - from.getTime();
     const prevTo = new Date(from.getTime() - 1).toISOString();

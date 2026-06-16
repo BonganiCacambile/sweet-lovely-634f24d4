@@ -16,6 +16,10 @@ type AuthCtx = {
   session: Session | null;
   profile: Profile | null;
   isAdmin: boolean;
+  isMainAdmin: boolean;
+  isZoneAdmin: boolean;
+  assignedZoneId: string | null;
+  assignedZoneName: string | null;
   loading: boolean;
   authTransition: AuthTransition;
   setAuthTransition: (t: AuthTransition) => void;
@@ -30,16 +34,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isMainAdmin, setIsMainAdmin] = useState(false);
+  const [isZoneAdmin, setIsZoneAdmin] = useState(false);
+  const [assignedZoneId, setAssignedZoneId] = useState<string | null>(null);
+  const [assignedZoneName, setAssignedZoneName] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [authTransition, setAuthTransition] = useState<AuthTransition>("idle");
 
   const loadExtras = async (uid: string) => {
     const [{ data: p }, { data: r }] = await Promise.all([
       supabase.from("profiles").select("id, full_name, phone, avatar_url").eq("id", uid).maybeSingle(),
-      supabase.from("user_roles").select("role").eq("user_id", uid),
+      supabase.from("user_roles").select("role, assigned_zone_id").eq("user_id", uid),
     ]);
     setProfile((p as Profile) ?? null);
-    setIsAdmin(Boolean(r?.some((x: { role: string }) => x.role === "admin")));
+    const rows = (r ?? []) as Array<{ role: string; assigned_zone_id: string | null }>;
+    const main = rows.some((x) => x.role === "admin");
+    const zoneRow = rows.find((x) => x.assigned_zone_id);
+    const zoneId = zoneRow?.assigned_zone_id ?? null;
+    setIsMainAdmin(main);
+    setIsZoneAdmin(!main && Boolean(zoneId));
+    setIsAdmin(main || Boolean(zoneId));
+    setAssignedZoneId(zoneId);
+    if (zoneId) {
+      const { data: z } = await supabase.from("delivery_zones").select("name").eq("id", zoneId).maybeSingle();
+      setAssignedZoneName((z as { name?: string } | null)?.name ?? null);
+    } else {
+      setAssignedZoneName(null);
+    }
   };
 
   useEffect(() => {
@@ -55,6 +76,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } else {
         setProfile(null);
         setIsAdmin(false);
+        setIsMainAdmin(false);
+        setIsZoneAdmin(false);
+        setAssignedZoneId(null);
+        setAssignedZoneName(null);
         if (event === "SIGNED_OUT") setAuthTransition("idle");
       }
     });
@@ -78,7 +103,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <Ctx.Provider value={{ user, session, profile, isAdmin, loading, authTransition, setAuthTransition, signOut, refreshProfile }}>
+    <Ctx.Provider value={{ user, session, profile, isAdmin, isMainAdmin, isZoneAdmin, assignedZoneId, assignedZoneName, loading, authTransition, setAuthTransition, signOut, refreshProfile }}>
       {children}
     </Ctx.Provider>
   );

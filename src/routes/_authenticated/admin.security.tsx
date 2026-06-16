@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { MainAdminGuard } from "@/components/admin/main-admin-guard";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { ShieldCheck, AlertTriangle, Users, KeyRound } from "lucide-react";
@@ -8,7 +9,11 @@ import { formatRelative } from "@/lib/admin/format";
 import { securityOverview } from "@/lib/admin/security.functions";
 
 export const Route = createFileRoute("/_authenticated/admin/security")({
-  component: SecurityPage,
+  component: () => (
+    <MainAdminGuard>
+      <SecurityPage />
+    </MainAdminGuard>
+  ),
 });
 
 function SecurityPage() {

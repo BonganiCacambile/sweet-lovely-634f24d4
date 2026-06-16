@@ -986,24 +986,35 @@ export type Database = {
       }
       user_roles: {
         Row: {
+          assigned_zone_id: string | null
           created_at: string
           id: string
           role: Database["public"]["Enums"]["app_role"]
           user_id: string
         }
         Insert: {
+          assigned_zone_id?: string | null
           created_at?: string
           id?: string
           role: Database["public"]["Enums"]["app_role"]
           user_id: string
         }
         Update: {
+          assigned_zone_id?: string | null
           created_at?: string
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "user_roles_assigned_zone_id_fkey"
+            columns: ["assigned_zone_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_zones"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
@@ -1020,7 +1031,12 @@ export type Database = {
         }
         Returns: number
       }
+      can_access_zone: {
+        Args: { _uid: string; _zone_id: string }
+        Returns: boolean
+      }
       check_stock_availability: { Args: { _items: Json }; Returns: Json }
+      get_user_zone: { Args: { _uid: string }; Returns: string }
       has_permission: {
         Args: {
           _permission: Database["public"]["Enums"]["app_permission"]
@@ -1035,6 +1051,8 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_main_admin: { Args: { _uid: string }; Returns: boolean }
+      is_zone_admin: { Args: { _uid: string }; Returns: boolean }
       log_audit_event: {
         Args: {
           _action: string
@@ -1080,7 +1098,7 @@ export type Database = {
         | "security.write"
         | "settings.read"
         | "settings.write"
-      app_role: "admin" | "user"
+      app_role: "admin" | "user" | "zone_admin"
       order_status:
         | "pending"
         | "preparing"
@@ -1248,7 +1266,7 @@ export const Constants = {
         "settings.read",
         "settings.write",
       ],
-      app_role: ["admin", "user"],
+      app_role: ["admin", "user", "zone_admin"],
       order_status: [
         "pending",
         "preparing",
