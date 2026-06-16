@@ -21,6 +21,7 @@ export const Route = createFileRoute("/auth/admin")({
 
 function AdminAuth() {
   const navigate = useNavigate();
+  const { setAuthTransition, signOut } = useAuth();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
