@@ -16,6 +16,7 @@ export type PublicZone = {
   color: string | null;
   postal_codes: string[];
   sort_order: number;
+  image_url: string | null;
 };
 
 /** Public list of currently-active delivery zones for the customer app. */
@@ -28,7 +29,7 @@ export const listActiveZones = createServerFn({ method: "GET" }).handler(async (
   const { data, error } = await supabase
     .from("delivery_zones")
     .select(
-      "id, slug, name, description, fee_zar, min_order_zar, eta_minutes, hours_text, contact_phone, contact_email, color, postal_codes, sort_order",
+      "id, slug, name, description, fee_zar, min_order_zar, eta_minutes, hours_text, contact_phone, contact_email, color, postal_codes, sort_order, image_url",
     )
     .eq("is_active", true)
     .order("sort_order", { ascending: true });
