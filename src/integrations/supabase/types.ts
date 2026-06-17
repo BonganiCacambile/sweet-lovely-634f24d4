@@ -178,6 +178,7 @@ export type Database = {
           fee_zar: number
           hours_text: string | null
           id: string
+          image_url: string | null
           is_active: boolean
           min_order_zar: number
           name: string
@@ -196,6 +197,7 @@ export type Database = {
           fee_zar?: number
           hours_text?: string | null
           id?: string
+          image_url?: string | null
           is_active?: boolean
           min_order_zar?: number
           name: string
@@ -214,6 +216,7 @@ export type Database = {
           fee_zar?: number
           hours_text?: string | null
           id?: string
+          image_url?: string | null
           is_active?: boolean
           min_order_zar?: number
           name?: string
