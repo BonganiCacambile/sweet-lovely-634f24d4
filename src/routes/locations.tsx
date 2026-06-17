@@ -4,7 +4,7 @@ import { Section } from "@/components/section";
 import { CityGrid } from "@/components/city-grid";
 import { DeliveryFaqList } from "@/components/delivery-faq-list";
 import { SiteFooter } from "@/components/site-footer";
-import { CITIES } from "@/data/menu";
+import { useActiveZoneCities } from "@/hooks/use-active-zones";
 
 export const Route = createFileRoute("/locations")({
   head: () => ({
@@ -19,11 +19,12 @@ export const Route = createFileRoute("/locations")({
 });
 
 function LocationsPage() {
+  const { cities } = useActiveZoneCities();
   return (
     <div className="min-h-screen bg-white text-neutral-900">
       <SiteHeader />
       <Section title="Our cities" subtitle="Pick a city to see local hours and delivery zones.">
-        <CityGrid cities={CITIES} />
+        <CityGrid cities={cities} />
       </Section>
       <Section title="Delivery & pickup">
         <DeliveryFaqList />
