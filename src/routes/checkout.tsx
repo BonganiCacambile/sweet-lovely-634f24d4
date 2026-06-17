@@ -216,10 +216,25 @@ function CheckoutPage() {
       callback: (response) => {
         // Verify on the server, persist the order, then go to success
         (async () => {
+          // Retry verification a few times to ride out transient network errors —
+          // the payment has already been captured at this point, so we can't bail
+          // on the first failed fetch.
+          const callPlaceOrder = async (payload: Parameters<typeof placeOrder>[0]) => {
+            let lastErr: unknown;
+            for (let attempt = 0; attempt < 3; attempt++) {
+              try {
+                return await placeOrder(payload);
+              } catch (err) {
+                lastErr = err;
+                await new Promise((r) => setTimeout(r, 1000 * (attempt + 1)));
+              }
+            }
+            throw lastErr;
+          };
           try {
             const { data: sessionData } = await supabase.auth.getSession();
             const userId = sessionData.session?.user.id ?? null;
-            const res = await placeOrder({
+            const res = await callPlaceOrder({
               data: {
                 reference: response.reference,
                 customer: {
@@ -249,18 +264,25 @@ function CheckoutPage() {
             });
             if (res.success) {
               if ("warning" in res && res.warning) toast.warning(res.warning);
+              toast.success(
+                `Order ${res.orderNumber ? `#${res.orderNumber} ` : ""}confirmed — thank you!`,
+              );
               clear();
-              navigate({
-                to: "/checkout/success",
-                search: { ref: response.reference, order: res.orderNumber },
-              });
+              // Send the customer back to the (now empty) cart, matching the
+              // pre-cleanup behaviour. Order details still flow through the
+              // success page via the link in the toast / order history.
+              navigate({ to: "/cart" });
             } else {
               toast.error(res.error || "We couldn't confirm your order. Please contact support.");
               setPaying(false);
             }
           } catch (err) {
             console.error(err);
-            toast.error("Verification error. Please try again.");
+            toast.error(
+              "Network error confirming your payment. Your payment reference is " +
+                response.reference +
+                " — please contact support if your order doesn't appear shortly.",
+            );
             setPaying(false);
           }
         })();
