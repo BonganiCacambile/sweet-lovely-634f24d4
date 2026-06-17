@@ -3,6 +3,7 @@ import { LogOut, User as UserIcon, ShieldCheck, Bell, Settings, ShoppingBag, Lay
 import { useAuth } from "@/lib/auth-context";
 import type { ReactNode } from "react";
 import { motion } from "framer-motion";
+import { LogoImage } from "@/components/logo";
 
 const NAV = [
   { to: "/account", label: "Overview", icon: UserIcon },
