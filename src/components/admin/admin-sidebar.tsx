@@ -77,7 +77,7 @@ export function AdminSidebar({
       }
     >
       <div className="flex h-16 items-center justify-between px-4">
-        {!collapsed && <BrandMark size={28} />}
+        {!collapsed && <BrandMark size={48} />}
         {collapsed && (
           <div
             className="mx-auto h-9 w-9 rounded-2xl"
