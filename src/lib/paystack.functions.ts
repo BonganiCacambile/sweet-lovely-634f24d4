@@ -138,27 +138,54 @@ export const verifyAndCreateOrder = createServerFn({ method: "POST" })
       return { success: false as const, error: "Paystack is not configured" };
     }
 
-    // 1) Verify payment with Paystack
-    let paystack: {
-      status: boolean;
-      data?: { status: string; amount: number; currency: string; reference: string };
-    };
-    try {
-      const res = await fetch(
-        `https://api.paystack.co/transaction/verify/${encodeURIComponent(data.reference)}`,
-        { headers: { Authorization: `Bearer ${secret}` } },
-      );
-      paystack = await res.json();
-      if (!res.ok || !paystack.status || !paystack.data) {
-        return { success: false as const, error: "Verification failed" };
+    // 1) Verify payment with Paystack (with retries for transient issues)
+    let paystackData: {
+      status: string;
+      amount: number;
+      currency: string;
+      reference: string;
+    } | null = null;
+    let networkError = false;
+
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        const res = await fetch(
+          `https://api.paystack.co/transaction/verify/${encodeURIComponent(data.reference)}`,
+          { headers: { Authorization: `Bearer ${secret}` } },
+        );
+        const text = await res.text();
+        let json: {
+          status: boolean;
+          data?: typeof paystackData;
+        };
+        try {
+          json = JSON.parse(text);
+        } catch {
+          console.error("Paystack returned non-JSON:", text.slice(0, 500));
+          if (attempt < 2) {
+            await new Promise((r) => setTimeout(r, 1000 * (attempt + 1)));
+            continue;
+          }
+          networkError = true;
+          break;
+        }
+        if (!res.ok || !json.status || !json.data) {
+          return { success: false as const, error: "Verification failed" };
+        }
+        paystackData = json.data;
+        break;
+      } catch (err) {
+        console.error(`Paystack verify attempt ${attempt + 1} failed:`, err);
+        if (attempt < 2) {
+          await new Promise((r) => setTimeout(r, 1000 * (attempt + 1)));
+        } else {
+          networkError = true;
+        }
       }
-    } catch (err) {
-      console.error("Paystack verify error:", err);
-      return { success: false as const, error: "Network error during verification" };
     }
 
-    if (paystack.data!.status !== "success") {
-      return { success: false as const, error: `Payment not successful (${paystack.data!.status})` };
+    if (paystackData && paystackData.status !== "success") {
+      return { success: false as const, error: `Payment not successful (${paystackData.status})` };
     }
 
     // 2) Recompute prices server-side from products table — never trust client.
