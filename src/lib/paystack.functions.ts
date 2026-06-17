@@ -292,12 +292,14 @@ export const verifyAndCreateOrder = createServerFn({ method: "POST" })
       .from("orders")
       .insert({
         user_id: data.userId ?? null,
-        status: "preparing",
+        status: paystackData ? "preparing" : "pending",
         customer_name: `${customer.firstName} ${customer.lastName}`.trim(),
         customer_email: customer.email,
         customer_phone: customer.phone,
         address: fullAddress,
-        notes: `Paystack ref: ${data.reference}`,
+        notes: paystackData
+          ? `Paystack ref: ${data.reference}`
+          : `Paystack ref: ${data.reference} (verification deferred due to network error — please verify manually)`,
         subtotal_zar: serverSubtotal,
         delivery_zar: shipping,
         total_zar: serverTotal,
@@ -375,5 +377,11 @@ export const verifyAndCreateOrder = createServerFn({ method: "POST" })
       success: true as const,
       orderNumber: order.order_number,
       reference: data.reference,
+      ...(paystackData
+        ? {}
+        : {
+            warning:
+              "We couldn't verify your payment immediately due to a network issue. Your order has been placed and will be reviewed shortly.",
+          }),
     };
   });
