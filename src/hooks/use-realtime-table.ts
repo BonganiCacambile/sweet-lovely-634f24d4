@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useId } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -8,9 +8,10 @@ export function useRealtimeTable(
   onEvent?: (e: { eventType: string }) => void,
 ) {
   const qc = useQueryClient();
+  const instanceId = useId();
   useEffect(() => {
     const channel = supabase
-      .channel(`realtime:${table}`)
+      .channel(`realtime:${table}:${instanceId}`)
       .on(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         "postgres_changes" as any,
@@ -27,5 +28,5 @@ export function useRealtimeTable(
       void supabase.removeChannel(channel);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [table]);
+  }, [table, instanceId]);
 }
