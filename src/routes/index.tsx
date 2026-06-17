@@ -11,7 +11,8 @@ import { SiteFooter } from "@/components/site-footer";
 import { Testimonials } from "@/components/testimonials";
 import { Reveal } from "@/components/reveal";
 import MenuTabFramerComponent from "@/framer/menu-products/menu-tab";
-import { FEATURED_PRODUCTS, CITIES, DESSERTS, TESTIMONIALS } from "@/data/menu";
+import { FEATURED_PRODUCTS, DESSERTS, TESTIMONIALS } from "@/data/menu";
+import { useActiveZoneCities } from "@/hooks/use-active-zones";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -26,6 +27,7 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
+  const { cities } = useActiveZoneCities();
   return (
     <div className="min-h-screen bg-white text-neutral-900">
       <SiteHeader />
@@ -110,7 +112,7 @@ function Index() {
               Locate our stores, check delivery zones, and pick the best option for you!
             </p>
           </Reveal>
-          <CityGrid cities={CITIES} />
+          <CityGrid cities={cities} />
         </div>
       </section>
 
