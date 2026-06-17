@@ -10,7 +10,7 @@ export function useRealtimeTable(
   const qc = useQueryClient();
   useEffect(() => {
     const channel = supabase
-      .channel(`realtime:${table}`)
+      .channel(`realtime:${table}:${Math.random().toString(36).slice(2)}`)
       .on(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         "postgres_changes" as any,
