@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 
-const LOGO_URL = "/logo.png";
+const LOGO_URL = "/logo-transparent.png";
 
 export function BrandMark({ size = 28 }: { size?: number }) {
   return (
