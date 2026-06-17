@@ -36,16 +36,7 @@ export function AccountShell({ children, title }: { children: ReactNode; title: 
       <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
         <header className="mb-8 flex flex-wrap items-center justify-between gap-4">
           <Link to="/" className="inline-flex items-center">
-            <span
-              style={{
-                fontFamily: '"Cherry Bomb One", sans-serif',
-                color: "rgb(255, 0, 60)",
-                fontSize: "22px",
-                lineHeight: 1,
-              }}
-            >
-              Sweet &amp; Lovely
-            </span>
+            <LogoImage height={40} />
           </Link>
           <button
             onClick={onSignOut}
