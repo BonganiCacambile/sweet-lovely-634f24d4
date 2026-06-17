@@ -18,6 +18,7 @@ const upsertSchema = z.object({
   contact_email: z.string().max(200).nullable().optional(),
   hours_text: z.string().max(200).nullable().optional(),
   color: z.string().max(20).nullable().optional(),
+  image_url: z.string().max(2000).nullable().optional(),
 });
 
 export const listAllZones = createServerFn({ method: "GET" })
@@ -58,6 +59,7 @@ export const upsertZone = createServerFn({ method: "POST" })
       contact_email: data.contact_email ?? null,
       hours_text: data.hours_text ?? null,
       color: data.color ?? null,
+      image_url: data.image_url ?? null,
     };
     if (data.id) {
       const { error } = await context.supabase
