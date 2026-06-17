@@ -156,7 +156,7 @@ export const verifyAndCreateOrder = createServerFn({ method: "POST" })
         const text = await res.text();
         let json: {
           status: boolean;
-          data?: typeof paystackData;
+          data?: { status: string; amount: number; currency: string; reference: string };
         };
         try {
           json = JSON.parse(text);
@@ -255,10 +255,10 @@ export const verifyAndCreateOrder = createServerFn({ method: "POST" })
     const tax = Math.max(0, Math.min(data.tax, 1_000_000));
     const serverTotal = Number((serverSubtotal + shipping + tax).toFixed(2));
     const expectedAmount = Math.round(serverTotal * 100);
-    if (paystack.data!.amount < expectedAmount) {
+    if (paystackData && paystackData.amount < expectedAmount) {
       console.error("Amount mismatch:", {
         expected: expectedAmount,
-        got: paystack.data!.amount,
+        got: paystackData.amount,
       });
       return { success: false as const, error: "Payment amount does not match order" };
     }
