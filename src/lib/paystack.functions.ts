@@ -145,7 +145,6 @@ export const verifyAndCreateOrder = createServerFn({ method: "POST" })
       currency: string;
       reference: string;
     } | null = null;
-    let networkError = false;
 
     for (let attempt = 0; attempt < 3; attempt++) {
       try {
