@@ -38,8 +38,8 @@ export function AccountShell({ children, title }: { children: ReactNode; title: 
             <span
               style={{
                 fontFamily: '"Cherry Bomb One", sans-serif',
-                color: "rgb(255, 153, 0)",
-                fontSize: "36px",
+                color: "rgb(255, 0, 60)",
+                fontSize: "22px",
                 lineHeight: 1,
               }}
             >
