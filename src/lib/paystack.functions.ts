@@ -165,7 +165,6 @@ export const verifyAndCreateOrder = createServerFn({ method: "POST" })
             await new Promise((r) => setTimeout(r, 1000 * (attempt + 1)));
             continue;
           }
-          networkError = true;
           break;
         }
         if (!res.ok || !json.status || !json.data) {
@@ -177,8 +176,6 @@ export const verifyAndCreateOrder = createServerFn({ method: "POST" })
         console.error(`Paystack verify attempt ${attempt + 1} failed:`, err);
         if (attempt < 2) {
           await new Promise((r) => setTimeout(r, 1000 * (attempt + 1)));
-        } else {
-          networkError = true;
         }
       }
     }
