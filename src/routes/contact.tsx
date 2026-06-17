@@ -4,7 +4,7 @@ import { SiteFooter } from "@/components/site-footer";
 import ContactFormFramerComponent from "@/framer/contact-form";
 import { CityGrid } from "@/components/city-grid";
 import { DeliveryFaqList } from "@/components/delivery-faq-list";
-import { CITIES } from "@/data/menu";
+import { useActiveZoneCities } from "@/hooks/use-active-zones";
 
 export const Route = createFileRoute("/contact")({
   head: () => ({
@@ -19,6 +19,7 @@ export const Route = createFileRoute("/contact")({
 });
 
 function ContactPage() {
+  const { cities } = useActiveZoneCities();
   return (
     <div className="min-h-screen bg-white text-neutral-900">
       <SiteHeader />
@@ -90,7 +91,7 @@ function ContactPage() {
             Maps & Delivery Info
           </h2>
           <div className="mt-8 sm:mt-10">
-            <CityGrid cities={CITIES} />
+            <CityGrid cities={cities} />
           </div>
           <div className="mt-12 sm:mt-16">
             <DeliveryFaqList />
