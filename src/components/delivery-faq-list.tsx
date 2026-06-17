@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { ChevronDown } from "lucide-react";
-import { useActiveZoneCities } from "@/hooks/use-active-zones";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useRealtimeTable } from "@/hooks/use-realtime-table";
