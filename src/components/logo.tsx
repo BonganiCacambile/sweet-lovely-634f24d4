@@ -1,4 +1,4 @@
-const LOGO_URL = "/logo.png";
+const LOGO_URL = "/logo-transparent.png";
 
 export function LogoImage({
   height = 64,
