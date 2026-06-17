@@ -36,6 +36,7 @@ const empty: ZoneDraft = {
   contact_email: "",
   hours_text: "",
   color: "#ff003c",
+  image_url: "",
 };
 
 interface ZoneDraft {
@@ -53,6 +54,7 @@ interface ZoneDraft {
   contact_email: string;
   hours_text: string;
   color: string;
+  image_url: string;
 }
 
 function DeliveryZonesPage() {
@@ -90,6 +92,7 @@ function DeliveryZonesPage() {
           contact_email: d.contact_email.trim() || null,
           hours_text: d.hours_text.trim() || null,
           color: d.color.trim() || null,
+          image_url: d.image_url.trim() || null,
         },
       }),
     onSuccess: () => {
@@ -126,6 +129,7 @@ function DeliveryZonesPage() {
       contact_email: z.contact_email ?? "",
       hours_text: z.hours_text ?? "",
       color: z.color ?? "#ff003c",
+      image_url: (z as { image_url: string | null }).image_url ?? "",
     });
 
   return (
@@ -291,6 +295,9 @@ function ZoneEditor({
             <Field label="Contact email"><input value={draft.contact_email} onChange={(e) => set("contact_email", e.target.value)} className={inputCls} /></Field>
           </div>
           <Field label="Operating hours"><input value={draft.hours_text} onChange={(e) => set("hours_text", e.target.value)} placeholder="Mon–Sun 10:00–22:00" className={inputCls} /></Field>
+          <Field label="Image URL (optional)">
+            <input value={draft.image_url} onChange={(e) => set("image_url", e.target.value)} placeholder="https://…" className={inputCls} />
+          </Field>
           <div className="grid grid-cols-3 gap-3">
             <Field label="Color"><input type="color" value={draft.color} onChange={(e) => set("color", e.target.value)} className="h-10 w-full rounded-lg border border-neutral-200" /></Field>
             <Field label="Sort order"><input type="number" min={0} value={draft.sort_order} onChange={(e) => set("sort_order", Number(e.target.value))} className={inputCls} /></Field>
