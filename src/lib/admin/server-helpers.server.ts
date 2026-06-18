@@ -57,13 +57,31 @@ export async function logAudit(
 ) {
   try {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    // Best-effort: tag every audit entry with the actor's assigned zone (if any)
+    // so the audit log can be sliced per delivery zone.
+    let zoneId: string | null = null;
+    try {
+      const { data } = await supabaseAdmin
+        .from("user_roles")
+        .select("assigned_zone_id")
+        .eq("user_id", ctx.userId)
+        .not("assigned_zone_id", "is", null)
+        .maybeSingle();
+      zoneId = (data?.assigned_zone_id as string | null) ?? null;
+    } catch {
+      // ignore — audit must never break the calling operation
+    }
+    const enriched =
+      zoneId && metadata && typeof metadata === "object" && !("zone_id" in metadata)
+        ? { ...metadata, zone_id: zoneId }
+        : metadata;
     await supabaseAdmin.from("audit_logs").insert({
       actor_id: ctx.userId,
       actor_email: (ctx.claims?.email as string | undefined) ?? null,
       action,
       entity: entity ?? null,
       entity_id: entityId ?? null,
-      metadata: metadata as never,
+      metadata: enriched as never,
     });
   } catch (e) {
     console.error("[audit] log failed", e);
