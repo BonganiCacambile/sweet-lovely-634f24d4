@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
+import { requireMainAdminGuard } from "@/lib/admin/route-guards";
 import { MainAdminGuard } from "@/components/admin/main-admin-guard";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -13,6 +14,7 @@ import { formatDateTime, formatRelative } from "@/lib/admin/format";
 import { deleteContent, getContent, listContent, upsertContent } from "@/lib/admin/content.functions";
 
 export const Route = createFileRoute("/_authenticated/admin/content")({
+  beforeLoad: requireMainAdminGuard,
   component: () => (
     <MainAdminGuard>
       <ContentPage />
