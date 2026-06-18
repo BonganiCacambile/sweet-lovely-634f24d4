@@ -226,3 +226,61 @@ export const userStats = createServerFn({ method: "GET" })
       .eq("role", "admin");
     return { total, newLast7d: newCount ?? 0, admins: adminCount ?? 0 };
   });
+
+export type ZoneAssignmentRow = {
+  user_id: string;
+  email: string | null;
+  full_name: string | null;
+  avatar_url: string | null;
+  zone_id: string;
+  zone_name: string;
+  zone_slug: string;
+  assigned_at: string;
+};
+
+/**
+ * Main-admin-only: list every employee admin and their assigned delivery zone.
+ * Returns one row per (user, zone) grant. Used by the Zone Assignments page.
+ */
+export const listZoneAssignments = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<ZoneAssignmentRow[]> => {
+    await requireMainAdmin(context.supabase, context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { data: grants, error } = await supabaseAdmin
+      .from("user_roles")
+      .select("user_id, assigned_zone_id, created_at, delivery_zones(id, name, slug)")
+      .not("assigned_zone_id", "is", null)
+      .order("created_at", { ascending: false });
+    if (error) throw new Error(error.message);
+    const rows = (grants ?? []) as Array<{
+      user_id: string;
+      assigned_zone_id: string;
+      created_at: string;
+      delivery_zones: { id: string; name: string; slug: string } | null;
+    }>;
+    if (rows.length === 0) return [];
+
+    const userIds = Array.from(new Set(rows.map((r) => r.user_id)));
+    const [{ data: profiles }, usersList] = await Promise.all([
+      supabaseAdmin.from("profiles").select("id, full_name, avatar_url").in("id", userIds),
+      supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 200 }),
+    ]);
+    const profileMap = new Map((profiles ?? []).map((p) => [p.id, p]));
+    const emailMap = new Map((usersList.data?.users ?? []).map((u) => [u.id, u.email ?? null]));
+
+    return rows.map((r) => {
+      const p = profileMap.get(r.user_id);
+      return {
+        user_id: r.user_id,
+        email: emailMap.get(r.user_id) ?? null,
+        full_name: p?.full_name ?? null,
+        avatar_url: p?.avatar_url ?? null,
+        zone_id: r.assigned_zone_id,
+        zone_name: r.delivery_zones?.name ?? "—",
+        zone_slug: r.delivery_zones?.slug ?? "",
+        assigned_at: r.created_at,
+      };
+    });
+  });
