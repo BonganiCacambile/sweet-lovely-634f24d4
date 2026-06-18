@@ -95,25 +95,14 @@ function ZoneAssignmentsPage() {
           <LoadingRows rows={4} />
         ) : assignments.error ? (
           <ErrorPanel
-            title="Couldn't load assignments"
-            message={(assignments.error as Error).message}
+            error={assignments.error}
             onRetry={() => void assignments.refetch()}
           />
         ) : (assignments.data ?? []).length === 0 ? (
           <EmptyState
-            icon={ShieldCheck}
+            icon={<ShieldCheck className="h-5 w-5" />}
             title="No zone assignments yet"
-            description="Assign an employee admin to a delivery zone to give them isolated access to that zone's orders and operations."
-            action={
-              <button
-                type="button"
-                onClick={() => setShowAdd(true)}
-                className="inline-flex items-center gap-2 rounded-2xl bg-[#ff003c] px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-[#e6003a]"
-              >
-                <UserPlus className="h-4 w-4" />
-                Assign employee
-              </button>
-            }
+            hint="Assign an employee admin to a delivery zone to give them isolated access to that zone's orders and operations."
           />
         ) : (
           <div className="overflow-x-auto">
@@ -132,7 +121,11 @@ function ZoneAssignmentsPage() {
                     key={`${row.user_id}-${row.zone_id}`}
                     row={row}
                     onRevoke={() => revoke.mutate({ data: { userId: row.user_id } })}
-                    revoking={revoke.isPending && revoke.variables?.data.userId === row.user_id}
+                    revoking={
+                      revoke.isPending &&
+                      (revoke.variables as { data: { userId: string } } | undefined)?.data
+                        .userId === row.user_id
+                    }
                   />
                 ))}
               </tbody>
