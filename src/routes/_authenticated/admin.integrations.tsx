@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { requireMainAdminGuard } from "@/lib/admin/route-guards";
 import { MainAdminGuard } from "@/components/admin/main-admin-guard";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -10,6 +11,7 @@ import { formatRelative } from "@/lib/admin/format";
 import { listIntegrations, updateIntegration } from "@/lib/admin/integrations.functions";
 
 export const Route = createFileRoute("/_authenticated/admin/integrations")({
+  beforeLoad: requireMainAdminGuard,
   component: () => (
     <MainAdminGuard>
       <IntegrationsPage />

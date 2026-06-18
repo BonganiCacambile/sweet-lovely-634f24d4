@@ -26,6 +26,7 @@ import { Route as AuthAdminRouteImport } from './routes/auth.admin'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedAccountRouteImport } from './routes/_authenticated/account'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
+import { Route as AuthenticatedAdminZoneAssignmentsRouteImport } from './routes/_authenticated/admin.zone-assignments'
 import { Route as AuthenticatedAdminUsersRouteImport } from './routes/_authenticated/admin.users'
 import { Route as AuthenticatedAdminSettingsRouteImport } from './routes/_authenticated/admin.settings'
 import { Route as AuthenticatedAdminSecurityRouteImport } from './routes/_authenticated/admin.security'
@@ -134,6 +135,12 @@ const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthenticatedAdminRoute,
 } as any)
+const AuthenticatedAdminZoneAssignmentsRoute =
+  AuthenticatedAdminZoneAssignmentsRouteImport.update({
+    id: '/zone-assignments',
+    path: '/zone-assignments',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const AuthenticatedAdminUsersRoute = AuthenticatedAdminUsersRouteImport.update({
   id: '/users',
   path: '/users',
@@ -308,6 +315,7 @@ export interface FileRoutesByFullPath {
   '/admin/security': typeof AuthenticatedAdminSecurityRoute
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
+  '/admin/zone-assignments': typeof AuthenticatedAdminZoneAssignmentsRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/account/orders/$orderId': typeof AuthenticatedAccountOrdersOrderIdRoute
 }
@@ -348,6 +356,7 @@ export interface FileRoutesByTo {
   '/admin/security': typeof AuthenticatedAdminSecurityRoute
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
+  '/admin/zone-assignments': typeof AuthenticatedAdminZoneAssignmentsRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/account/orders/$orderId': typeof AuthenticatedAccountOrdersOrderIdRoute
 }
@@ -391,6 +400,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/security': typeof AuthenticatedAdminSecurityRoute
   '/_authenticated/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/_authenticated/admin/users': typeof AuthenticatedAdminUsersRoute
+  '/_authenticated/admin/zone-assignments': typeof AuthenticatedAdminZoneAssignmentsRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/account/orders/$orderId': typeof AuthenticatedAccountOrdersOrderIdRoute
 }
@@ -434,6 +444,7 @@ export interface FileRouteTypes {
     | '/admin/security'
     | '/admin/settings'
     | '/admin/users'
+    | '/admin/zone-assignments'
     | '/admin/'
     | '/account/orders/$orderId'
   fileRoutesByTo: FileRoutesByTo
@@ -474,6 +485,7 @@ export interface FileRouteTypes {
     | '/admin/security'
     | '/admin/settings'
     | '/admin/users'
+    | '/admin/zone-assignments'
     | '/admin'
     | '/account/orders/$orderId'
   id:
@@ -516,6 +528,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/security'
     | '/_authenticated/admin/settings'
     | '/_authenticated/admin/users'
+    | '/_authenticated/admin/zone-assignments'
     | '/_authenticated/admin/'
     | '/_authenticated/account/orders/$orderId'
   fileRoutesById: FileRoutesById
@@ -652,6 +665,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/admin/'
       preLoaderRoute: typeof AuthenticatedAdminIndexRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/zone-assignments': {
+      id: '/_authenticated/admin/zone-assignments'
+      path: '/zone-assignments'
+      fullPath: '/admin/zone-assignments'
+      preLoaderRoute: typeof AuthenticatedAdminZoneAssignmentsRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
     '/_authenticated/admin/users': {
@@ -871,6 +891,7 @@ interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminSecurityRoute: typeof AuthenticatedAdminSecurityRoute
   AuthenticatedAdminSettingsRoute: typeof AuthenticatedAdminSettingsRoute
   AuthenticatedAdminUsersRoute: typeof AuthenticatedAdminUsersRoute
+  AuthenticatedAdminZoneAssignmentsRoute: typeof AuthenticatedAdminZoneAssignmentsRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
 }
 
@@ -892,6 +913,8 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminSecurityRoute: AuthenticatedAdminSecurityRoute,
   AuthenticatedAdminSettingsRoute: AuthenticatedAdminSettingsRoute,
   AuthenticatedAdminUsersRoute: AuthenticatedAdminUsersRoute,
+  AuthenticatedAdminZoneAssignmentsRoute:
+    AuthenticatedAdminZoneAssignmentsRoute,
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
 }
 

@@ -1,4 +1,5 @@
-import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect, useRouter } from "@tanstack/react-router";
+import { supabase } from "@/integrations/supabase/client";
 import { motion } from "framer-motion";
 import {
   Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis,
@@ -25,6 +26,21 @@ function dashboardQueryOptions(fetcher: () => Promise<DashboardStats>) {
 }
 
 export const Route = createFileRoute("/_authenticated/admin/")({
+  beforeLoad: async () => {
+    // Zone (employee) admins don't have access to the global dashboard.
+    // Auto-load their primary workspace — the zone-scoped orders list.
+    const { data: userData } = await supabase.auth.getUser();
+    const user = userData.user;
+    if (!user) return;
+    const { data: roleRows } = await supabase
+      .from("user_roles")
+      .select("role, assigned_zone_id")
+      .eq("user_id", user.id);
+    const rows = (roleRows ?? []) as Array<{ role: string; assigned_zone_id: string | null }>;
+    const isMain = rows.some((r) => r.role === "admin");
+    const isZone = !isMain && rows.some((r) => r.assigned_zone_id);
+    if (isZone) throw redirect({ to: "/admin/orders", replace: true });
+  },
   component: DashboardHome,
   errorComponent: ({ error, reset }) => <DashboardRouteError error={error} reset={reset} />,
 });

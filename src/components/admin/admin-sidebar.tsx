@@ -2,7 +2,7 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import {
   LayoutDashboard, BarChart3, Users, ShoppingBag, Package, FileText,
   Tags, Boxes, Star, Bell, FileBarChart2, ShieldCheck, Lock, ScrollText,
-  Plug, Settings, UserCircle2, LogOut, X, MapPin,
+  Plug, Settings, UserCircle2, LogOut, X, MapPin, Users2,
 } from "lucide-react";
 import { BrandMark } from "./brand-mark";
 import { useAuth } from "@/lib/auth-context";
@@ -28,6 +28,7 @@ const SECTIONS: Array<{ heading: string; items: Item[] }> = [
       { to: "/admin/categories", label: "Categories", icon: Tags, mainOnly: true },
       { to: "/admin/inventory", label: "Inventory", icon: Boxes },
       { to: "/admin/delivery-zones", label: "Delivery Zones", icon: MapPin },
+      { to: "/admin/zone-assignments", label: "Zone Assignments", icon: Users2, mainOnly: true },
       { to: "/admin/reviews", label: "Reviews", icon: Star, mainOnly: true },
       { to: "/admin/notifications", label: "Notifications", icon: Bell, mainOnly: true },
       { to: "/admin/reports", label: "Reports", icon: FileBarChart2, mainOnly: true },

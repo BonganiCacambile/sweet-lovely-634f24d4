@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { requireMainAdminGuard } from "@/lib/admin/route-guards";
 import { MainAdminGuard } from "@/components/admin/main-admin-guard";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -9,6 +10,7 @@ import { formatRelative } from "@/lib/admin/format";
 import { securityOverview } from "@/lib/admin/security.functions";
 
 export const Route = createFileRoute("/_authenticated/admin/security")({
+  beforeLoad: requireMainAdminGuard,
   component: () => (
     <MainAdminGuard>
       <SecurityPage />
