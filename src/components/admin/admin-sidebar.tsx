@@ -39,7 +39,7 @@ const SECTIONS: Array<{ heading: string; items: Item[] }> = [
     items: [
       { to: "/admin/roles", label: "Roles & Permissions", icon: ShieldCheck, mainOnly: true },
       { to: "/admin/security", label: "Security Center", icon: Lock, mainOnly: true },
-      { to: "/admin/audit", label: "Audit Logs", icon: ScrollText, mainOnly: true },
+      { to: "/admin/audit", label: "Audit Logs", icon: ScrollText },
       { to: "/admin/integrations", label: "Integrations", icon: Plug, mainOnly: true },
       { to: "/admin/settings", label: "System Settings", icon: Settings, mainOnly: true },
     ],

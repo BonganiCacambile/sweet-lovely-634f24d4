@@ -1,30 +1,26 @@
 import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { requireMainAdminGuard } from "@/lib/admin/route-guards";
-import { MainAdminGuard } from "@/components/admin/main-admin-guard";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Search } from "lucide-react";
+import { MapPin, Search } from "lucide-react";
 import { PageHeader } from "@/components/admin/page-header";
 import { Card, EmptyState, ErrorPanel, LoadingRows, Pagination } from "@/components/admin/data-shell";
 import { ExportMenu } from "@/components/admin/export-menu";
 import { useDebounced } from "@/hooks/use-debounced";
 import { formatDateTime, formatRelative } from "@/lib/admin/format";
 import { listAudit, auditFacets } from "@/lib/admin/audit.functions";
+import { useAuth } from "@/lib/auth-context";
 
 export const Route = createFileRoute("/_authenticated/admin/audit")({
-  beforeLoad: requireMainAdminGuard,
-  component: () => (
-    <MainAdminGuard>
-      <AuditPage />
-    </MainAdminGuard>
-  ),
+  component: AuditPage,
 });
 
 function AuditPage() {
+  const { isMainAdmin, assignedZoneName } = useAuth();
   const [search, setSearch] = useState("");
   const [action, setAction] = useState("");
   const [entity, setEntity] = useState("");
+  const [zoneId, setZoneId] = useState("");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
   const [page, setPage] = useState(1);
@@ -34,8 +30,8 @@ function AuditPage() {
   const facetsFn = useServerFn(auditFacets);
 
   const { data, isLoading, error, refetch } = useQuery({
-    queryKey: ["admin", "audit", "list", { search: debounced, action, entity, fromDate, toDate, page }],
-    queryFn: () => listFn({ data: { search: debounced, action, entity, fromDate, toDate, page, pageSize: 50 } }),
+    queryKey: ["admin", "audit", "list", { search: debounced, action, entity, zoneId, fromDate, toDate, page }],
+    queryFn: () => listFn({ data: { search: debounced, action, entity, zoneId, fromDate, toDate, page, pageSize: 50 } }),
     refetchOnWindowFocus: true,
   });
   const { data: facets } = useQuery({ queryKey: ["admin", "audit", "facets"], queryFn: () => facetsFn() });
@@ -48,20 +44,47 @@ function AuditPage() {
     { key: "action", label: "Action" },
     { key: "entity", label: "Entity" },
     { key: "entity_id", label: "Entity ID" },
+    {
+      key: "zone_id",
+      label: "Zone",
+      map: (r: { metadata: unknown }) => {
+        const m = r.metadata as { zone_id?: string } | null;
+        return m?.zone_id ?? "";
+      },
+    },
     { key: "metadata", label: "Metadata", map: (r: { metadata: unknown }) => JSON.stringify(r.metadata) },
   ]), []);
+
+  const selectedZoneName = useMemo(() => {
+    if (!isMainAdmin) return assignedZoneName;
+    if (!zoneId) return null;
+    return facets?.zones?.find((z) => z.id === zoneId)?.name ?? null;
+  }, [isMainAdmin, assignedZoneName, zoneId, facets?.zones]);
 
   return (
     <div className="space-y-6">
       <PageHeader
         eyebrow="Compliance"
         title="Audit logs"
-        description="A searchable trail of every admin and system action."
+        description={
+          isMainAdmin
+            ? "A searchable trail of every admin and system action. Filter by delivery zone to inspect a single zone."
+            : `Audit trail for your assigned delivery zone${assignedZoneName ? ` (${assignedZoneName})` : ""}. You only see actions that happened in your zone.`
+        }
         actions={<ExportMenu rows={rows} columns={exportCols as never} filename="audit-logs" title="Audit logs" />}
       />
 
+      {(selectedZoneName || (!isMainAdmin && assignedZoneName)) && (
+        <div className="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-medium text-amber-900">
+          <MapPin className="h-3 w-3" />
+          {isMainAdmin
+            ? `Filtering: ${selectedZoneName}`
+            : `Zone: ${assignedZoneName}`}
+        </div>
+      )}
+
       <Card>
-        <div className="grid gap-2 border-b border-neutral-100 p-3 md:grid-cols-[1fr_auto_auto_auto_auto]">
+        <div className="grid gap-2 border-b border-neutral-100 p-3 md:grid-cols-[1fr_auto_auto_auto_auto_auto]">
           <div className="relative">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-neutral-400" />
             <input
@@ -71,6 +94,19 @@ function AuditPage() {
               className="h-9 w-full rounded-full border border-neutral-200 bg-white pl-9 pr-3 text-sm"
             />
           </div>
+          {isMainAdmin && (
+            <select
+              value={zoneId}
+              onChange={(e) => { setPage(1); setZoneId(e.target.value); }}
+              className="h-9 rounded-full border border-neutral-200 bg-white px-3 text-sm"
+              aria-label="Filter by delivery zone"
+            >
+              <option value="">All zones</option>
+              {facets?.zones?.map((z) => (
+                <option key={z.id} value={z.id}>{z.name}</option>
+              ))}
+            </select>
+          )}
           <select value={action} onChange={(e) => { setPage(1); setAction(e.target.value); }} className="h-9 rounded-full border border-neutral-200 bg-white px-3 text-sm">
             <option value="">All actions</option>
             {facets?.actions.map((a) => <option key={a} value={a}>{a}</option>)}
