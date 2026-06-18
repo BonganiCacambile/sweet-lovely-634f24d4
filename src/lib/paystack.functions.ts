@@ -138,27 +138,50 @@ export const verifyAndCreateOrder = createServerFn({ method: "POST" })
       return { success: false as const, error: "Paystack is not configured" };
     }
 
-    // 1) Verify payment with Paystack
-    let paystack: {
-      status: boolean;
-      data?: { status: string; amount: number; currency: string; reference: string };
-    };
-    try {
-      const res = await fetch(
-        `https://api.paystack.co/transaction/verify/${encodeURIComponent(data.reference)}`,
-        { headers: { Authorization: `Bearer ${secret}` } },
-      );
-      paystack = await res.json();
-      if (!res.ok || !paystack.status || !paystack.data) {
-        return { success: false as const, error: "Verification failed" };
+    // 1) Verify payment with Paystack (with retries for transient issues)
+    let paystackData: {
+      status: string;
+      amount: number;
+      currency: string;
+      reference: string;
+    } | null = null;
+
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        const res = await fetch(
+          `https://api.paystack.co/transaction/verify/${encodeURIComponent(data.reference)}`,
+          { headers: { Authorization: `Bearer ${secret}` } },
+        );
+        const text = await res.text();
+        let json: {
+          status: boolean;
+          data?: { status: string; amount: number; currency: string; reference: string };
+        };
+        try {
+          json = JSON.parse(text);
+        } catch {
+          console.error("Paystack returned non-JSON:", text.slice(0, 500));
+          if (attempt < 2) {
+            await new Promise((r) => setTimeout(r, 1000 * (attempt + 1)));
+            continue;
+          }
+          break;
+        }
+        if (!res.ok || !json.status || !json.data) {
+          return { success: false as const, error: "Verification failed" };
+        }
+        paystackData = json.data;
+        break;
+      } catch (err) {
+        console.error(`Paystack verify attempt ${attempt + 1} failed:`, err);
+        if (attempt < 2) {
+          await new Promise((r) => setTimeout(r, 1000 * (attempt + 1)));
+        }
       }
-    } catch (err) {
-      console.error("Paystack verify error:", err);
-      return { success: false as const, error: "Network error during verification" };
     }
 
-    if (paystack.data!.status !== "success") {
-      return { success: false as const, error: `Payment not successful (${paystack.data!.status})` };
+    if (paystackData && paystackData.status !== "success") {
+      return { success: false as const, error: `Payment not successful (${paystackData.status})` };
     }
 
     // 2) Recompute prices server-side from products table — never trust client.
@@ -228,10 +251,10 @@ export const verifyAndCreateOrder = createServerFn({ method: "POST" })
     const tax = Math.max(0, Math.min(data.tax, 1_000_000));
     const serverTotal = Number((serverSubtotal + shipping + tax).toFixed(2));
     const expectedAmount = Math.round(serverTotal * 100);
-    if (paystack.data!.amount < expectedAmount) {
+    if (paystackData && paystackData.amount < expectedAmount) {
       console.error("Amount mismatch:", {
         expected: expectedAmount,
-        got: paystack.data!.amount,
+        got: paystackData.amount,
       });
       return { success: false as const, error: "Payment amount does not match order" };
     }
@@ -265,12 +288,14 @@ export const verifyAndCreateOrder = createServerFn({ method: "POST" })
       .from("orders")
       .insert({
         user_id: data.userId ?? null,
-        status: "preparing",
+        status: paystackData ? "preparing" : "pending",
         customer_name: `${customer.firstName} ${customer.lastName}`.trim(),
         customer_email: customer.email,
         customer_phone: customer.phone,
         address: fullAddress,
-        notes: `Paystack ref: ${data.reference}`,
+        notes: paystackData
+          ? `Paystack ref: ${data.reference}`
+          : `Paystack ref: ${data.reference} (verification deferred due to network error — please verify manually)`,
         subtotal_zar: serverSubtotal,
         delivery_zar: shipping,
         total_zar: serverTotal,
@@ -348,5 +373,11 @@ export const verifyAndCreateOrder = createServerFn({ method: "POST" })
       success: true as const,
       orderNumber: order.order_number,
       reference: data.reference,
+      ...(paystackData
+        ? {}
+        : {
+            warning:
+              "We couldn't verify your payment immediately due to a network issue. Your order has been placed and will be reviewed shortly.",
+          }),
     };
   });
