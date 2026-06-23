@@ -310,6 +310,321 @@ export type Database = {
           },
         ]
       }
+      home_banners: {
+        Row: {
+          created_at: string
+          cta_href: string | null
+          cta_label: string | null
+          ends_at: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean
+          position: number
+          starts_at: string | null
+          subtitle: string | null
+          title: string
+          updated_at: string
+          zone_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          cta_href?: string | null
+          cta_label?: string | null
+          ends_at?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          position?: number
+          starts_at?: string | null
+          subtitle?: string | null
+          title: string
+          updated_at?: string
+          zone_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          cta_href?: string | null
+          cta_label?: string | null
+          ends_at?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          position?: number
+          starts_at?: string | null
+          subtitle?: string | null
+          title?: string
+          updated_at?: string
+          zone_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "home_banners_zone_id_fkey"
+            columns: ["zone_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_zones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      home_content_events: {
+        Row: {
+          content_id: string
+          content_type: string
+          event_type: string
+          id: number
+          occurred_at: string
+          zone_id: string | null
+        }
+        Insert: {
+          content_id: string
+          content_type: string
+          event_type: string
+          id?: number
+          occurred_at?: string
+          zone_id?: string | null
+        }
+        Update: {
+          content_id?: string
+          content_type?: string
+          event_type?: string
+          id?: number
+          occurred_at?: string
+          zone_id?: string | null
+        }
+        Relationships: []
+      }
+      home_hot_deals: {
+        Row: {
+          created_at: string
+          description: string | null
+          discount_pct: number | null
+          discounted_price: number | null
+          ends_at: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean
+          label: string | null
+          original_price: number | null
+          position: number
+          product_slug: string | null
+          starts_at: string | null
+          title: string
+          updated_at: string
+          zone_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          discount_pct?: number | null
+          discounted_price?: number | null
+          ends_at?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          label?: string | null
+          original_price?: number | null
+          position?: number
+          product_slug?: string | null
+          starts_at?: string | null
+          title: string
+          updated_at?: string
+          zone_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          discount_pct?: number | null
+          discounted_price?: number | null
+          ends_at?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          label?: string | null
+          original_price?: number | null
+          position?: number
+          product_slug?: string | null
+          starts_at?: string | null
+          title?: string
+          updated_at?: string
+          zone_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "home_hot_deals_product_slug_fkey"
+            columns: ["product_slug"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["slug"]
+          },
+          {
+            foreignKeyName: "home_hot_deals_zone_id_fkey"
+            columns: ["zone_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_zones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      home_popular_items: {
+        Row: {
+          category: string | null
+          created_at: string
+          description: string | null
+          ends_at: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean
+          position: number
+          price: string | null
+          product_slug: string | null
+          starts_at: string | null
+          title: string
+          updated_at: string
+          zone_id: string | null
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          ends_at?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          position?: number
+          price?: string | null
+          product_slug?: string | null
+          starts_at?: string | null
+          title: string
+          updated_at?: string
+          zone_id?: string | null
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          ends_at?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          position?: number
+          price?: string | null
+          product_slug?: string | null
+          starts_at?: string | null
+          title?: string
+          updated_at?: string
+          zone_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "home_popular_items_product_slug_fkey"
+            columns: ["product_slug"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["slug"]
+          },
+          {
+            foreignKeyName: "home_popular_items_zone_id_fkey"
+            columns: ["zone_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_zones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      home_section_visibility: {
+        Row: {
+          created_at: string
+          id: string
+          is_visible: boolean
+          section: string
+          updated_at: string
+          zone_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_visible?: boolean
+          section: string
+          updated_at?: string
+          zone_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_visible?: boolean
+          section?: string
+          updated_at?: string
+          zone_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "home_section_visibility_zone_id_fkey"
+            columns: ["zone_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_zones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      home_specials: {
+        Row: {
+          created_at: string
+          description: string | null
+          ends_at: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean
+          kind: string
+          position: number
+          price: string | null
+          product_slugs: string[]
+          starts_at: string | null
+          title: string
+          updated_at: string
+          zone_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          ends_at?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          kind?: string
+          position?: number
+          price?: string | null
+          product_slugs?: string[]
+          starts_at?: string | null
+          title: string
+          updated_at?: string
+          zone_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          ends_at?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          kind?: string
+          position?: number
+          price?: string | null
+          product_slugs?: string[]
+          starts_at?: string | null
+          title?: string
+          updated_at?: string
+          zone_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "home_specials_zone_id_fkey"
+            columns: ["zone_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_zones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       integrations: {
         Row: {
           category: string
