@@ -25,7 +25,10 @@ export const listAllZones = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const scope = await requireAdminScope(context.supabase, context.userId);
-    let q = context.supabase
+    // Use the service-role client so admins can read internal contact columns
+    // (SELECT on contact_email/contact_phone is revoked from the authenticated role).
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    let q = supabaseAdmin
       .from("delivery_zones")
       .select("*")
       .order("sort_order", { ascending: true });
