@@ -1,18 +1,21 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Link } from "@tanstack/react-router";
-import { useState } from "react";
 import { SiteHeader } from "@/components/site-header";
 import { Section } from "@/components/section";
 import { ProductGrid } from "@/components/product-grid";
 import { CityGrid } from "@/components/city-grid";
 import { DeliveryFaqList } from "@/components/delivery-faq-list";
-import { OfferGrid } from "@/components/offer-grid";
 import { SiteFooter } from "@/components/site-footer";
 import { Testimonials } from "@/components/testimonials";
 import { Reveal } from "@/components/reveal";
-import MenuTabFramerComponent from "@/framer/menu-products/menu-tab";
-import { FEATURED_PRODUCTS, DESSERTS, TESTIMONIALS } from "@/data/menu";
+import { DESSERTS, TESTIMONIALS } from "@/data/menu";
 import { useActiveZoneCities } from "@/hooks/use-active-zones";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { getHomeContent } from "@/lib/public-home.functions";
+import { useZone } from "@/lib/zone-context";
+import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
+import { HomePopularSection, HomeHotDealsSection, HomeSpecialsSection, HomeBannersSection } from "@/components/home/home-sections";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -69,6 +72,17 @@ export const Route = createFileRoute("/")({
 
 function Index() {
   const { cities } = useActiveZoneCities();
+  const { selected } = useZone();
+  const fetchHome = useServerFn(getHomeContent);
+  const { data: home } = useQuery({
+    queryKey: ["home-content", selected?.id ?? null],
+    queryFn: () => fetchHome({ data: { zoneId: selected?.id ?? null } }),
+  });
+  useRealtimeInvalidate(
+    ["home_popular_items", "home_hot_deals", "home_specials", "home_banners", "home_section_visibility"],
+    [["home-content", selected?.id ?? null]],
+  );
+  const visible = (section: string) => home?.visibility[section] !== false;
   return (
     <div className="min-h-screen bg-white text-neutral-900">
       <SiteHeader />
@@ -104,23 +118,14 @@ function Index() {
         </div>
       </section>
 
+      {visible("banners") && <HomeBannersSection banners={home?.banners ?? []} />}
+
       {/* Fan Favorites */}
-      <FanFavoritesSection />
+      {visible("popular") && <HomePopularSection items={home?.popular ?? []} zoneId={selected?.id ?? null} />}
 
       {/* Hot Pizza, Hotter Deals */}
-      <section id="deals" className="w-full px-4 py-16 sm:px-6 md:py-24 lg:px-8">
-        <div className="mx-auto max-w-7xl">
-          <Reveal className="mb-12 text-center">
-            <h2 className="text-4xl font-extrabold tracking-tight md:text-5xl">
-              Hot Pizza, Hotter Deals
-            </h2>
-            <p className="mt-4 text-base text-neutral-700 md:text-lg">
-              From family-sized deals to solo slices, find the perfect offer for your pizza cravings.
-            </p>
-          </Reveal>
-          <OfferGrid />
-        </div>
-      </section>
+      {visible("hot_deals") && <HomeHotDealsSection deals={home?.hotDeals ?? []} zoneId={selected?.id ?? null} />}
+      {visible("specials") && <HomeSpecialsSection specials={home?.specials ?? []} zoneId={selected?.id ?? null} />}
 
       {/* Desserts */}
       <section id="desserts" className="w-full bg-white px-4 py-16 sm:px-6 md:py-24 lg:px-8">
@@ -217,65 +222,6 @@ function NewsletterSection() {
               Submit
             </button>
           </form>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function FanFavoritesSection() {
-  const [showPopular, setShowPopular] = useState(true);
-
-  return (
-    <section className="w-full bg-[#fff5f7] px-4 py-20 sm:px-6 md:py-24 lg:px-8">
-      <div className="mx-auto flex max-w-7xl flex-col items-center">
-        <Reveal className="mb-11 text-center">
-          <h2 className="text-4xl font-extrabold tracking-tight md:text-5xl">
-            Fan Favorites
-          </h2>
-          <p className="mt-7 text-base text-neutral-900 md:text-lg">
-            From classic combinations to bold flavors, these pizzas top our list for a reason.
-          </p>
-        </Reveal>
-        <button
-          type="button"
-          onClick={() => setShowPopular((v) => !v)}
-          aria-pressed={showPopular}
-          className={`group mb-10 inline-flex items-center gap-3 rounded-full border pl-2 pr-6 py-2 text-base font-semibold transition-all duration-300 ease-out shadow-sm hover:shadow-lg hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#ff003c] ${
-            showPopular
-              ? "bg-neutral-900 text-white border-neutral-900"
-              : "bg-white text-neutral-900 border-neutral-200 hover:border-neutral-900"
-          }`}
-        >
-          <span className="relative flex h-10 w-10 items-center justify-center rounded-full bg-[#fff5f7] overflow-hidden ring-1 ring-black/5">
-            <img
-              src="https://framerusercontent.com/images/bo5PFGtg1mLU0lWO3J9CWKVAcM.png?scale-down-to=512"
-              alt=""
-              className="h-9 w-9 object-contain transition-transform duration-500 group-hover:rotate-12 group-hover:scale-110"
-            />
-          </span>
-          <span className="tracking-tight">Popular</span>
-          <span
-            aria-hidden="true"
-            className={`ml-1 relative inline-flex h-5 w-9 items-center rounded-full transition-colors duration-300 ${
-              showPopular ? "bg-[#ff003c]" : "bg-neutral-300"
-            }`}
-          >
-            <span
-              className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform duration-300 ${
-                showPopular ? "translate-x-4" : "translate-x-0.5"
-              }`}
-            />
-          </span>
-        </button>
-        {showPopular && <ProductGrid products={FEATURED_PRODUCTS} imageOnly isPizza />}
-        <div className="mt-12 flex justify-center">
-          <Link
-            to="/menu/full-menu"
-            className="btn-pop inline-flex items-center rounded-full bg-neutral-900 px-8 py-4 text-base font-semibold text-white hover:bg-neutral-800"
-          >
-            View Pizza Menu
-          </Link>
         </div>
       </div>
     </section>
