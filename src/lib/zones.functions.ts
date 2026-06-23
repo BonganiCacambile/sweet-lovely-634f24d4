@@ -11,8 +11,6 @@ export type PublicZone = {
   min_order_zar: number;
   eta_minutes: number;
   hours_text: string | null;
-  contact_phone: string | null;
-  contact_email: string | null;
   color: string | null;
   postal_codes: string[];
   sort_order: number;
@@ -29,7 +27,7 @@ export const listActiveZones = createServerFn({ method: "GET" }).handler(async (
   const { data, error } = await supabase
     .from("delivery_zones")
     .select(
-      "id, slug, name, description, fee_zar, min_order_zar, eta_minutes, hours_text, contact_phone, contact_email, color, postal_codes, sort_order, image_url",
+      "id, slug, name, description, fee_zar, min_order_zar, eta_minutes, hours_text, color, postal_codes, sort_order, image_url",
     )
     .eq("is_active", true)
     .order("sort_order", { ascending: true });
