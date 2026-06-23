@@ -12,6 +12,7 @@ import { SectionCard } from "@/components/admin/section-card";
 import { useAuth } from "@/lib/auth-context";
 import { getDashboardStats, type DashboardStats } from "@/lib/admin-dashboard.functions";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useRealtimeTable } from "@/hooks/use-realtime-table";
 
 const DASHBOARD_QUERY_KEY = ["admin", "dashboard"] as const;
 
@@ -62,6 +63,11 @@ function DashboardHome() {
     ...dashboardQueryOptions(() => fetchStats()),
     refetchInterval: 30_000,
   });
+
+  // Push live updates into the dashboard whenever orders or order items
+  // change in the database, so KPIs and the recent orders feed stay current.
+  useRealtimeTable("orders", [DASHBOARD_QUERY_KEY]);
+  useRealtimeTable("order_items", [DASHBOARD_QUERY_KEY]);
 
   if (error) {
     return <DashboardError error={error} isRetrying={isFetching} reset={() => void refetch()} />;
