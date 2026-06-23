@@ -84,7 +84,7 @@ export const listPopularItems = createServerFn({ method: "POST" })
   .handler(async ({ context }) => {
     const scope = await requireAdminScope(context.supabase, context.userId);
     const base = context.supabase.from("home_popular_items").select("*").order("position");
-    const q = scope.isMain ? base : base.eq("zone_id", scope.zoneId);
+    const q = scope.isMain ? base : base.eq("zone_id", scope.zoneId as string);
     const { data, error } = await q;
     if (error) throw new Error(error.message);
     return { rows: data ?? [], scope };
@@ -126,7 +126,7 @@ export const listHotDeals = createServerFn({ method: "POST" })
   .handler(async ({ context }) => {
     const scope = await requireAdminScope(context.supabase, context.userId);
     const base = context.supabase.from("home_hot_deals").select("*").order("position");
-    const q = scope.isMain ? base : base.eq("zone_id", scope.zoneId);
+    const q = scope.isMain ? base : base.eq("zone_id", scope.zoneId as string);
     const { data, error } = await q;
     if (error) throw new Error(error.message);
     return { rows: data ?? [], scope };
@@ -168,7 +168,7 @@ export const listSpecials = createServerFn({ method: "POST" })
   .handler(async ({ context }) => {
     const scope = await requireAdminScope(context.supabase, context.userId);
     const base = context.supabase.from("home_specials").select("*").order("position");
-    const q = scope.isMain ? base : base.eq("zone_id", scope.zoneId);
+    const q = scope.isMain ? base : base.eq("zone_id", scope.zoneId as string);
     const { data, error } = await q;
     if (error) throw new Error(error.message);
     return { rows: data ?? [], scope };
@@ -210,7 +210,7 @@ export const listBanners = createServerFn({ method: "POST" })
   .handler(async ({ context }) => {
     const scope = await requireAdminScope(context.supabase, context.userId);
     const base = context.supabase.from("home_banners").select("*").order("position");
-    const q = scope.isMain ? base : base.eq("zone_id", scope.zoneId);
+    const q = scope.isMain ? base : base.eq("zone_id", scope.zoneId as string);
     const { data, error } = await q;
     if (error) throw new Error(error.message);
     return { rows: data ?? [], scope };
@@ -267,7 +267,7 @@ export const listSectionVisibility = createServerFn({ method: "POST" })
   .handler(async ({ context }) => {
     const scope = await requireAdminScope(context.supabase, context.userId);
     const base = context.supabase.from("home_section_visibility").select("*");
-    const q = scope.isMain ? base : base.eq("zone_id", scope.zoneId);
+    const q = scope.isMain ? base : base.eq("zone_id", scope.zoneId as string);
     const { data, error } = await q;
     if (error) throw new Error(error.message);
     return { rows: data ?? [], scope };
@@ -297,7 +297,7 @@ export const getHomeAnalytics = createServerFn({ method: "POST" })
     const scope = await requireAdminScope(context.supabase, context.userId);
     const since = new Date(Date.now() - data.days * 24 * 60 * 60 * 1000).toISOString();
     const base = context.supabase.from("home_content_events").select("content_type, content_id, event_type, occurred_at").gte("occurred_at", since);
-    const q = scope.isMain ? base : base.eq("zone_id", scope.zoneId);
+    const q = scope.isMain ? base : base.eq("zone_id", scope.zoneId as string);
     const { data: rows, error } = await q;
     if (error) throw new Error(error.message);
     type Bucket = { content_type: string; content_id: string; views: number; clicks: number };
