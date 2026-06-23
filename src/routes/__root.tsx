@@ -96,6 +96,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:title", content: "Sweet & Lovely — Pizza & Delivery" },
       { name: "twitter:description", content: "Freshly made pizza and fast delivery from Sweet & Lovely. Browse our menu and find a location near you." },
+      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/uVCrXAwreINZTgiVWJQNbGypaU83/social-images/social-1782237028201-IMG-20260613-WA0012.webp" },
+      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/uVCrXAwreINZTgiVWJQNbGypaU83/social-images/social-1782237028201-IMG-20260613-WA0012.webp" },
     ],
     links: [
       {
