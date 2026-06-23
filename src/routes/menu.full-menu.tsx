@@ -19,11 +19,13 @@ import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
 export const Route = createFileRoute("/menu/full-menu")({
   head: () => ({
     meta: [
-      { title: "Full Menu - Sweet & Lovely - Pizza Framer Template" },
+      { title: "Full Menu — Sweet & Lovely" },
       { name: "description", content: "Browse the full Sweet & Lovely menu — pizzas, sides and desserts." },
-      { property: "og:title", content: "Full Menu - Pepper - Pizza Framer Template" },
-      { property: "og:description", content: "Browse the full Pepper menu — pizzas, sides and desserts." },
+      { property: "og:title", content: "Full Menu — Sweet & Lovely" },
+      { property: "og:description", content: "Browse the full Sweet & Lovely menu — pizzas, sides and desserts." },
+      { property: "og:url", content: "https://sweet-n-lovely-pizza.lovable.app/menu/full-menu" },
     ],
+    links: [{ rel: "canonical", href: "https://sweet-n-lovely-pizza.lovable.app/menu/full-menu" }],
   }),
   component: FullMenuPage,
 });

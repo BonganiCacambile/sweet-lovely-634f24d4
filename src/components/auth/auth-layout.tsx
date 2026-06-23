@@ -40,9 +40,9 @@ export function AuthLayout({
             className="max-w-md"
           >
             <p className="text-sm uppercase tracking-[0.18em] text-[#ff003c]">{eyebrow}</p>
-            <h1 className="mt-3 text-4xl font-semibold tracking-tight text-neutral-900">
+            <p className="mt-3 text-4xl font-semibold tracking-tight text-neutral-900">
               {title}
-            </h1>
+            </p>
             <p className="mt-3 text-base leading-relaxed text-neutral-600">{subtitle}</p>
 
             <ul className="mt-8 space-y-3 text-sm text-neutral-700">
@@ -82,9 +82,9 @@ export function AuthLayout({
               <p className="mt-3 text-[11px] uppercase tracking-[0.18em] text-[#ff003c]">
                 {eyebrow}
               </p>
-              <h1 className="mt-1.5 text-2xl font-semibold tracking-tight text-neutral-900">
+              <p className="mt-1.5 text-2xl font-semibold tracking-tight text-neutral-900">
                 {title}
-              </h1>
+              </p>
               <p className="mt-2 max-w-xs text-sm leading-relaxed text-neutral-600">
                 {subtitle}
               </p>
@@ -93,6 +93,8 @@ export function AuthLayout({
               className="rounded-3xl border border-neutral-200/70 bg-white/80 p-5 shadow-[0_30px_80px_-30px_rgba(15,15,15,0.18)] backdrop-blur-xl sm:p-8"
               style={{ backdropFilter: "blur(20px)" }}
             >
+              {/* Visually-hidden single H1 ensures one heading for the page */}
+              <h1 className="sr-only">{title}</h1>
               {children}
             </div>
             <p className="mt-6 text-center text-xs text-neutral-500">

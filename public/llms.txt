@@ -1,0 +1,12 @@
+# Sweet & Lovely
+
+> Freshly made pizza with fast delivery across our active South African delivery zones.
+
+Sweet & Lovely is a pizza restaurant and delivery service. The site lets customers browse the full menu, see delivery zones and fees, find a nearby location, and contact the team.
+
+## Pages
+
+- [Home](/): Hero, fan favorites, deals, desserts, locations and delivery FAQs.
+- [Full Menu](/menu/full-menu): The complete menu — pizzas, sides, desserts and drinks with prices.
+- [Locations & Delivery](/locations): Delivery zones, fees, estimated times and pickup info.
+- [Contact](/contact): Get in touch for questions, feedback or catering.

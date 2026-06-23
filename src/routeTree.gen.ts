@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as LocationsRouteImport } from './routes/locations'
 import { Route as LoadingRouteImport } from './routes/loading'
@@ -51,6 +52,11 @@ import { Route as AuthenticatedAccountNotificationsRouteImport } from './routes/
 import { Route as AuthenticatedAccountAddressesRouteImport } from './routes/_authenticated/account.addresses'
 import { Route as AuthenticatedAccountOrdersOrderIdRouteImport } from './routes/_authenticated/account.orders.$orderId'
 
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
@@ -286,6 +292,7 @@ export interface FileRoutesByFullPath {
   '/loading': typeof LoadingRoute
   '/locations': typeof LocationsRoute
   '/login': typeof LoginRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/account': typeof AuthenticatedAccountRouteWithChildren
   '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/auth/admin': typeof AuthAdminRoute
@@ -328,6 +335,7 @@ export interface FileRoutesByTo {
   '/loading': typeof LoadingRoute
   '/locations': typeof LocationsRoute
   '/login': typeof LoginRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/account': typeof AuthenticatedAccountRouteWithChildren
   '/auth/admin': typeof AuthAdminRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
@@ -371,6 +379,7 @@ export interface FileRoutesById {
   '/loading': typeof LoadingRoute
   '/locations': typeof LocationsRoute
   '/login': typeof LoginRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/_authenticated/account': typeof AuthenticatedAccountRouteWithChildren
   '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
   '/auth/admin': typeof AuthAdminRoute
@@ -415,6 +424,7 @@ export interface FileRouteTypes {
     | '/loading'
     | '/locations'
     | '/login'
+    | '/sitemap.xml'
     | '/account'
     | '/admin'
     | '/auth/admin'
@@ -457,6 +467,7 @@ export interface FileRouteTypes {
     | '/loading'
     | '/locations'
     | '/login'
+    | '/sitemap.xml'
     | '/account'
     | '/auth/admin'
     | '/auth/forgot-password'
@@ -499,6 +510,7 @@ export interface FileRouteTypes {
     | '/loading'
     | '/locations'
     | '/login'
+    | '/sitemap.xml'
     | '/_authenticated/account'
     | '/_authenticated/admin'
     | '/auth/admin'
@@ -543,11 +555,19 @@ export interface RootRouteChildren {
   LoadingRoute: typeof LoadingRoute
   LocationsRoute: typeof LocationsRoute
   LoginRoute: typeof LoginRoute
+  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   MenuFullMenuRoute: typeof MenuFullMenuRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/login': {
       id: '/login'
       path: '/login'
@@ -970,6 +990,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoadingRoute: LoadingRoute,
   LocationsRoute: LocationsRoute,
   LoginRoute: LoginRoute,
+  SitemapDotxmlRoute: SitemapDotxmlRoute,
   MenuFullMenuRoute: MenuFullMenuRoute,
 }
 export const routeTree = rootRouteImport

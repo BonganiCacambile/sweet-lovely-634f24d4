@@ -14,7 +14,12 @@ export const Route = createFileRoute("/auth")({
     meta: [
       { title: "Sign in or create an account — Sweet & Lovely" },
       { name: "description", content: "Sign in or create your Sweet & Lovely account to order faster, track deliveries, and unlock member deals." },
+      { property: "og:title", content: "Sign in — Sweet & Lovely" },
+      { property: "og:description", content: "Sign in or create your Sweet & Lovely account to order faster, track deliveries, and unlock member deals." },
+      { property: "og:url", content: "https://sweet-n-lovely-pizza.lovable.app/auth" },
+      { name: "robots", content: "noindex" },
     ],
+    links: [{ rel: "canonical", href: "https://sweet-n-lovely-pizza.lovable.app/auth" }],
   }),
   component: AuthPage,
 });

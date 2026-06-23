@@ -21,6 +21,47 @@ export const Route = createFileRoute("/")({
       { name: "description", content: "Fresh pizza, fast delivery. Browse the menu and find a Sweet & Lovely near you." },
       { property: "og:title", content: "Sweet & Lovely — Pizza & Delivery" },
       { property: "og:description", content: "Fresh pizza, fast delivery. Browse the menu and find a Sweet & Lovely near you." },
+      { property: "og:url", content: "https://sweet-n-lovely-pizza.lovable.app/" },
+    ],
+    links: [{ rel: "canonical", href: "https://sweet-n-lovely-pizza.lovable.app/" }],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "Restaurant",
+          name: "Sweet & Lovely",
+          url: "https://sweet-n-lovely-pizza.lovable.app/",
+          image: "https://sweet-n-lovely-pizza.lovable.app/logo.png",
+          servesCuisine: ["Pizza", "Italian"],
+          priceRange: "$$",
+          acceptsReservations: false,
+        }),
+      },
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          mainEntity: [
+            {
+              "@type": "Question",
+              name: "Do you deliver?",
+              acceptedAnswer: { "@type": "Answer", text: "Yes — we deliver across our active zones. Enter your address at checkout to confirm availability and fees." },
+            },
+            {
+              "@type": "Question",
+              name: "How fast is delivery?",
+              acceptedAnswer: { "@type": "Answer", text: "Most orders arrive within 30–60 minutes. Each delivery zone shows an estimated time at checkout." },
+            },
+            {
+              "@type": "Question",
+              name: "Can I order for pickup?",
+              acceptedAnswer: { "@type": "Answer", text: "Yes, pickup is available at every Sweet & Lovely location during opening hours." },
+            },
+          ],
+        }),
+      },
     ],
   }),
   component: Index,
@@ -54,6 +95,9 @@ function Index() {
             <img
               src="https://framerusercontent.com/images/TselH8OEkb2YNE35eIM1vVAfb6s.png?scale-down-to=1024"
               alt="Pizza Margheritta"
+              width={1000}
+              height={1000}
+              fetchPriority="high"
               className="h-auto w-full select-none animate-spin-slow"
             />
           </div>

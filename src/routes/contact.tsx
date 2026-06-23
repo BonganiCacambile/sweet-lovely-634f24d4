@@ -11,9 +11,11 @@ export const Route = createFileRoute("/contact")({
     meta: [
       { title: "Contact — Sweet & Lovely" },
       { name: "description", content: "Get in touch with Sweet & Lovely — questions, feedback, catering." },
-      { property: "og:title", content: "Contact — Pepper" },
-      { property: "og:description", content: "Get in touch with Pepper — questions, feedback, catering." },
+      { property: "og:title", content: "Contact — Sweet & Lovely" },
+      { property: "og:description", content: "Get in touch with Sweet & Lovely — questions, feedback, catering." },
+      { property: "og:url", content: "https://sweet-n-lovely-pizza.lovable.app/contact" },
     ],
+    links: [{ rel: "canonical", href: "https://sweet-n-lovely-pizza.lovable.app/contact" }],
   }),
   component: ContactPage,
 });
