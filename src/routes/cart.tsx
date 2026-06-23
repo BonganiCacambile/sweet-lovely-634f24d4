@@ -18,7 +18,12 @@ export const Route = createFileRoute("/cart")({
     meta: [
       { title: "Cart — Sweet & Lovely" },
       { name: "description", content: "Review your order before checkout." },
+      { property: "og:title", content: "Cart — Sweet & Lovely" },
+      { property: "og:description", content: "Review your order before checkout." },
+      { property: "og:url", content: "https://sweet-n-lovely-pizza.lovable.app/cart" },
+      { name: "robots", content: "noindex" },
     ],
+    links: [{ rel: "canonical", href: "https://sweet-n-lovely-pizza.lovable.app/cart" }],
   }),
   component: CartPage,
 });
