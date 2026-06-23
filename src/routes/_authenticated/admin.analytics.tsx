@@ -10,6 +10,7 @@ import { formatZar } from "@/lib/admin/format";
 import { analyticsOverview } from "@/lib/admin/analytics.functions";
 import { listAllZones } from "@/lib/admin/zones.functions";
 import { useAuth } from "@/lib/auth-context";
+import { useRealtimeTable } from "@/hooks/use-realtime-table";
 
 export const Route = createFileRoute("/_authenticated/admin/analytics")({
   validateSearch: (s: Record<string, unknown>) => ({
@@ -42,6 +43,11 @@ function AnalyticsPage() {
     queryFn: () => fn({ data: { ...range, zoneId } }),
     refetchOnWindowFocus: true,
   });
+
+  // Live-refresh analytics whenever orders/items change so revenue, counts
+  // and top products update without a manual reload.
+  useRealtimeTable("orders", [["admin", "analytics"]]);
+  useRealtimeTable("order_items", [["admin", "analytics"]]);
 
   const topProductCols = useMemo(() => ([
     { key: "title", label: "Product" },
