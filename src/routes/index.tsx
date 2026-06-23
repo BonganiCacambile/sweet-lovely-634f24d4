@@ -1,6 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Link } from "@tanstack/react-router";
-import { useState } from "react";
 import { SiteHeader } from "@/components/site-header";
 import { Section } from "@/components/section";
 import { ProductGrid } from "@/components/product-grid";
@@ -9,7 +8,6 @@ import { DeliveryFaqList } from "@/components/delivery-faq-list";
 import { SiteFooter } from "@/components/site-footer";
 import { Testimonials } from "@/components/testimonials";
 import { Reveal } from "@/components/reveal";
-import MenuTabFramerComponent from "@/framer/menu-products/menu-tab";
 import { DESSERTS, TESTIMONIALS } from "@/data/menu";
 import { useActiveZoneCities } from "@/hooks/use-active-zones";
 import { useQuery } from "@tanstack/react-query";
