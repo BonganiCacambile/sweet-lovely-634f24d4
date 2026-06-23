@@ -1,7 +1,7 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
   LayoutDashboard, BarChart3, Users, ShoppingBag, Package, FileText,
-  Tags, Boxes, Star, Bell, FileBarChart2, ShieldCheck, Lock, ScrollText,
+  Home, Tags, Boxes, Star, Bell, FileBarChart2, ShieldCheck, Lock, ScrollText,
   Plug, Settings, UserCircle2, LogOut, X, MapPin, Users2,
 } from "lucide-react";
 import { BrandMark } from "./brand-mark";
@@ -20,6 +20,7 @@ const SECTIONS: Array<{ heading: string; items: Item[] }> = [
       { to: "/admin/orders", label: "Orders", icon: ShoppingBag },
       { to: "/admin/products", label: "Products", icon: Package, mainOnly: true },
       { to: "/admin/content", label: "Content", icon: FileText, mainOnly: true },
+      { to: "/admin/home-content", label: "Home Content", icon: Home },
     ],
   },
   {
