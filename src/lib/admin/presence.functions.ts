@@ -30,23 +30,21 @@ export const pingPresence = createServerFn({ method: "POST" })
       .maybeSingle();
 
     const now = new Date().toISOString();
-    const row: Record<string, unknown> = {
-      user_id: context.userId,
-      status: data.status,
-      assigned_zone_id: roleRow?.assigned_zone_id ?? null,
-      user_agent: data.userAgent ?? null,
-      last_heartbeat_at: now,
-    };
-    if (data.status === "active" || data.status === "online") {
-      row.last_active_at = now;
-    }
-    if (data.isLogin) {
-      row.login_at = now;
-    }
-
+    const isActive = data.status === "active" || data.status === "online";
     const { error } = await context.supabase
       .from("admin_presence")
-      .upsert(row, { onConflict: "user_id" });
+      .upsert(
+        {
+          user_id: context.userId,
+          status: data.status,
+          assigned_zone_id: roleRow?.assigned_zone_id ?? null,
+          user_agent: data.userAgent ?? null,
+          last_heartbeat_at: now,
+          ...(isActive ? { last_active_at: now } : {}),
+          ...(data.isLogin ? { login_at: now } : {}),
+        },
+        { onConflict: "user_id" },
+      );
     if (error) throw new Error(error.message);
     return { ok: true as const };
   });
