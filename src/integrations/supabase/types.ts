@@ -14,6 +14,47 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_presence: {
+        Row: {
+          assigned_zone_id: string | null
+          last_active_at: string
+          last_heartbeat_at: string
+          login_at: string | null
+          status: string
+          updated_at: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          assigned_zone_id?: string | null
+          last_active_at?: string
+          last_heartbeat_at?: string
+          login_at?: string | null
+          status?: string
+          updated_at?: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          assigned_zone_id?: string | null
+          last_active_at?: string
+          last_heartbeat_at?: string
+          login_at?: string | null
+          status?: string
+          updated_at?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_presence_assigned_zone_id_fkey"
+            columns: ["assigned_zone_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_zones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_logs: {
         Row: {
           action: string

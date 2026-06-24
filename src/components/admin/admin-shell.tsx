@@ -4,11 +4,13 @@ import { motion, AnimatePresence } from "framer-motion";
 import { AdminSidebar } from "./admin-sidebar";
 import { AdminTopbar } from "./admin-topbar";
 import { CommandPalette } from "./command-palette";
+import { useAdminPresence } from "@/lib/admin-presence";
 
 export function AdminShell() {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
+  useAdminPresence();
 
   useEffect(() => {
     document.body.style.overflow = mobileOpen ? "hidden" : "";
