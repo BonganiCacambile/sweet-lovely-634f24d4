@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "lint": "eslint .",
     "format": "prettier --write .",
-    "test:regression:orders": "node tests/regression/realtime-orders.mjs"
+    "test:regression:orders": "node tests/regression/realtime-orders.mjs",
+    "test:regression:notifications": "node tests/regression/realtime-customer-notifications.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
