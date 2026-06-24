@@ -7,7 +7,6 @@ import { requireMainAdminGuard } from "@/lib/admin/route-guards";
 import { MainAdminGuard } from "@/components/admin/main-admin-guard";
 import { PageHeader } from "@/components/admin/page-header";
 import { Card, EmptyState, ErrorPanel, LoadingRows } from "@/components/admin/data-shell";
-import { KpiCard } from "@/components/admin/kpi-card";
 import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
 import { formatDateTime, formatRelative } from "@/lib/admin/format";
 import { listAdminPresence, type AdminPresenceRow } from "@/lib/admin/presence.functions";
@@ -21,6 +20,18 @@ export const Route = createFileRoute("/_authenticated/admin/employee-activity")(
     </MainAdminGuard>
   ),
 });
+
+function MiniKpi({ label, value, icon }: { label: string; value: number; icon: React.ReactNode }) {
+  return (
+    <div className="rounded-3xl border border-neutral-200/70 bg-white/80 p-5 shadow-[0_10px_40px_-24px_rgba(15,15,15,0.18)] backdrop-blur">
+      <div className="flex items-center justify-between">
+        <p className="text-xs font-medium uppercase tracking-wider text-neutral-500">{label}</p>
+        <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-neutral-100 text-neutral-600">{icon}</span>
+      </div>
+      <p className="mt-3 text-3xl font-semibold tabular-nums text-neutral-900">{value}</p>
+    </div>
+  );
+}
 
 const STATUS_STYLES: Record<
   AdminPresenceRow["status"],
@@ -98,21 +109,21 @@ function EmployeeActivityPage() {
       />
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <KpiCard label="Online" value={kpis.online} icon={<Activity className="h-4 w-4" />} />
-        <KpiCard label="Idle / Away" value={kpis.idleAway} icon={<Users className="h-4 w-4" />} />
-        <KpiCard label="Offline" value={kpis.offline} icon={<WifiOff className="h-4 w-4" />} />
-        <KpiCard label="Zones staffed" value={kpis.staffedZones} icon={<MapPin className="h-4 w-4" />} />
+        <MiniKpi label="Online" value={kpis.online} icon={<Activity className="h-4 w-4" />} />
+        <MiniKpi label="Idle / Away" value={kpis.idleAway} icon={<Users className="h-4 w-4" />} />
+        <MiniKpi label="Offline" value={kpis.offline} icon={<WifiOff className="h-4 w-4" />} />
+        <MiniKpi label="Zones staffed" value={kpis.staffedZones} icon={<MapPin className="h-4 w-4" />} />
       </div>
 
       <Card>
         {query.isLoading ? (
-          <LoadingRows rows={6} cols={6} />
+          <LoadingRows rows={6} />
         ) : query.isError ? (
-          <ErrorPanel message={(query.error as Error).message} onRetry={() => query.refetch()} />
+          <ErrorPanel error={query.error} onRetry={() => { void query.refetch(); }} />
         ) : rows.length === 0 ? (
           <EmptyState
             title="No admin users yet"
-            description="Invite team members from the Users module to start tracking presence."
+            hint="Invite team members from the Users module to start tracking presence."
           />
         ) : (
           <div className="overflow-x-auto">
