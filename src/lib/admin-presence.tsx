@@ -73,16 +73,9 @@ export function useAdminPresence() {
     };
 
     const onUnload = () => {
-      // Best-effort offline marker via sendBeacon — server fn would race the
-      // tab teardown otherwise.
-      try {
-        navigator.sendBeacon?.(
-          "/_serverFn/src_lib_admin_presence_functions_ts--endPresence_createServerFn_handler",
-          new Blob(["{}"], { type: "application/json" }),
-        );
-      } catch {
-        // ignore
-      }
+      // Best-effort offline marker. The fetch may not complete before the
+      // tab dies, but the server still flips the row to offline when the
+      // next listAdminPresence call sees a stale (>60s) heartbeat.
       void end({});
     };
 
