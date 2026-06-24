@@ -72,7 +72,7 @@ export type ActivityFeedRow = {
   action: string;
   entity: string | null;
   entity_id: string | null;
-  metadata: Record<string, unknown>;
+  metadata: Record<string, string | number | boolean | null>;
   zone_name: string | null;
   created_at: string;
 };
@@ -136,7 +136,16 @@ export const listActivityFeed = createServerFn({ method: "POST" })
     const zoneMap = new Map((zonesRes.data ?? []).map((z) => [z.id, z.name]));
 
     return logs.map((r) => {
-      const md = (r.metadata ?? {}) as Record<string, unknown>;
+      const rawMd = (r.metadata ?? {}) as Record<string, unknown>;
+      // Coerce to serializable scalars for the RPC boundary.
+      const md: Record<string, string | number | boolean | null> = {};
+      for (const [k, v] of Object.entries(rawMd)) {
+        if (v === null || ["string", "number", "boolean"].includes(typeof v)) {
+          md[k] = v as string | number | boolean | null;
+        } else {
+          md[k] = JSON.stringify(v);
+        }
+      }
       const zoneId = typeof md.zone_id === "string" ? md.zone_id : null;
       return {
         id: r.id,
