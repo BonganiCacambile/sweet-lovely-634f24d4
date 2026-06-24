@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useAuth } from "@/lib/auth-context";
 import { pingPresence, endPresence } from "@/lib/admin/presence.functions";
+import { logPresenceEvent } from "@/lib/admin/activity-feed.functions";
 
 const HEARTBEAT_MS = 20_000;
 const IDLE_MS = 5 * 60_000;
@@ -19,6 +20,7 @@ export function useAdminPresence() {
   const { user, isAdmin } = useAuth();
   const ping = useServerFn(pingPresence);
   const end = useServerFn(endPresence);
+  const logEvent = useServerFn(logPresenceEvent);
   const lastActivityRef = useRef<number>(Date.now());
   const currentStatusRef = useRef<Status>("offline");
   const sentLoginRef = useRef<boolean>(false);
@@ -35,8 +37,15 @@ export function useAdminPresence() {
 
     const send = (next: Status, isLogin = false) => {
       if (cancelled) return;
+      const prev = currentStatusRef.current;
       currentStatusRef.current = next;
       void ping({ data: { status: next, userAgent: ua, isLogin } }).catch(() => {});
+      // Lifecycle audit: only on transitions, never on plain heartbeats.
+      if (isLogin) {
+        void logEvent({ data: { action: "auth.sign_in", metadata: { user_agent: ua } } }).catch(() => {});
+      } else if (prev !== next && (next === "active" || next === "idle" || next === "away")) {
+        void logEvent({ data: { action: `presence.${next}` as const } }).catch(() => {});
+      }
     };
 
     const compute = (): Status => {
@@ -77,6 +86,7 @@ export function useAdminPresence() {
       // tab dies, but the server still flips the row to offline when the
       // next listAdminPresence call sees a stale (>60s) heartbeat.
       void end({});
+      void logEvent({ data: { action: "auth.sign_out" } }).catch(() => {});
     };
 
     // Initial login ping.
@@ -102,6 +112,7 @@ export function useAdminPresence() {
       window.removeEventListener("beforeunload", onUnload);
       window.removeEventListener("pagehide", onUnload);
       void end({}).catch(() => {});
+      void logEvent({ data: { action: "auth.sign_out" } }).catch(() => {});
     };
-  }, [user, isAdmin, ping, end]);
+  }, [user, isAdmin, ping, end, logEvent]);
 }
