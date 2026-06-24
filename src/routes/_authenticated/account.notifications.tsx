@@ -97,6 +97,21 @@ function NotificationsPage() {
     }
   };
 
+  const allPrefs = ((profile as any)?.notification_prefs ?? {}) as Record<string, unknown>;
+  const soundOn = allPrefs.sound !== false;
+  const vibrationOn = allPrefs.vibration !== false;
+
+  const toggleDevicePref = async (key: "sound" | "vibration") => {
+    const next = { ...allPrefs, ...prefs, [key]: !(allPrefs[key] !== false) };
+    try {
+      await savePrefs({ data: { notification_prefs: next } });
+      await refreshProfile();
+      toast.success("Preferences saved");
+    } catch (e: any) {
+      toast.error(e.message ?? "Couldn't save");
+    }
+  };
+
   return (
     <AccountShell title="Notifications">
       <Card>
