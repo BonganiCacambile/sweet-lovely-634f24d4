@@ -110,7 +110,7 @@ export const MENU_ITEMS: MenuItem[] = [
 /** Static demo menu — replace with a backend query when Lovable Cloud is enabled. */
 export const FEATURED_PRODUCTS: Product[] = [
   {
-    id: "cheese-avalanche-fav",
+    id: "cheese-avalanche",
     title: "Cheese Avalanche",
     price: "R80",
     allergens: "Dairy, Gluten",
@@ -120,7 +120,7 @@ export const FEATURED_PRODUCTS: Product[] = [
     image: fr("Q4djsExkm2dVJLND8pnRkbmHKy8.png"),
   },
   {
-    id: "buffalo-bliss-fav",
+    id: "buffalo-bliss",
     title: "Buffalo Bliss",
     price: "R80",
     allergens: "Dairy, Gluten, Eggs",
@@ -130,7 +130,7 @@ export const FEATURED_PRODUCTS: Product[] = [
     image: fr("fOcW4cqVIKe7O6jovEeqZ46Cg.png"),
   },
   {
-    id: "mediterranean-marvel-fav",
+    id: "mediterranean-marvel",
     title: "Mediterranean Marvel",
     price: "R80",
     allergens: "Dairy, Gluten",
