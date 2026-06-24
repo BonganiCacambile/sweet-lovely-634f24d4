@@ -40,6 +40,7 @@ import { Route as AuthenticatedAdminOrdersRouteImport } from './routes/_authenti
 import { Route as AuthenticatedAdminNotificationsRouteImport } from './routes/_authenticated/admin.notifications'
 import { Route as AuthenticatedAdminInventoryRouteImport } from './routes/_authenticated/admin.inventory'
 import { Route as AuthenticatedAdminIntegrationsRouteImport } from './routes/_authenticated/admin.integrations'
+import { Route as AuthenticatedAdminEmployeeActivityRouteImport } from './routes/_authenticated/admin.employee-activity'
 import { Route as AuthenticatedAdminDeliveryZonesRouteImport } from './routes/_authenticated/admin.delivery-zones'
 import { Route as AuthenticatedAdminContentRouteImport } from './routes/_authenticated/admin.content'
 import { Route as AuthenticatedAdminCategoriesRouteImport } from './routes/_authenticated/admin.categories'
@@ -217,6 +218,12 @@ const AuthenticatedAdminIntegrationsRoute =
     path: '/integrations',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const AuthenticatedAdminEmployeeActivityRoute =
+  AuthenticatedAdminEmployeeActivityRouteImport.update({
+    id: '/employee-activity',
+    path: '/employee-activity',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const AuthenticatedAdminDeliveryZonesRoute =
   AuthenticatedAdminDeliveryZonesRouteImport.update({
     id: '/delivery-zones',
@@ -310,6 +317,7 @@ export interface FileRoutesByFullPath {
   '/admin/categories': typeof AuthenticatedAdminCategoriesRoute
   '/admin/content': typeof AuthenticatedAdminContentRoute
   '/admin/delivery-zones': typeof AuthenticatedAdminDeliveryZonesRoute
+  '/admin/employee-activity': typeof AuthenticatedAdminEmployeeActivityRoute
   '/admin/integrations': typeof AuthenticatedAdminIntegrationsRoute
   '/admin/inventory': typeof AuthenticatedAdminInventoryRoute
   '/admin/notifications': typeof AuthenticatedAdminNotificationsRoute
@@ -352,6 +360,7 @@ export interface FileRoutesByTo {
   '/admin/categories': typeof AuthenticatedAdminCategoriesRoute
   '/admin/content': typeof AuthenticatedAdminContentRoute
   '/admin/delivery-zones': typeof AuthenticatedAdminDeliveryZonesRoute
+  '/admin/employee-activity': typeof AuthenticatedAdminEmployeeActivityRoute
   '/admin/integrations': typeof AuthenticatedAdminIntegrationsRoute
   '/admin/inventory': typeof AuthenticatedAdminInventoryRoute
   '/admin/notifications': typeof AuthenticatedAdminNotificationsRoute
@@ -397,6 +406,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/categories': typeof AuthenticatedAdminCategoriesRoute
   '/_authenticated/admin/content': typeof AuthenticatedAdminContentRoute
   '/_authenticated/admin/delivery-zones': typeof AuthenticatedAdminDeliveryZonesRoute
+  '/_authenticated/admin/employee-activity': typeof AuthenticatedAdminEmployeeActivityRoute
   '/_authenticated/admin/integrations': typeof AuthenticatedAdminIntegrationsRoute
   '/_authenticated/admin/inventory': typeof AuthenticatedAdminInventoryRoute
   '/_authenticated/admin/notifications': typeof AuthenticatedAdminNotificationsRoute
@@ -442,6 +452,7 @@ export interface FileRouteTypes {
     | '/admin/categories'
     | '/admin/content'
     | '/admin/delivery-zones'
+    | '/admin/employee-activity'
     | '/admin/integrations'
     | '/admin/inventory'
     | '/admin/notifications'
@@ -484,6 +495,7 @@ export interface FileRouteTypes {
     | '/admin/categories'
     | '/admin/content'
     | '/admin/delivery-zones'
+    | '/admin/employee-activity'
     | '/admin/integrations'
     | '/admin/inventory'
     | '/admin/notifications'
@@ -528,6 +540,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/categories'
     | '/_authenticated/admin/content'
     | '/_authenticated/admin/delivery-zones'
+    | '/_authenticated/admin/employee-activity'
     | '/_authenticated/admin/integrations'
     | '/_authenticated/admin/inventory'
     | '/_authenticated/admin/notifications'
@@ -778,6 +791,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminIntegrationsRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/employee-activity': {
+      id: '/_authenticated/admin/employee-activity'
+      path: '/employee-activity'
+      fullPath: '/admin/employee-activity'
+      preLoaderRoute: typeof AuthenticatedAdminEmployeeActivityRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/delivery-zones': {
       id: '/_authenticated/admin/delivery-zones'
       path: '/delivery-zones'
@@ -899,6 +919,7 @@ interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminCategoriesRoute: typeof AuthenticatedAdminCategoriesRoute
   AuthenticatedAdminContentRoute: typeof AuthenticatedAdminContentRoute
   AuthenticatedAdminDeliveryZonesRoute: typeof AuthenticatedAdminDeliveryZonesRoute
+  AuthenticatedAdminEmployeeActivityRoute: typeof AuthenticatedAdminEmployeeActivityRoute
   AuthenticatedAdminIntegrationsRoute: typeof AuthenticatedAdminIntegrationsRoute
   AuthenticatedAdminInventoryRoute: typeof AuthenticatedAdminInventoryRoute
   AuthenticatedAdminNotificationsRoute: typeof AuthenticatedAdminNotificationsRoute
@@ -921,6 +942,8 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminCategoriesRoute: AuthenticatedAdminCategoriesRoute,
   AuthenticatedAdminContentRoute: AuthenticatedAdminContentRoute,
   AuthenticatedAdminDeliveryZonesRoute: AuthenticatedAdminDeliveryZonesRoute,
+  AuthenticatedAdminEmployeeActivityRoute:
+    AuthenticatedAdminEmployeeActivityRoute,
   AuthenticatedAdminIntegrationsRoute: AuthenticatedAdminIntegrationsRoute,
   AuthenticatedAdminInventoryRoute: AuthenticatedAdminInventoryRoute,
   AuthenticatedAdminNotificationsRoute: AuthenticatedAdminNotificationsRoute,
