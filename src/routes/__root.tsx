@@ -20,6 +20,7 @@ import { AuthProvider, useAuth } from "@/lib/auth-context";
 import { LoadingScreen } from "@/components/loading-screen";
 import { ZoneProvider } from "@/lib/zone-context";
 import { ZonePicker, ZoneChip } from "@/components/zone-picker";
+import { NotificationsProvider } from "@/lib/notifications-context";
 
 function NotFoundComponent() {
   return (
@@ -156,19 +157,21 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <CartProvider>
-          <ZoneProvider>
-            <AuthGate>
+        <NotificationsProvider>
+          <CartProvider>
+            <ZoneProvider>
+              <AuthGate>
               {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
               <Outlet />
               <CartFab />
               <CartDrawer />
               <ZonePicker />
               <FloatingZoneChip />
-            </AuthGate>
-          </ZoneProvider>
-          <Toaster position="top-center" richColors />
-        </CartProvider>
+              </AuthGate>
+            </ZoneProvider>
+            <Toaster position="top-center" richColors />
+          </CartProvider>
+        </NotificationsProvider>
       </AuthProvider>
     </QueryClientProvider>
   );
