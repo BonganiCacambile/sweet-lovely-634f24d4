@@ -83,3 +83,34 @@ node tests/regression/realtime-customer-notifications.mjs
 # or
 bun run test:regression:notifications
 ```
+
+---
+
+# Employee Presence + Activity Feed Performance Regression
+
+File: `tests/regression/admin-presence-perf.mjs`
+
+Asserts the newly added Employee Presence Monitoring page and Activity
+Feed load fast and stay responsive — no lag, no slow server functions,
+no realtime delay.
+
+Checks (all configurable via env):
+
+| Budget | Default | Env var |
+| --- | --- | --- |
+| Cold + warm load of `/admin/employee-activity` | 4000 ms | `PAGE_BUDGET_MS` |
+| `listAdminPresence` server fn round-trip | 1500 ms | `SERVER_FN_BUDGET_MS` |
+| `listActivityFeed` server fn round-trip | 1500 ms | `SERVER_FN_BUDGET_MS` |
+| Realtime feed update after an `audit_logs` insert | 5000 ms | `REALTIME_BUDGET_MS` |
+
+Required env: same as the orders regression (`APP_URL`, `SUPABASE_URL`,
+`SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `ADMIN_EMAIL`,
+`ADMIN_PASSWORD`).
+
+## Run
+
+```bash
+node tests/regression/admin-presence-perf.mjs
+# or
+bun run test:regression:presence-perf
+```
