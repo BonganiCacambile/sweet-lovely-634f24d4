@@ -1,5 +1,6 @@
 import NavFramerComponent from "@/framer/top-nav/nav";
 import { HeaderAccountMenu } from "@/components/auth/header-account-menu";
+import { NotificationBell } from "@/components/notifications/notification-bell";
 
 /** Top navigation rendered with the Framer-exported Nav (all variants/animations preserved). */
 export function SiteHeader() {
@@ -15,7 +16,8 @@ export function SiteHeader() {
           "2xl": "Desktop",
         }}
       />
-      <div className="pointer-events-none absolute right-2 top-full z-40 mt-2 flex justify-end sm:right-4 md:right-6">
+      <div className="pointer-events-none absolute right-2 top-full z-40 mt-2 flex items-center justify-end gap-2 sm:right-4 md:right-6">
+        <NotificationBell />
         <HeaderAccountMenu />
       </div>
     </header>

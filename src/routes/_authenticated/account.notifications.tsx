@@ -97,6 +97,21 @@ function NotificationsPage() {
     }
   };
 
+  const allPrefs = ((profile as any)?.notification_prefs ?? {}) as Record<string, unknown>;
+  const soundOn = allPrefs.sound !== false;
+  const vibrationOn = allPrefs.vibration !== false;
+
+  const toggleDevicePref = async (key: "sound" | "vibration") => {
+    const next = { ...allPrefs, ...prefs, [key]: !(allPrefs[key] !== false) };
+    try {
+      await savePrefs({ data: { notification_prefs: next } });
+      await refreshProfile();
+      toast.success("Preferences saved");
+    } catch (e: any) {
+      toast.error(e.message ?? "Couldn't save");
+    }
+  };
+
   return (
     <AccountShell title="Notifications">
       <Card>
@@ -184,6 +199,22 @@ function NotificationsPage() {
       <Card>
         <p className="text-sm font-semibold text-neutral-900">Delivery preferences</p>
         <p className="mt-1 text-xs text-neutral-500">Choose how you want to hear from us.</p>
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          <div className="flex items-center justify-between rounded-xl border border-neutral-200 px-3 py-2.5">
+            <div>
+              <p className="text-sm font-medium text-neutral-800">Notification sound</p>
+              <p className="text-xs text-neutral-500">Play a soft ping for new alerts.</p>
+            </div>
+            <Toggle on={soundOn} onChange={() => toggleDevicePref("sound")} />
+          </div>
+          <div className="flex items-center justify-between rounded-xl border border-neutral-200 px-3 py-2.5">
+            <div>
+              <p className="text-sm font-medium text-neutral-800">Vibration</p>
+              <p className="text-xs text-neutral-500">Vibrate on supported devices.</p>
+            </div>
+            <Toggle on={vibrationOn} onChange={() => toggleDevicePref("vibration")} />
+          </div>
+        </div>
         <div className="mt-4 overflow-x-auto">
           <table className="min-w-full text-sm">
             <thead>
