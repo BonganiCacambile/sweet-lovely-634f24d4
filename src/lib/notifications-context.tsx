@@ -27,6 +27,7 @@ export type NotificationRow = {
 type Ctx = {
   unread: number;
   recent: NotificationRow[];
+  rtStatus: "idle" | "connecting" | "SUBSCRIBED" | "CLOSED" | "CHANNEL_ERROR" | "TIMED_OUT";
   refresh: () => Promise<void>;
   markAllRead: () => Promise<void>;
   markOneRead: (id: string) => Promise<void>;
@@ -63,6 +64,7 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
 
   const [unread, setUnread] = useState(0);
   const [recent, setRecent] = useState<NotificationRow[]>([]);
+  const [rtStatus, setRtStatus] = useState<Ctx["rtStatus"]>("idle");
   const prefsRef = useRef(readDevicePrefs(profile));
   prefsRef.current = readDevicePrefs(profile);
 
@@ -100,6 +102,7 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
     let cancelled = false;
 
     const subscribe = async () => {
+      setRtStatus("connecting");
       const { data } = await supabase.auth.getSession();
       const token = data.session?.access_token;
       if (token) {
@@ -160,6 +163,7 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
           },
         )
         .subscribe((status) => {
+          setRtStatus(status as Ctx["rtStatus"]);
           // On (re)connect, resync to catch anything missed while offline.
           if (status === "SUBSCRIBED") void refresh();
         });
@@ -214,8 +218,8 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
   );
 
   const value = useMemo<Ctx>(
-    () => ({ unread, recent, refresh, markAllRead, markOneRead }),
-    [unread, recent, refresh, markAllRead, markOneRead],
+    () => ({ unread, recent, rtStatus, refresh, markAllRead, markOneRead }),
+    [unread, recent, rtStatus, refresh, markAllRead, markOneRead],
   );
 
   return <NotificationsContext.Provider value={value}>{children}</NotificationsContext.Provider>;
@@ -228,6 +232,7 @@ export function useNotifications(): Ctx {
     return {
       unread: 0,
       recent: [],
+      rtStatus: "idle",
       refresh: async () => {},
       markAllRead: async () => {},
       markOneRead: async () => {},

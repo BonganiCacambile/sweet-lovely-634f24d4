@@ -17,7 +17,7 @@ function timeAgo(iso: string): string {
 
 export function NotificationBell() {
   const { user } = useAuth();
-  const { unread, recent, markAllRead, markOneRead } = useNotifications();
+  const { unread, recent, rtStatus, markAllRead, markOneRead } = useNotifications();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -37,6 +37,9 @@ export function NotificationBell() {
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-label={unread > 0 ? `Notifications (${unread} unread)` : "Notifications"}
+        data-testid="notification-bell"
+        data-rt-status={rtStatus}
+        data-unread-count={unread}
         className="relative inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/70 text-neutral-800 ring-1 ring-black/5 shadow-[0_6px_20px_-8px_rgba(0,0,0,0.25)] backdrop-blur-md transition hover:bg-white hover:scale-105 sm:h-10 sm:w-10"
       >
         <Bell className="h-4 w-4" />

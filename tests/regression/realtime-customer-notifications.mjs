@@ -106,13 +106,11 @@ async function cleanup(orderId, userId) {
 }
 
 async function readBadgeCount(page) {
-  const label = await page
-    .locator('button[aria-label^="Notifications"]')
+  const attr = await page
+    .locator('[data-testid="notification-bell"]')
     .first()
-    .getAttribute("aria-label");
-  if (!label) return 0;
-  const m = label.match(/\((\d+)\s+unread\)/);
-  return m ? Number(m[1]) : 0;
+    .getAttribute("data-unread-count");
+  return attr ? Number(attr) : 0;
 }
 
 async function run() {
@@ -133,10 +131,28 @@ async function run() {
     );
 
     log("Reloading as signed-in customer…");
-    await page.goto(`${APP_URL}/`, { waitUntil: "networkidle" });
+    await page.goto(`${APP_URL}/`, { waitUntil: "domcontentloaded" });
 
     // The bell only renders for signed-in users.
-    await page.waitForSelector('button[aria-label^="Notifications"]', { timeout: 15_000 });
+    const bell = page.locator('[data-testid="notification-bell"]').first();
+    await bell.waitFor({ state: "visible", timeout: 20_000 });
+
+    // Wait until the realtime channel has fully SUBSCRIBED, otherwise inserts
+    // performed before the join completes will be missed and the test flakes.
+    log("Waiting for realtime channel to SUBSCRIBE…");
+    await page.waitForFunction(
+      () => {
+        const el = document.querySelector('[data-testid="notification-bell"]');
+        return el?.getAttribute("data-rt-status") === "SUBSCRIBED";
+      },
+      undefined,
+      { timeout: 20_000 },
+    );
+
+    // Sonner toaster region must be mounted before the toast can render.
+    await page.waitForSelector('ol[data-sonner-toaster], section[data-sonner-toaster]', {
+      timeout: 10_000,
+    });
     await page.screenshot({ path: join(ARTIFACTS, "notif_1_before.png") });
 
     const beforeCount = await readBadgeCount(page);
@@ -156,11 +172,9 @@ async function run() {
     log("Waiting for unread badge to increment…");
     await page.waitForFunction(
       (prev) => {
-        const btn = document.querySelector('button[aria-label^="Notifications"]');
-        if (!btn) return false;
-        const label = btn.getAttribute("aria-label") || "";
-        const m = label.match(/\((\d+)\s+unread\)/);
-        const current = m ? Number(m[1]) : 0;
+        const el = document.querySelector('[data-testid="notification-bell"]');
+        if (!el) return false;
+        const current = Number(el.getAttribute("data-unread-count") || "0");
         return current > prev;
       },
       beforeCount,
