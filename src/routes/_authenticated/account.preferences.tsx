@@ -66,6 +66,7 @@ function PrefsPage() {
     setUploading(true);
     const ext = file.name.split(".").pop() ?? "jpg";
     const path = `${user.id}/avatar-${Date.now()}.${ext}`;
+    if (path.includes('..')) throw new Error('Invalid path');
     const { error: upErr } = await supabase.storage.from("avatars").upload(path, file, { upsert: true });
     if (upErr) {
       setUploading(false);
