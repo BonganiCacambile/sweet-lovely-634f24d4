@@ -21,7 +21,7 @@ const ACTIVITY_ACTIONS = [
 
 const logInput = z.object({
   action: z.enum(ACTIVITY_ACTIONS),
-  metadata: z.record(z.unknown()).optional(),
+  metadata: z.record(z.union([z.string(), z.number(), z.boolean(), z.null()])).optional(),
 });
 
 /**
