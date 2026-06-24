@@ -11,7 +11,8 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "test:regression:orders": "node tests/regression/realtime-orders.mjs",
-    "test:regression:notifications": "node tests/regression/realtime-customer-notifications.mjs"
+    "test:regression:notifications": "node tests/regression/realtime-customer-notifications.mjs",
+    "test:regression:presence-perf": "node tests/regression/admin-presence-perf.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
