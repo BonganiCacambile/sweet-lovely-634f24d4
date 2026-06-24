@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { AccountShell, Card } from "@/components/auth/account-shell";
 import {
@@ -10,8 +10,10 @@ import {
   Search,
   RefreshCw,
   FileText,
+  XCircle,
+  Trash2,
 } from "lucide-react";
-import { getMyOrders } from "@/lib/orders.functions";
+import { getMyOrders, cancelMyOrder, deleteMyOrder } from "@/lib/orders.functions";
 import { formatPrice, useCart } from "@/lib/cart-context";
 import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
 import { toast } from "sonner";
@@ -42,12 +44,35 @@ const FILTERS = [
 
 function OrdersPage() {
   const fetchOrders = useServerFn(getMyOrders);
+  const cancelFn = useServerFn(cancelMyOrder);
+  const deleteFn = useServerFn(deleteMyOrder);
+  const qc = useQueryClient();
   const cart = useCart();
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["my-orders"],
     queryFn: () => fetchOrders(),
   });
   useRealtimeInvalidate(["orders", "order_items"], [["my-orders"]]);
+
+  const cancelOrder = useMutation({
+    mutationFn: (id: string) => cancelFn({ data: { id } }),
+    onSuccess: () => {
+      toast.success("Order cancelled");
+      qc.invalidateQueries({ queryKey: ["my-orders"] });
+      qc.invalidateQueries({ queryKey: ["account-overview"] });
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Couldn't cancel"),
+  });
+
+  const removeOrder = useMutation({
+    mutationFn: (id: string) => deleteFn({ data: { id } }),
+    onSuccess: () => {
+      toast.success("Order removed");
+      qc.invalidateQueries({ queryKey: ["my-orders"] });
+      qc.invalidateQueries({ queryKey: ["account-overview"] });
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Couldn't delete"),
+  });
 
   const [filter, setFilter] = useState<(typeof FILTERS)[number]["key"]>("all");
   const [search, setSearch] = useState("");
@@ -231,6 +256,30 @@ function OrdersPage() {
                     >
                       <RefreshCw className="h-3.5 w-3.5" /> Reorder
                     </button>
+                    {!["cancelled", "refunded", "delivered", "completed"].includes(status) && (
+                      <button
+                        onClick={() => {
+                          if (confirm(`Cancel order #${o.order_number}? This cannot be undone.`))
+                            cancelOrder.mutate(o.id);
+                        }}
+                        disabled={cancelOrder.isPending}
+                        className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-700 hover:bg-amber-100 disabled:opacity-50"
+                      >
+                        <XCircle className="h-3.5 w-3.5" /> Cancel
+                      </button>
+                    )}
+                    {["cancelled", "refunded", "delivered", "completed"].includes(status) && (
+                      <button
+                        onClick={() => {
+                          if (confirm(`Delete order #${o.order_number} from your history?`))
+                            removeOrder.mutate(o.id);
+                        }}
+                        disabled={removeOrder.isPending}
+                        className="inline-flex items-center gap-1 rounded-full border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-700 hover:bg-rose-100 disabled:opacity-50"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" /> Delete
+                      </button>
+                    )}
                   </div>
                   <span className="text-base font-extrabold text-neutral-900">
                     {formatPrice(Number(o.total_zar))}
