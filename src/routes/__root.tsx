@@ -21,6 +21,7 @@ import { LoadingScreen } from "@/components/loading-screen";
 import { ZoneProvider } from "@/lib/zone-context";
 import { ZonePicker, ZoneChip } from "@/components/zone-picker";
 import { NotificationsProvider } from "@/lib/notifications-context";
+import { MobileBottomNav } from "@/components/mobile-bottom-nav";
 
 function NotFoundComponent() {
   return (
@@ -167,6 +168,7 @@ function RootComponent() {
               <CartDrawer />
               <ZonePicker />
               <FloatingZoneChip />
+              <MobileBottomNav />
               </AuthGate>
             </ZoneProvider>
             <Toaster position="top-center" richColors />
@@ -186,7 +188,7 @@ function FloatingZoneChip() {
     pathname.startsWith("/checkout");
   if (hide) return null;
   return (
-    <div className="pointer-events-none fixed bottom-5 left-4 z-40 sm:left-6">
+    <div className="pointer-events-none fixed bottom-[88px] left-4 z-40 sm:left-6 md:bottom-5">
       <ZoneChip />
     </div>
   );
