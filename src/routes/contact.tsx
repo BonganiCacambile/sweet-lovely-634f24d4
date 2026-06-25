@@ -1,10 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
-import ContactFormFramerComponent from "@/framer/contact-form";
 import { CityGrid } from "@/components/city-grid";
 import { DeliveryFaqList } from "@/components/delivery-faq-list";
 import { useActiveZoneCities } from "@/hooks/use-active-zones";
+import { ContactForm } from "@/components/contact-form";
 
 export const Route = createFileRoute("/contact")({
   head: () => ({
@@ -69,18 +69,8 @@ function ContactPage() {
             <h2 className="text-xl font-semibold tracking-tight text-neutral-900 sm:text-2xl md:text-3xl">
               Write Us a Message
             </h2>
-            <div className="mt-6 w-full overflow-hidden sm:mt-8">
-              <ContactFormFramerComponent.Responsive
-                variants={{
-                  base: "Mobile",
-                  sm: "Mobile",
-                  md: "Desktop",
-                  lg: "Desktop",
-                  xl: "Desktop",
-                  "2xl": "Desktop",
-                }}
-                style={{ width: "100%", maxWidth: "100%" }}
-              />
+            <div className="mt-6 sm:mt-8">
+              <ContactForm />
             </div>
           </div>
         </div>
