@@ -76,7 +76,7 @@ export function CartDrawer() {
               </button>
             </header>
 
-            {/* Free shipping progress */}
+            {/* Free delivery progress */}
             {items.length > 0 && (
               <div className="border-b border-neutral-100 bg-[#fffafb] px-6 py-3">
                 {subtotal >= FREE_SHIPPING_THRESHOLD ? (
