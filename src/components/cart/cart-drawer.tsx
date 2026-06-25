@@ -81,7 +81,7 @@ export function CartDrawer() {
               <div className="border-b border-neutral-100 bg-[#fffafb] px-6 py-3">
                 {subtotal >= FREE_SHIPPING_THRESHOLD ? (
                   <p className="text-xs font-medium text-emerald-600">
-                    🎉 You've unlocked free shipping!
+                    🎉 You've unlocked free delivery!
                   </p>
                 ) : (
                   <>
@@ -90,7 +90,7 @@ export function CartDrawer() {
                       <span className="font-semibold text-[#ff003c]">
                         {formatPrice(FREE_SHIPPING_THRESHOLD - subtotal)}
                       </span>{" "}
-                      more for free shipping
+                      more for free delivery
                     </p>
                     <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-neutral-200">
                       <motion.div
