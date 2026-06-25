@@ -42,7 +42,7 @@ function CartPage() {
       setDiscount(d);
       toast.success(`Promo applied — ${formatPrice(d)} off`);
     } else if (code === "FREESHIP") {
-      toast.success("Free shipping unlocked");
+      toast.success("Free delivery unlocked");
       setDiscount(0);
     } else {
       toast.error("Invalid promo code");
@@ -181,7 +181,7 @@ function CartPage() {
                 {subtotal < FREE_SHIPPING_THRESHOLD && (
                   <p className="mt-4 rounded-2xl bg-[#fff5f7] px-4 py-3 text-xs text-neutral-600">
                     Spend {formatPrice(FREE_SHIPPING_THRESHOLD - subtotal)} more for{" "}
-                    <span className="font-semibold text-[#ff003c]">free shipping</span>.
+                    <span className="font-semibold text-[#ff003c]">free delivery</span>.
                   </p>
                 )}
 
