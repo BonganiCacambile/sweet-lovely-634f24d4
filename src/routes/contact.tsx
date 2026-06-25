@@ -3,7 +3,7 @@ import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { CityGrid } from "@/components/city-grid";
 import { DeliveryFaqList } from "@/components/delivery-faq-list";
-import { useActiveZoneCities } from "@/hooks/use-active-zones";
+import { useActiveZoneCities, useActiveZones } from "@/hooks/use-active-zones";
 import { ContactForm } from "@/components/contact-form";
 
 export const Route = createFileRoute("/contact")({
@@ -22,6 +22,7 @@ export const Route = createFileRoute("/contact")({
 
 function ContactPage() {
   const { cities } = useActiveZoneCities();
+  const { zones, isLoading: zonesLoading } = useActiveZones();
   return (
     <div className="min-h-screen bg-white text-neutral-900">
       <SiteHeader />
@@ -47,21 +48,40 @@ function ContactPage() {
             <h2 className="text-xl font-semibold tracking-tight text-neutral-900 sm:text-2xl md:text-3xl">
               Addresses
             </h2>
-            <div className="mt-6 grid gap-8 sm:mt-8 sm:grid-cols-2 sm:gap-10">
-              {ADDRESSES.map((a) => (
-                <div key={a.city}>
-                  <h3 className="text-base font-semibold text-neutral-900">{a.city}:</h3>
-                  <p className="mt-3 text-sm text-neutral-700">{a.address}</p>
-                  <a
-                    href={`mailto:${a.email}`}
-                    className="mt-3 block break-all text-sm text-neutral-400 hover:text-neutral-600"
-                  >
-                    {a.email}
-                  </a>
-                  <p className="mt-3 text-sm text-neutral-900">{a.phone}</p>
-                </div>
-              ))}
-            </div>
+            {zonesLoading && zones.length === 0 ? (
+              <p className="mt-6 text-sm text-neutral-500">Loading locations…</p>
+            ) : zones.length === 0 ? (
+              <p className="mt-6 text-sm text-neutral-500">
+                No delivery locations are available yet.
+              </p>
+            ) : (
+              <div className="mt-6 grid gap-8 sm:mt-8 sm:grid-cols-2 sm:gap-10">
+                {zones.map((z) => (
+                  <div key={z.id}>
+                    <h3 className="text-base font-semibold text-neutral-900">{z.name}:</h3>
+                    {z.description ? (
+                      <p className="mt-3 text-sm text-neutral-700">{z.description}</p>
+                    ) : null}
+                    {z.contact_email ? (
+                      <a
+                        href={`mailto:${z.contact_email}`}
+                        className="mt-3 block break-all text-sm text-neutral-400 hover:text-neutral-600"
+                      >
+                        {z.contact_email}
+                      </a>
+                    ) : null}
+                    {z.contact_phone ? (
+                      <a
+                        href={`tel:${z.contact_phone.replace(/\s+/g, "")}`}
+                        className="mt-3 block text-sm text-neutral-900 hover:text-neutral-600"
+                      >
+                        {z.contact_phone}
+                      </a>
+                    ) : null}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Form */}
@@ -95,36 +115,3 @@ function ContactPage() {
     </div>
   );
 }
-
-const ADDRESSES = [
-  {
-    city: "New York",
-    address: "113 E31st St, New York, NY 10016",
-    email: "newyork@sweetandlovely.pizza",
-    phone: "+01 222 555 444",
-  },
-  {
-    city: "London",
-    address: "Ingeni Building, Broadwick St, London W1F 0DL, UK",
-    email: "london@sweetandlovely.pizza",
-    phone: "+44 333 555 777",
-  },
-  {
-    city: "Amsterdam",
-    address: "Keizersgracht 351, 1016 EZ Amsterdam, Netherlands",
-    email: "amsterdam@sweetandlovely.pizza",
-    phone: "+31 555 444 222",
-  },
-  {
-    city: "Berlin",
-    address: "Genter Str. 14, 13353 Berlin, Germany",
-    email: "berlin@sweetandlovely.pizza",
-    phone: "+49 777 333 888",
-  },
-  {
-    city: "Bucharest",
-    address: "Strada General Christian Tell 1-3, București 030167",
-    email: "bucharest@sweetandlovely.pizza",
-    phone: "+40 555 444 777",
-  },
-];

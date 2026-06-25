@@ -22,3 +22,14 @@ export function useActiveZoneCities(): { cities: City[]; isLoading: boolean } {
   }));
   return { cities, isLoading };
 }
+
+/** Live list of active zones with public contact details for the Contact page. */
+export function useActiveZones(): { zones: PublicZone[]; isLoading: boolean } {
+  const fetchZones = useServerFn(listActiveZones);
+  const { data, isLoading } = useQuery({
+    queryKey: ZONES_KEY,
+    queryFn: () => fetchZones(),
+  });
+  useRealtimeTable("delivery_zones", [ZONES_KEY]);
+  return { zones: data ?? [], isLoading };
+}
