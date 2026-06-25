@@ -5,6 +5,18 @@
 //     error logger plugins, and sandbox detection (port/host/strictPort).
 // You can pass additional config via defineConfig({ vite: { ... }, etc... }) if needed.
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
+import { existsSync } from "node:fs";
+import { resolve } from "node:path";
+
+const previewClientEntry = "client";
+const previewClientEntryFile = resolve(process.cwd(), "src/client.tsx");
+
+if (!existsSync(previewClientEntryFile)) {
+  throw new Error(
+    `Preview bootstrap entry missing: ${previewClientEntryFile}. ` +
+      "Do not remove src/client.tsx; hosted previews need an app-owned client entry.",
+  );
+}
 
 export default defineConfig({
   tanstackStart: {
@@ -13,7 +25,7 @@ export default defineConfig({
     // bootstrapper dynamically imports deep /node_modules paths, which shows
     // up as: "Preview has not been built yet". This stable app-owned entry
     // makes the preview bundle deterministic across rebuilds.
-    client: { entry: "client" },
+    client: { entry: previewClientEntry },
     // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
     // nitro/vite builds from this
     server: { entry: "server" },
