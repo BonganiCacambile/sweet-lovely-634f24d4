@@ -53,6 +53,13 @@ export type Database = {
             referencedRelation: "delivery_zones"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "admin_presence_assigned_zone_id_fkey"
+            columns: ["assigned_zone_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_zones_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       audit_logs: {
@@ -405,6 +412,13 @@ export type Database = {
             referencedRelation: "delivery_zones"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "home_banners_zone_id_fkey"
+            columns: ["zone_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_zones_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       home_content_events: {
@@ -504,6 +518,13 @@ export type Database = {
             referencedRelation: "delivery_zones"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "home_hot_deals_zone_id_fkey"
+            columns: ["zone_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_zones_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       home_popular_items: {
@@ -570,6 +591,13 @@ export type Database = {
             referencedRelation: "delivery_zones"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "home_popular_items_zone_id_fkey"
+            columns: ["zone_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_zones_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       home_section_visibility: {
@@ -603,6 +631,13 @@ export type Database = {
             columns: ["zone_id"]
             isOneToOne: false
             referencedRelation: "delivery_zones"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "home_section_visibility_zone_id_fkey"
+            columns: ["zone_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_zones_public"
             referencedColumns: ["id"]
           },
         ]
@@ -662,6 +697,13 @@ export type Database = {
             columns: ["zone_id"]
             isOneToOne: false
             referencedRelation: "delivery_zones"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "home_specials_zone_id_fkey"
+            columns: ["zone_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_zones_public"
             referencedColumns: ["id"]
           },
         ]
@@ -969,6 +1011,13 @@ export type Database = {
             columns: ["delivery_zone_id"]
             isOneToOne: false
             referencedRelation: "delivery_zones"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_delivery_zone_id_fkey"
+            columns: ["delivery_zone_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_zones_public"
             referencedColumns: ["id"]
           },
         ]
@@ -1373,11 +1422,68 @@ export type Database = {
             referencedRelation: "delivery_zones"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "user_roles_assigned_zone_id_fkey"
+            columns: ["assigned_zone_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_zones_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
     }
     Views: {
-      [_ in never]: never
+      delivery_zones_public: {
+        Row: {
+          color: string | null
+          contact_email: string | null
+          contact_phone: string | null
+          description: string | null
+          eta_minutes: number | null
+          fee_zar: number | null
+          hours_text: string | null
+          id: string | null
+          image_url: string | null
+          min_order_zar: number | null
+          name: string | null
+          postal_codes: string[] | null
+          slug: string | null
+          sort_order: number | null
+        }
+        Insert: {
+          color?: string | null
+          contact_email?: string | null
+          contact_phone?: string | null
+          description?: string | null
+          eta_minutes?: number | null
+          fee_zar?: number | null
+          hours_text?: string | null
+          id?: string | null
+          image_url?: string | null
+          min_order_zar?: number | null
+          name?: string | null
+          postal_codes?: string[] | null
+          slug?: string | null
+          sort_order?: number | null
+        }
+        Update: {
+          color?: string | null
+          contact_email?: string | null
+          contact_phone?: string | null
+          description?: string | null
+          eta_minutes?: number | null
+          fee_zar?: number | null
+          hours_text?: string | null
+          id?: string | null
+          image_url?: string | null
+          min_order_zar?: number | null
+          name?: string | null
+          postal_codes?: string[] | null
+          slug?: string | null
+          sort_order?: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       adjust_product_stock: {
