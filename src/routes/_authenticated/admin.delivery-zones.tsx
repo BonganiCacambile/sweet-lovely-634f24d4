@@ -296,7 +296,13 @@ function ZoneEditor({
           </div>
           <Field label="Operating hours"><input value={draft.hours_text} onChange={(e) => set("hours_text", e.target.value)} placeholder="Mon–Sun 10:00–22:00" className={inputCls} /></Field>
           <Field label="Image URL (optional)">
-            <input value={draft.image_url} onChange={(e) => set("image_url", e.target.value)} placeholder="https://…" className={inputCls} />
+            <input
+              value={draft.image_url}
+              onChange={(e) => set("image_url", e.target.value)}
+              placeholder="https://… (direct image link, not a GitHub blob page)"
+              className={inputCls}
+            />
+            <ImagePreview url={draft.image_url} />
           </Field>
           <div className="grid grid-cols-3 gap-3">
             <Field label="Color"><input type="color" value={draft.color} onChange={(e) => set("color", e.target.value)} className="h-10 w-full rounded-lg border border-neutral-200" /></Field>
