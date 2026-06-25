@@ -296,7 +296,13 @@ function ZoneEditor({
           </div>
           <Field label="Operating hours"><input value={draft.hours_text} onChange={(e) => set("hours_text", e.target.value)} placeholder="Mon–Sun 10:00–22:00" className={inputCls} /></Field>
           <Field label="Image URL (optional)">
-            <input value={draft.image_url} onChange={(e) => set("image_url", e.target.value)} placeholder="https://…" className={inputCls} />
+            <input
+              value={draft.image_url}
+              onChange={(e) => set("image_url", e.target.value)}
+              placeholder="https://… (direct image link, not a GitHub blob page)"
+              className={inputCls}
+            />
+            <ImagePreview url={draft.image_url} />
           </Field>
           <div className="grid grid-cols-3 gap-3">
             <Field label="Color"><input type="color" value={draft.color} onChange={(e) => set("color", e.target.value)} className="h-10 w-full rounded-lg border border-neutral-200" /></Field>
@@ -328,5 +334,44 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
       <span className="mb-1 block text-xs font-medium text-neutral-600">{label}</span>
       {children}
     </label>
+  );
+}
+
+function normalizePreviewUrl(input: string): string {
+  const url = input.trim();
+  if (!url) return "";
+  const gh = url.match(/^https?:\/\/github\.com\/([^/]+)\/([^/]+)\/blob\/(.+?)(?:\?.*)?$/i);
+  if (gh) return `https://raw.githubusercontent.com/${gh[1]}/${gh[2]}/${gh[3]}`;
+  return url;
+}
+
+function ImagePreview({ url }: { url: string }) {
+  const [status, setStatus] = React.useState<"idle" | "ok" | "err">("idle");
+  const resolved = normalizePreviewUrl(url);
+  React.useEffect(() => { setStatus("idle"); }, [resolved]);
+  if (!resolved) return null;
+  const wasNormalized = resolved !== url.trim();
+  return (
+    <div className="mt-2 space-y-1">
+      <div className="relative h-28 w-full overflow-hidden rounded-lg border border-neutral-200 bg-neutral-50">
+        <img
+          src={resolved}
+          alt="Zone image preview"
+          className="h-full w-full object-cover"
+          onLoad={() => setStatus("ok")}
+          onError={() => setStatus("err")}
+        />
+      </div>
+      {wasNormalized && (
+        <p className="text-xs text-amber-700">
+          We'll save the direct image URL: <span className="font-mono break-all">{resolved}</span>
+        </p>
+      )}
+      {status === "err" && (
+        <p className="text-xs text-red-600">
+          This URL does not return an image. Use a direct link (ending in .jpg/.png/.webp) — not a GitHub blob, Dropbox preview, or Google Drive view page.
+        </p>
+      )}
+    </div>
   );
 }

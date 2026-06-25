@@ -21,6 +21,26 @@ const upsertSchema = z.object({
   image_url: z.string().max(2000).nullable().optional(),
 });
 
+/**
+ * Normalize common image-hosting URLs so that <img src=...> resolves to the raw
+ * binary instead of an HTML preview page.
+ *  - github.com/<u>/<r>/blob/<path>      -> raw.githubusercontent.com/<u>/<r>/<path>
+ *  - www.dropbox.com/...?dl=0           -> dl=1
+ */
+function normalizeImageUrl(input: string | null | undefined): string | null {
+  if (!input) return null;
+  let url = input.trim();
+  if (!url) return null;
+  // GitHub blob -> raw
+  const gh = url.match(/^https?:\/\/github\.com\/([^/]+)\/([^/]+)\/blob\/(.+?)(?:\?.*)?$/i);
+  if (gh) {
+    url = `https://raw.githubusercontent.com/${gh[1]}/${gh[2]}/${gh[3]}`;
+  }
+  // Dropbox preview -> direct download
+  url = url.replace(/^(https?:\/\/(?:www\.)?dropbox\.com\/[^?]+)\?.*dl=0.*$/i, "$1?dl=1");
+  return url;
+}
+
 export const listAllZones = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
@@ -62,7 +82,7 @@ export const upsertZone = createServerFn({ method: "POST" })
       contact_email: data.contact_email ?? null,
       hours_text: data.hours_text ?? null,
       color: data.color ?? null,
-      image_url: data.image_url ?? null,
+      image_url: normalizeImageUrl(data.image_url),
     };
     if (data.id) {
       const { error } = await context.supabase
