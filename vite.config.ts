@@ -8,6 +8,12 @@ import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 
 export default defineConfig({
   tanstackStart: {
+    // Keep the browser entry inside src/ instead of relying on TanStack's
+    // package-internal default entry. Hosted previews can fail when the
+    // bootstrapper dynamically imports deep /node_modules paths, which shows
+    // up as: "Preview has not been built yet". This stable app-owned entry
+    // makes the preview bundle deterministic across rebuilds.
+    client: { entry: "client" },
     // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
     // nitro/vite builds from this
     server: { entry: "server" },
