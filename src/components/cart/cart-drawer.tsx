@@ -177,7 +177,7 @@ export function CartDrawer() {
                 <dl className="space-y-1.5 text-sm">
                   <Row label="Subtotal" value={formatPrice(subtotal)} />
                   <Row
-                    label="Shipping"
+                    label="Delivery"
                     value={shipping === 0 ? "Free" : formatPrice(shipping)}
                   />
                   <Row label="Tax (est.)" value={formatPrice(tax)} muted />
