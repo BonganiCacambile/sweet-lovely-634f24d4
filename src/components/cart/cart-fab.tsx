@@ -10,7 +10,7 @@ export function CartFab() {
       type="button"
       onClick={open}
       aria-label={`Open cart (${count} item${count === 1 ? "" : "s"})`}
-      className="fixed bottom-6 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-[#ff003c] text-white shadow-[0_10px_30px_-8px_rgba(255,0,60,0.55)] transition-transform hover:scale-105 active:scale-95 md:bottom-8 md:right-8"
+      className="fixed bottom-[88px] right-4 z-40 hidden h-14 w-14 items-center justify-center rounded-full bg-[#ff003c] text-white shadow-[0_10px_30px_-8px_rgba(255,0,60,0.55)] transition-transform hover:scale-105 active:scale-95 md:right-8 md:bottom-8 md:flex"
     >
       <ShoppingBag className="h-6 w-6" />
       <AnimatePresence>
