@@ -117,7 +117,7 @@ export function useCart() {
 /** Shipping & tax helpers — flat demo values. */
 export const SHIPPING_FLAT = 3.99;
 export const FREE_SHIPPING_THRESHOLD = 40;
-export const TAX_RATE = 0.08;
+export const TAX_RATE = 0.05;
 
 export function computeTotals(subtotal: number, discount = 0, shippingOverride?: number) {
   const discounted = Math.max(0, subtotal - discount);
