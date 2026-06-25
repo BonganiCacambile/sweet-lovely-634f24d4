@@ -437,7 +437,7 @@ function CheckoutPage() {
               </ul>
               <dl className="mt-6 space-y-2 border-t border-dashed border-neutral-200 pt-4 text-sm">
                 <Row label="Subtotal" value={formatPrice(subtotal)} />
-                <Row label="Shipping" value={shipping === 0 ? "Free" : formatPrice(shipping)} />
+                <Row label="Delivery" value={shipping === 0 ? "Free" : formatPrice(shipping)} />
                 <Row label="Tax" value={formatPrice(tax)} muted />
               </dl>
               <div className="mt-3 flex items-center justify-between border-t border-dashed border-neutral-200 pt-3">

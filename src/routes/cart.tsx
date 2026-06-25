@@ -172,7 +172,7 @@ function CartPage() {
                     />
                   )}
                   <SummaryRow
-                    label="Shipping"
+                    label="Delivery"
                     value={shipping === 0 ? "Free" : formatPrice(shipping)}
                   />
                   <SummaryRow label="VAT (est.)" value={formatPrice(tax)} muted />
