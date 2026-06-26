@@ -39,7 +39,7 @@ export function SiteHeader() {
         hidden ? "-translate-y-full md:translate-y-0" : "translate-y-0"
       }`}
     >
-      <div className="relative w-full bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/70">
+      <div className="relative w-full bg-[#ff003c]/95 backdrop-blur supports-[backdrop-filter]:bg-[#ff003c]/85">
         <NavFramerComponent.Responsive
           variants={{
             base: "Mobile - Default",
