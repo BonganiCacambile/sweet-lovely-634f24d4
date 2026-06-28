@@ -30,4 +30,19 @@ export default defineConfig({
     // nitro/vite builds from this
     server: { entry: "server" },
   },
+  vite: {
+    // Pre-bundle deps that Vite would otherwise discover lazily on first
+    // navigation. When that lazy discovery happens, Vite logs
+    // "optimized dependencies changed. reloading" and tears down the module
+    // graph mid-session — during that brief window the hosted preview proxy
+    // shows "Preview has not been built yet". Listing them here keeps the
+    // optimizer output stable from cold-start and prevents that reload.
+    optimizeDeps: {
+      include: [
+        "@tanstack/router-core",
+        "@tanstack/router-core/ssr/client",
+        "seroval",
+      ],
+    },
+  },
 });
