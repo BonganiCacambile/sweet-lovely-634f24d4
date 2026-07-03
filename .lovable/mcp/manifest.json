@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "sdk_version": "0.20.0",
+  "path": "/mcp",
+  "auth": {
+    "type": "none"
+  },
+  "mcp": {
+    "server": {
+      "name": "sweet-n-lovely-mcp",
+      "version": "0.1.0",
+      "title": "Sweet & Lovely Pizza"
+    },
+    "tools": [
+      {
+        "name": "get_menu",
+        "title": "Get menu",
+        "description": "Fetch Sweet & Lovely's public menu: active categories and products with prices in ZAR.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "category_slug": {
+              "description": "Optional category slug to filter products (e.g. 'pizza').",
+              "type": "string"
+            }
+          }
+        },
+        "outputSchema": null
+      }
+    ]
+  }
+}
