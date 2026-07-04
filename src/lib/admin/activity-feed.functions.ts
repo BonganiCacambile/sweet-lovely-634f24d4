@@ -1,13 +1,11 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { requireMainAdmin } from "./server-helpers.server";
-import { requireMainAdmin } from "./server-helpers.server";
 import {
   ACTIVITY_ACTIONS,
   activityFeedInput,
   activityLogInput,
 } from "./activity-feed.schemas";
-
 
 /**
  * Any signed-in admin can record their own lifecycle event. Uses the
@@ -17,7 +15,7 @@ import {
  */
 export const logPresenceEvent = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => logInput.parse(d))
+  .inputValidator((d: unknown) => activityLogInput.parse(d))
   .handler(async ({ data, context }) => {
     // Only record events for users who hold an admin role (main or zone).
     const { data: roles } = await context.supabase
@@ -62,11 +60,6 @@ export type ActivityFeedRow = {
   created_at: string;
 };
 
-const feedInput = z.object({
-  limit: z.number().int().min(1).max(200).optional().default(50),
-  category: z.enum(["all", "lifecycle", "orders", "inventory"]).optional().default("all"),
-});
-
 /**
  * Main-admin only: returns the most recent admin activity events joined
  * with profile name + zone name for display. Mixes lifecycle events
@@ -74,7 +67,7 @@ const feedInput = z.object({
  */
 export const listActivityFeed = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => feedInput.parse(d))
+  .inputValidator((d: unknown) => activityFeedInput.parse(d))
   .handler(async ({ data, context }): Promise<ActivityFeedRow[]> => {
     await requireMainAdmin(context.supabase, context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
