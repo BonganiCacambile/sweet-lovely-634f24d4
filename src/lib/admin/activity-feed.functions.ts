@@ -2,27 +2,12 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { requireMainAdmin } from "./server-helpers.server";
+import {
+  ACTIVITY_ACTIONS,
+  activityFeedInput,
+  activityLogInput,
+} from "./activity-feed.schemas";
 
-/**
- * Lifecycle activity types emitted by the admin shell. Persisted to
- * `audit_logs` so the Main Admin's Employee Activity Feed sees a single
- * unified stream of sign-in/out, presence transitions, AND business
- * actions (inventory/orders) that already go through `logAudit`.
- */
-const ACTIVITY_ACTIONS = [
-  "auth.sign_in",
-  "auth.sign_out",
-  "presence.active",
-  "presence.idle",
-  "presence.away",
-  "presence.online",
-  "presence.offline",
-] as const;
-
-const logInput = z.object({
-  action: z.enum(ACTIVITY_ACTIONS),
-  metadata: z.record(z.string(), z.union([z.string(), z.number(), z.boolean(), z.null()])).optional(),
-});
 
 /**
  * Any signed-in admin can record their own lifecycle event. Uses the
