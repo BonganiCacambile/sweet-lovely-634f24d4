@@ -2,7 +2,6 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { requireMainAdmin } from "./server-helpers.server";
 import {
-  ACTIVITY_ACTIONS,
   activityFeedInput,
   activityLogInput,
 } from "./activity-feed.schemas";
