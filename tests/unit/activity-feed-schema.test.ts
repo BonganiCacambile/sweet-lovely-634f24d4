@@ -43,16 +43,16 @@ describe("activity feed schemas", () => {
     ).toThrow();
   });
 
-  test("activityLogInput metadata enforces string keys", () => {
-    // Numeric keys are rejected because the schema explicitly uses
-    // `z.record(z.string(), ...)`. Reverting to a single-argument record
-    // would change this behavior and break the test.
-    expect(() =>
-      activityLogInput.parse({
-        action: "auth.sign_in",
-        metadata: { 123: "numeric-key" },
-      }),
-    ).toThrow();
+  test("activityLogInput metadata coerces object keys to strings", () => {
+    // Zod v4 records accept string keys; numeric keys are serialized.
+    // The real TS2554 guard is the explicit `z.record(z.string(), ...)`
+    // in src/lib/admin/activity-feed.schemas.ts — reverting to a single
+    // argument would fail the project's TypeScript build.
+    const parsed = activityLogInput.parse({
+      action: "auth.sign_in",
+      metadata: { 123: "numeric-key" },
+    });
+    expect(parsed.metadata).toEqual({ "123": "numeric-key" });
   });
 
   test("activityFeedInput uses safe defaults", () => {
