@@ -448,6 +448,72 @@ export type Database = {
         }
         Relationships: []
       }
+      home_desserts: {
+        Row: {
+          category: string | null
+          created_at: string
+          description: string | null
+          ends_at: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean
+          position: number
+          price: string | null
+          product_slug: string | null
+          starts_at: string | null
+          title: string
+          updated_at: string
+          zone_id: string | null
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          ends_at?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          position?: number
+          price?: string | null
+          product_slug?: string | null
+          starts_at?: string | null
+          title: string
+          updated_at?: string
+          zone_id?: string | null
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          ends_at?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          position?: number
+          price?: string | null
+          product_slug?: string | null
+          starts_at?: string | null
+          title?: string
+          updated_at?: string
+          zone_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "home_desserts_zone_id_fkey"
+            columns: ["zone_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_zones"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "home_desserts_zone_id_fkey"
+            columns: ["zone_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_zones_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       home_hot_deals: {
         Row: {
           created_at: string
