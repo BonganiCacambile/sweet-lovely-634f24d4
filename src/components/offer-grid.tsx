@@ -26,22 +26,17 @@ function DealCard({ variant, items, price, save, bg, images, darkText = false, b
     <article
       className={`hover-zoom group relative w-full overflow-hidden rounded-[24px] transition-transform duration-300 hover:-translate-y-1.5 ${bg} ${textColor} ${
         big
-          ? "min-h-[560px] px-6 pb-[280px] pt-6 md:min-h-[690px] md:px-12 md:pb-[340px] md:pt-12"
-          : "min-h-[460px] px-6 pb-[220px] pt-6 md:min-h-[491px] md:px-12 md:pb-[240px] md:pt-12"
-      }`}
+          ? "min-h-[420px] p-6 md:min-h-[460px] md:p-10"
+          : "min-h-[360px] p-6 md:min-h-[400px] md:p-10"
+      } flex flex-col`}
     >
-      <h3 className="relative z-10 text-[28px] font-extrabold leading-[1.2] tracking-normal">
+      <h3 className="relative z-10 max-w-[60%] text-[28px] font-extrabold leading-[1.2] tracking-normal md:text-[32px]">
         {variant}
       </h3>
-      <ul className="relative z-10 mt-6 flex flex-col gap-3 text-[20px] leading-[1.35] tracking-normal">
-        {items.map((item) => (
-          <li key={item} className="flex gap-4">
-            <span className="mt-[0.6em] h-[6px] w-[6px] shrink-0 rounded-full bg-current" />
-            <span>{item}</span>
-          </li>
-        ))}
-      </ul>
-      <div className="relative z-10 mt-6 flex w-full flex-wrap items-center justify-between gap-3 pt-3">
+      <p className="relative z-10 mt-3 max-w-[55%] text-[16px] leading-[1.4] tracking-normal md:text-[18px]">
+        {items.join(" + ")}
+      </p>
+      <div className="relative z-10 mt-auto flex w-full flex-wrap items-center justify-between gap-3 pt-8">
         <AddToCartButton
           item={{
             id: `deal-${variant.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`,
@@ -58,33 +53,17 @@ function DealCard({ variant, items, price, save, bg, images, darkText = false, b
         </p>
       </div>
 
-      <div
-        className={`pointer-events-none absolute inset-x-0 bottom-0 z-[1] overflow-hidden ${
-          big ? "h-[260px] md:h-[340px]" : "h-[200px] md:h-[240px]"
-        }`}
+      <img
+        src={images[0]}
+        alt=""
+        loading="eager"
         aria-hidden
-      >
-        <img
-          src={images[0]}
-          alt=""
-          loading="eager"
-          className={`absolute bottom-[-30%] select-none object-contain transition-transform duration-700 ease-out group-hover:-rotate-6 group-hover:scale-105 ${
-            big
-              ? "left-[-8%] h-[380px] w-[380px] md:h-[520px] md:w-[520px]"
-              : "left-[-6%] h-[280px] w-[280px] md:h-[340px] md:w-[340px]"
-          }`}
-        />
-        <img
-          src={images[1]}
-          alt=""
-          loading="eager"
-          className={`absolute bottom-[-30%] select-none object-contain transition-transform duration-700 ease-out group-hover:rotate-6 group-hover:scale-105 ${
-            big
-              ? "right-[-8%] h-[380px] w-[380px] md:h-[520px] md:w-[520px]"
-              : "right-[-6%] h-[280px] w-[280px] md:h-[340px] md:w-[340px]"
-          }`}
-        />
-      </div>
+        className={`pointer-events-none absolute z-[1] select-none rounded-full object-cover shadow-2xl transition-transform duration-700 ease-out group-hover:rotate-6 group-hover:scale-105 ${
+          big
+            ? "right-[-70px] top-[-70px] h-[320px] w-[320px] md:right-[-90px] md:top-[-90px] md:h-[420px] md:w-[420px]"
+            : "right-[-60px] top-[-60px] h-[260px] w-[260px] md:right-[-80px] md:top-[-80px] md:h-[340px] md:w-[340px]"
+        }`}
+      />
     </article>
   );
 }
