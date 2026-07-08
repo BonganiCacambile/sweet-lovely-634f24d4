@@ -263,19 +263,33 @@ function HeroBanners({ banners }: { banners: Array<{ id: string; title: string; 
 function HotDealGrid({ deals }: { deals: Array<{ id: string; title: string; description: string | null; image_url: string | null; original_price: number | null; discounted_price: number | null; discount_pct: number | null; label: string | null }> }) {
   const colors = ["bg-[#ff003c] text-white", "bg-[#ffcc00] text-neutral-900", "bg-[#333333] text-white", "bg-[#0a9900] text-white", "bg-[#ff9100] text-white"];
   return (
-    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+    <div className="grid gap-6 md:grid-cols-2">
       {deals.map((d, i) => {
         const orig = d.original_price != null ? Number(d.original_price) : null;
         const disc = d.discounted_price != null ? Number(d.discounted_price) : null;
         const save = orig != null && disc != null ? (orig - disc).toFixed(0) : null;
+        const raw = (d.label ?? d.description ?? "").trim();
+        const items = raw
+          ? raw
+              .split(/\r?\n|(?:\s*[+•·]\s*)|(?:,\s*)/)
+              .map((s) => s.trim())
+              .filter(Boolean)
+          : [];
         return (
           <Reveal key={d.id} className="w-full" delay={i * 60}>
-            <article className={`relative overflow-hidden rounded-[24px] p-6 transition-transform hover:-translate-y-1.5 min-h-[380px] flex flex-col ${colors[i % colors.length]}`}>
-              <h3 className="text-[26px] font-extrabold leading-tight">{d.title}</h3>
-              {(d.label || d.description) && (
-                <p className="mt-3 text-[15px] opacity-90 whitespace-pre-line">{d.label ?? d.description}</p>
-              )}
-              <div className="mt-auto flex flex-wrap items-end justify-between gap-3 pt-6">
+            <article className={`group relative flex min-h-[520px] flex-col overflow-hidden rounded-[24px] px-8 pb-[260px] pt-10 transition-transform hover:-translate-y-1.5 md:min-h-[560px] md:px-12 md:pb-[300px] md:pt-12 ${colors[i % colors.length]}`}>
+              <h3 className="relative z-10 text-[28px] font-extrabold leading-[1.15] md:text-[32px]">{d.title}</h3>
+              {items.length > 0 ? (
+                <ul className="relative z-10 mt-6 flex flex-col gap-3 text-[18px] leading-[1.35] md:text-[20px]">
+                  {items.map((it, idx) => (
+                    <li key={`${it}-${idx}`} className="flex gap-3">
+                      <span className="mt-[0.55em] h-[6px] w-[6px] shrink-0 rounded-full bg-current" />
+                      <span>{it}</span>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+              <div className="relative z-10 mt-auto flex flex-wrap items-end justify-between gap-3 pt-8">
                 <AddToCartButton
                   item={{
                     id: `deal-${d.id}`,
@@ -284,11 +298,11 @@ function HotDealGrid({ deals }: { deals: Array<{ id: string; title: string; desc
                     image: d.image_url ?? undefined,
                     variation: d.label ?? undefined,
                   }}
-                  className="h-9 px-6 text-[14px]"
+                  className="h-10 px-6 text-[15px]"
                 />
-                <p className="flex items-end gap-2 whitespace-nowrap text-[20px] font-extrabold leading-none">
+                <p className="flex items-end gap-2 whitespace-nowrap text-[20px] font-extrabold leading-none md:text-[22px]">
                   {disc != null ? `R${disc.toFixed(0)}` : ""}
-                  {save && <span className="text-[16px] font-light">- Save R{save}</span>}
+                  {save && <span className="text-[18px] font-light md:text-[20px]">- Save R{save}</span>}
                 </p>
               </div>
               {d.image_url && (
@@ -296,7 +310,7 @@ function HotDealGrid({ deals }: { deals: Array<{ id: string; title: string; desc
                   src={d.image_url}
                   alt=""
                   aria-hidden
-                  className="pointer-events-none absolute -right-12 -top-8 h-56 w-56 select-none object-contain opacity-90 transition-transform duration-700 group-hover:rotate-6"
+                  className="pointer-events-none absolute bottom-[-40%] left-1/2 z-[1] h-[340px] w-[340px] -translate-x-1/2 select-none rounded-full object-cover transition-transform duration-700 group-hover:rotate-6 group-hover:scale-105 md:h-[420px] md:w-[420px]"
                 />
               )}
             </article>
