@@ -76,11 +76,6 @@ const featuredPayload = z.object({
 
 type Scope = { isMain: boolean; zoneId: string | null };
 
-function normalizeZone<T extends { zone_id?: string | null | undefined }>(input: T, scope: Scope): T {
-  if (!scope.isMain) return { ...input, zone_id: scope.zoneId };
-  return input;
-}
-
 // ---------- popular items -------------------------------------------------
 
 export const listPopular = createServerFn({ method: "GET" })
@@ -101,7 +96,7 @@ export const upsertPopular = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const scope = await requireAdminScope(supabaseAdmin, context.userId);
-    const patch = normalizeZone(data.patch, scope);
+    const patch = scope.isMain ? data.patch : { ...data.patch, zone_id: scope.zoneId };
     if (data.id) {
       let q = supabaseAdmin.from("home_popular_items").update(patch).eq("id", data.id);
       if (!scope.isMain && scope.zoneId) q = q.eq("zone_id", scope.zoneId);
@@ -150,7 +145,7 @@ export const upsertHotDeal = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const scope = await requireAdminScope(supabaseAdmin, context.userId);
-    const patch = normalizeZone(data.patch, scope);
+    const patch = scope.isMain ? data.patch : { ...data.patch, zone_id: scope.zoneId };
     if (data.id) {
       let q = supabaseAdmin.from("home_hot_deals").update(patch).eq("id", data.id);
       if (!scope.isMain && scope.zoneId) q = q.eq("zone_id", scope.zoneId);
@@ -199,7 +194,7 @@ export const upsertSpecial = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const scope = await requireAdminScope(supabaseAdmin, context.userId);
-    const patch = normalizeZone(data.patch, scope);
+    const patch = scope.isMain ? data.patch : { ...data.patch, zone_id: scope.zoneId };
     if (data.id) {
       let q = supabaseAdmin.from("home_specials").update(patch).eq("id", data.id);
       if (!scope.isMain && scope.zoneId) q = q.eq("zone_id", scope.zoneId);
@@ -248,7 +243,7 @@ export const upsertBanner = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const scope = await requireAdminScope(supabaseAdmin, context.userId);
-    const patch = normalizeZone(data.patch, scope);
+    const patch = scope.isMain ? data.patch : { ...data.patch, zone_id: scope.zoneId };
     if (data.id) {
       let q = supabaseAdmin.from("home_banners").update(patch).eq("id", data.id);
       if (!scope.isMain && scope.zoneId) q = q.eq("zone_id", scope.zoneId);
