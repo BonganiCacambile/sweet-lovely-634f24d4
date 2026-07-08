@@ -13,12 +13,14 @@ import {
   SECTION_KEYS,
   type SectionKey,
   deleteBanner,
+  deleteDessert,
   deleteFeatured,
   deleteHotDeal,
   deletePopular,
   deleteSpecial,
   homeContentAnalytics,
   listBanners,
+  listDesserts,
   listFeatured,
   listHotDeals,
   listPopular,
@@ -27,6 +29,7 @@ import {
   listVisibility,
   setVisibility,
   upsertBanner,
+  upsertDessert,
   upsertFeatured,
   upsertHotDeal,
   upsertPopular,
@@ -43,6 +46,7 @@ export const Route = createFileRoute("/_authenticated/admin/home-content")({
 
 type Tab =
   | "popular"
+  | "desserts"
   | "hot_deals"
   | "specials"
   | "featured"
@@ -52,6 +56,7 @@ type Tab =
 
 const TABS: { id: Tab; label: string }[] = [
   { id: "popular", label: "Popular Items" },
+  { id: "desserts", label: "Desserts" },
   { id: "hot_deals", label: "Hot Deals" },
   { id: "specials", label: "Specials" },
   { id: "featured", label: "Featured" },
@@ -87,6 +92,7 @@ function HomeContentPage() {
       </div>
 
       {tab === "popular" && <PopularTab />}
+      {tab === "desserts" && <DessertsTab />}
       {tab === "hot_deals" && <HotDealsTab />}
       {tab === "specials" && <SpecialsTab />}
       {tab === "featured" && <FeaturedTab />}
