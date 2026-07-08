@@ -76,21 +76,23 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
     }
     // Admins also see broadcast notifications (user_id IS NULL), which the
     // notify_admin_on_new_order trigger emits for every new order.
-    const scope = (q: ReturnType<typeof supabase.from>) =>
-      isAdmin ? q.or(`user_id.eq.${user.id},user_id.is.null`) : q.eq("user_id", user.id);
+    const rowsQuery = supabase
+      .from("notifications")
+      .select("id, title, body, category, read, created_at");
+    const countQuery = supabase
+      .from("notifications")
+      .select("id", { count: "exact", head: true })
+      .eq("read", false);
     const [{ data: rows }, { count }] = await Promise.all([
-      scope(
-        supabase
-          .from("notifications")
-          .select("id, title, body, category, read, created_at"),
+      (isAdmin
+        ? rowsQuery.or(`user_id.eq.${user.id},user_id.is.null`)
+        : rowsQuery.eq("user_id", user.id)
       )
         .order("created_at", { ascending: false })
         .limit(20),
-      scope(
-        supabase
-          .from("notifications")
-          .select("id", { count: "exact", head: true }),
-      ).eq("read", false),
+      isAdmin
+        ? countQuery.or(`user_id.eq.${user.id},user_id.is.null`)
+        : countQuery.eq("user_id", user.id),
     ]);
     setRecent((rows ?? []) as NotificationRow[]);
     setUnread(count ?? 0);
