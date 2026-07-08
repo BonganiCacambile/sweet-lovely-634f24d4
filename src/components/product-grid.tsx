@@ -1,6 +1,7 @@
 import ProductCardFramerComponent from "@/framer/menu-products/product-card";
 import { Reveal } from "@/components/reveal";
 import { AddToCartButton } from "@/components/cart/add-to-cart-button";
+import { FramerBoundary } from "@/components/framer-boundary";
 
 export interface Product {
   id: string;
@@ -38,6 +39,7 @@ export function ProductGrid({ products, imageOnly = false, isPizza = false }: Pr
       {products.map((p, i) => (
         <Reveal key={p.id} delay={Math.min(i, 8) * 70}>
           <div className="group relative [&_a[href='#'],&_a:not([href])]:pointer-events-none">
+            <FramerBoundary>
             <ProductCardFramerComponent.Responsive
               variants={variants as never}
               FZjwTwKXl={p.title}
@@ -60,6 +62,7 @@ export function ProductGrid({ products, imageOnly = false, isPizza = false }: Pr
                   }
                 : {})}
             />
+            </FramerBoundary>
             {/* Overlay the real Add-to-cart button on top of the Framer "Order Now" CTA (bottom-left of card). */}
             <div className="pointer-events-none absolute bottom-5 left-5 z-20 sm:bottom-6 sm:left-6">
               <div className="pointer-events-auto">

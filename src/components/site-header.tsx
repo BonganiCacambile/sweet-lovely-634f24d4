@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import NavFramerComponent from "@/framer/top-nav/nav";
+import { FramerBoundary } from "@/components/framer-boundary";
 import { HeaderAccountMenu } from "@/components/auth/header-account-menu";
 import { NotificationBell } from "@/components/notifications/notification-bell";
 
@@ -40,16 +41,18 @@ export function SiteHeader() {
       }`}
     >
       <div className="relative w-full bg-[#ff003c]/95 backdrop-blur supports-[backdrop-filter]:bg-[#ff003c]/85">
-        <NavFramerComponent.Responsive
-          variants={{
-            base: "Mobile - Default",
-            sm: "Mobile - Default",
-            md: "Tablet",
-            lg: "Desktop",
-            xl: "Desktop",
-            "2xl": "Desktop",
-          }}
-        />
+        <FramerBoundary fallback={<div className="h-16 w-full" aria-hidden />}>
+          <NavFramerComponent.Responsive
+            variants={{
+              base: "Mobile - Default",
+              sm: "Mobile - Default",
+              md: "Tablet",
+              lg: "Desktop",
+              xl: "Desktop",
+              "2xl": "Desktop",
+            }}
+          />
+        </FramerBoundary>
         <div className="pointer-events-none absolute right-2 top-full z-40 mt-2 flex items-center justify-end gap-2 sm:right-4 md:right-6">
           <NotificationBell />
           <HeaderAccountMenu />
