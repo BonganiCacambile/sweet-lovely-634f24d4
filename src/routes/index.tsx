@@ -260,6 +260,40 @@ function HeroBanners({ banners }: { banners: Array<{ id: string; title: string; 
   );
 }
 
+const hotDealPizzaAsset = (hash: string) =>
+  `https://framerusercontent.com/images/${hash}?width=1200&height=1200`;
+
+const hotDealImagePairs = [
+  {
+    match: "spicy",
+    images: [hotDealPizzaAsset("lp6wNgrYu7ClOrMG4ibaVQNDWLo.png"), hotDealPizzaAsset("fOcW4cqVIKe7O6jovEeqZ46Cg.png")],
+  },
+  {
+    match: "cheese",
+    images: [hotDealPizzaAsset("Q4djsExkm2dVJLND8pnRkbmHKy8.png"), hotDealPizzaAsset("EvzWDEqJkdunx7f5YzmUVnArM4.png")],
+  },
+  {
+    match: "meat",
+    images: [hotDealPizzaAsset("ilD3FzfskejkXM7jRyVgKSBEE5I.png"), hotDealPizzaAsset("dQKnVrygQTPBTqZDioB8akNs.png")],
+  },
+  {
+    match: "veggie",
+    images: [hotDealPizzaAsset("vtNegrYfppnZJV5SpQd607Hls8.png"), hotDealPizzaAsset("Q2rEr3IGpX893CKsEuhm5IGMKk.png")],
+  },
+  {
+    match: "sweet",
+    images: [hotDealPizzaAsset("z0tpcmuGY42myUTNyLF9LCXg.png"), hotDealPizzaAsset("bo5PFGtg1mLU0lWO3J9CWKVAcM.png")],
+  },
+] as const;
+
+function getHotDealImages(deal: { title: string; image_url: string | null }) {
+  const normalizedTitle = deal.title.toLowerCase();
+  const matchedPair = hotDealImagePairs.find((pair) => normalizedTitle.includes(pair.match));
+  if (matchedPair) return matchedPair.images;
+  if (deal.image_url) return [deal.image_url, deal.image_url] as const;
+  return hotDealImagePairs[0].images;
+}
+
 function HotDealGrid({ deals }: { deals: Array<{ id: string; title: string; description: string | null; image_url: string | null; original_price: number | null; discounted_price: number | null; discount_pct: number | null; label: string | null }> }) {
   const colors = ["bg-[#ff003c] text-white", "bg-[#ffcc00] text-neutral-900", "bg-[#333333] text-white", "bg-[#0a9900] text-white", "bg-[#ff9100] text-white"];
   return (
@@ -275,6 +309,7 @@ function HotDealGrid({ deals }: { deals: Array<{ id: string; title: string; desc
               .map((s) => s.trim())
               .filter(Boolean)
           : [];
+        const [firstPizza, secondPizza] = getHotDealImages(d);
         return (
           <Reveal key={d.id} className="w-full" delay={i * 60}>
             <article className={`group relative flex min-h-[520px] flex-col overflow-hidden rounded-[24px] px-8 pb-[260px] pt-10 transition-transform hover:-translate-y-1.5 md:min-h-[560px] md:px-12 md:pb-[300px] md:pt-12 ${colors[i % colors.length]}`}>
@@ -305,14 +340,20 @@ function HotDealGrid({ deals }: { deals: Array<{ id: string; title: string; desc
                   {save && <span className="text-[18px] font-light md:text-[20px]">- Save R{save}</span>}
                 </p>
               </div>
-              {d.image_url && (
+              <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] h-[245px] md:h-[285px]" aria-hidden>
                 <img
-                  src={d.image_url}
+                  src={firstPizza}
                   alt=""
-                  aria-hidden
-                  className="pointer-events-none absolute bottom-[-40%] left-1/2 z-[1] h-[340px] w-[340px] -translate-x-1/2 select-none rounded-full object-cover transition-transform duration-700 group-hover:rotate-6 group-hover:scale-105 md:h-[420px] md:w-[420px]"
+                  loading="eager"
+                  className="absolute bottom-[-44%] left-[-6%] h-[310px] w-[310px] select-none rounded-full object-cover transition-transform duration-700 group-hover:-rotate-6 group-hover:scale-105 md:bottom-[-48%] md:left-[2%] md:h-[390px] md:w-[390px]"
                 />
-              )}
+                <img
+                  src={secondPizza}
+                  alt=""
+                  loading="eager"
+                  className="absolute bottom-[-46%] right-[-8%] h-[310px] w-[310px] select-none rounded-full object-cover transition-transform duration-700 group-hover:rotate-6 group-hover:scale-105 md:bottom-[-48%] md:right-[2%] md:h-[390px] md:w-[390px]"
+                />
+              </div>
             </article>
           </Reveal>
         );
