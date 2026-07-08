@@ -21,7 +21,7 @@ export function SiteFooter() {
             </Link>
             <address className="mt-5 not-italic text-sm leading-6 text-white/90">
               C357 Sidima Street<br />
-              Khayelitsha, Western Cape, 7784
+              Khayelitsha, Western Cape, 7784, South Africa
             </address>
             <div className="mt-5 space-y-1 text-sm text-white/90">
               <p><a href="mailto:contact@sweetandlovely.pizza" className="hover:underline">contact@sweetandlovely.pizza</a></p>
