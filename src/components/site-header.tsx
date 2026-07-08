@@ -40,7 +40,7 @@ export function SiteHeader() {
         hidden ? "-translate-y-full md:translate-y-0" : "translate-y-0"
       }`}
     >
-      <div className="relative w-full bg-white backdrop-blur">
+      <div className="relative w-full overflow-hidden bg-[#ff003c]/95 backdrop-blur supports-[backdrop-filter]:bg-[#ff003c]/85">
         <FramerBoundary fallback={<div className="h-16 w-full" aria-hidden />}>
           <div className="w-full bg-white">
             <NavFramerComponent.Responsive
