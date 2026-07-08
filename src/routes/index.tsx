@@ -81,7 +81,7 @@ function Index() {
     staleTime: 30_000,
   });
   useRealtimeInvalidate(
-    ["home_popular_items", "home_hot_deals", "home_specials", "home_banners", "featured_items", "home_section_visibility"],
+    ["home_popular_items", "home_hot_deals", "home_specials", "home_banners", "home_desserts", "featured_items", "home_section_visibility"],
     [["home-content"]],
   );
 
@@ -98,6 +98,16 @@ function Index() {
   }));
 
   const banners = (content?.banners ?? []).filter((b) => b.is_active !== false);
+
+  const dessertsFromAdmin: Product[] = (content?.desserts ?? []).map((d) => ({
+    id: d.id,
+    title: d.title,
+    price: d.price ?? "",
+    image: d.image_url ?? undefined,
+    content: d.description ?? undefined,
+    nutrition: "from",
+  }));
+  const desserts = dessertsFromAdmin.length > 0 ? dessertsFromAdmin : DESSERTS;
 
   return (
     <div className="min-h-screen bg-white text-neutral-900">
@@ -183,7 +193,7 @@ function Index() {
               Our desserts are worth it. Trust us, you won&apos;t want to miss these sweet delights.
             </p>
           </Reveal>
-          <ProductGrid products={DESSERTS} />
+          <ProductGrid products={desserts} />
           <div className="mt-12 flex justify-center">
             <Link
               to="/menu/full-menu"
