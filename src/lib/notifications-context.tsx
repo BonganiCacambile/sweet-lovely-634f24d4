@@ -59,7 +59,7 @@ function categoryAllowed(category: string | null | undefined, prefs: ReturnType<
 }
 
 export function NotificationsProvider({ children }: { children: ReactNode }) {
-  const { user, profile } = useAuth();
+  const { user, profile, isAdmin } = useAuth();
   const qc = useQueryClient();
 
   const [unread, setUnread] = useState(0);
@@ -74,22 +74,29 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
       setRecent([]);
       return;
     }
+    // Admins also see broadcast notifications (user_id IS NULL), which the
+    // notify_admin_on_new_order trigger emits for every new order.
+    const rowsQuery = supabase
+      .from("notifications")
+      .select("id, title, body, category, read, created_at");
+    const countQuery = supabase
+      .from("notifications")
+      .select("id", { count: "exact", head: true })
+      .eq("read", false);
     const [{ data: rows }, { count }] = await Promise.all([
-      supabase
-        .from("notifications")
-        .select("id, title, body, category, read, created_at")
-        .eq("user_id", user.id)
+      (isAdmin
+        ? rowsQuery.or(`user_id.eq.${user.id},user_id.is.null`)
+        : rowsQuery.eq("user_id", user.id)
+      )
         .order("created_at", { ascending: false })
         .limit(20),
-      supabase
-        .from("notifications")
-        .select("id", { count: "exact", head: true })
-        .eq("user_id", user.id)
-        .eq("read", false),
+      isAdmin
+        ? countQuery.or(`user_id.eq.${user.id},user_id.is.null`)
+        : countQuery.eq("user_id", user.id),
     ]);
     setRecent((rows ?? []) as NotificationRow[]);
     setUnread(count ?? 0);
-  }, [user]);
+  }, [user, isAdmin]);
 
   useEffect(() => {
     void refresh();
@@ -114,37 +121,36 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
       }
       if (cancelled) return;
       const name = `rt:user-notifications:${user.id}:${Math.random().toString(36).slice(2, 8)}`;
-      channel = supabase
-        .channel(name)
+      let ch = supabase.channel(name);
+
+      const handleInsert = (payload: { new: NotificationRow }) => {
+        const row = payload.new;
+        setRecent((prev) => [row, ...prev].slice(0, 20));
+        if (!row.read) setUnread((n) => n + 1);
+        qc.invalidateQueries({ queryKey: ["my-notifications"] });
+        qc.invalidateQueries({ queryKey: ["account-overview"] });
+        const prefs = prefsRef.current;
+        if (!categoryAllowed(row.category, prefs)) return;
+        if (prefs.sound) playNotificationPing();
+        if (prefs.vibration) {
+          const important = /deliver|out_for|ready|cancel|refund|order/i.test(
+            `${row.title} ${row.body ?? ""}`,
+          );
+          vibrate(important ? [40, 60, 40] : 30);
+        }
+        toast(row.title, {
+          description: row.body ?? undefined,
+          icon: <Bell className="h-4 w-4" />,
+          duration: 6000,
+        });
+      };
+
+      ch = ch
         .on(
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           "postgres_changes" as any,
           { event: "INSERT", schema: "public", table: "notifications", filter: `user_id=eq.${user.id}` },
-          (payload: { new: NotificationRow }) => {
-            const row = payload.new;
-            // Update local state immediately.
-            setRecent((prev) => [row, ...prev].slice(0, 20));
-            if (!row.read) setUnread((n) => n + 1);
-            // Invalidate any queries reading notifications.
-            qc.invalidateQueries({ queryKey: ["my-notifications"] });
-            qc.invalidateQueries({ queryKey: ["account-overview"] });
-
-            // Alert (sound + vibrate + toast), filtered by user prefs.
-            const prefs = prefsRef.current;
-            if (!categoryAllowed(row.category, prefs)) return;
-            if (prefs.sound) playNotificationPing();
-            if (prefs.vibration) {
-              const important = /deliver|out_for|ready|cancel|refund/i.test(
-                `${row.title} ${row.body ?? ""}`,
-              );
-              vibrate(important ? [40, 60, 40] : 30);
-            }
-            toast(row.title, {
-              description: row.body ?? undefined,
-              icon: <Bell className="h-4 w-4" />,
-              duration: 6000,
-            });
-          },
+          handleInsert,
         )
         .on(
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -161,8 +167,19 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
           () => {
             void refresh();
           },
-        )
-        .subscribe((status) => {
+        );
+
+      if (isAdmin) {
+        // Admin broadcast notifications (user_id IS NULL) — new order alerts, etc.
+        ch = ch.on(
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          "postgres_changes" as any,
+          { event: "INSERT", schema: "public", table: "notifications", filter: "user_id=is.null" },
+          handleInsert,
+        );
+      }
+
+      channel = ch.subscribe((status) => {
           setRtStatus(status as Ctx["rtStatus"]);
           // On (re)connect, resync to catch anything missed while offline.
           if (status === "SUBSCRIBED") void refresh();
@@ -197,6 +214,7 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
       if (channel) void supabase.removeChannel(channel);
     };
   }, [user, qc, refresh]);
+  // isAdmin is captured via refresh dep chain; explicit for lint clarity.
 
   const markAllRead = useCallback(async () => {
     if (!user) return;
