@@ -125,6 +125,55 @@ export const deletePopular = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+// ---------- desserts ------------------------------------------------------
+
+export const listDesserts = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const scope = await requireAdminScope(supabaseAdmin, context.userId);
+    let q = supabaseAdmin.from("home_desserts").select("*").order("position").order("created_at");
+    if (!scope.isMain && scope.zoneId) q = q.eq("zone_id", scope.zoneId);
+    const { data, error } = await q;
+    if (error) throw new Error(error.message);
+    return { rows: data ?? [], scope };
+  });
+
+export const upsertDessert = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ id: z.string().uuid().optional(), patch: popularPayload }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const scope = await requireAdminScope(supabaseAdmin, context.userId);
+    const patch = scope.isMain ? data.patch : { ...data.patch, zone_id: scope.zoneId };
+    if (data.id) {
+      let q = supabaseAdmin.from("home_desserts").update(patch).eq("id", data.id);
+      if (!scope.isMain && scope.zoneId) q = q.eq("zone_id", scope.zoneId);
+      const { error } = await q;
+      if (error) throw new Error(error.message);
+      await logAudit(context, "home.dessert.update", "home_desserts", data.id, { title: patch.title });
+    } else {
+      const { error } = await supabaseAdmin.from("home_desserts").insert(patch);
+      if (error) throw new Error(error.message);
+      await logAudit(context, "home.dessert.create", "home_desserts", null, { title: patch.title });
+    }
+    return { ok: true };
+  });
+
+export const deleteDessert = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const scope = await requireAdminScope(supabaseAdmin, context.userId);
+    let q = supabaseAdmin.from("home_desserts").delete().eq("id", data.id);
+    if (!scope.isMain && scope.zoneId) q = q.eq("zone_id", scope.zoneId);
+    const { error } = await q;
+    if (error) throw new Error(error.message);
+    await logAudit(context, "home.dessert.delete", "home_desserts", data.id);
+    return { ok: true };
+  });
+
 // ---------- hot deals -----------------------------------------------------
 
 export const listHotDeals = createServerFn({ method: "GET" })
