@@ -5,7 +5,7 @@ import { z } from "zod";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 
-export const Route = createFileRoute("/checkout/success")({
+export const Route = createFileRoute("/checkout_/success")({
   validateSearch: (s) =>
     z.object({ ref: z.string().optional(), order: z.string().optional() }).parse(s),
   head: () => ({
