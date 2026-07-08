@@ -380,7 +380,7 @@ function NewsletterSection() {
   );
 }
 
-function FanFavoritesSection() {
+function FanFavoritesSection({ items }: { items: Product[] }) {
   const [showPopular, setShowPopular] = useState(true);
 
   return (
@@ -425,7 +425,7 @@ function FanFavoritesSection() {
             />
           </span>
         </button>
-        {showPopular && <ProductGrid products={FEATURED_PRODUCTS} imageOnly isPizza />}
+        {showPopular && <ProductGrid products={items} imageOnly isPizza />}
         <div className="mt-12 flex justify-center">
           <Link
             to="/menu/full-menu"
