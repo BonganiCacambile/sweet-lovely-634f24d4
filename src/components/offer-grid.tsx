@@ -26,8 +26,8 @@ function DealCard({ variant, items, price, save, bg, images, darkText = false, b
     <article
       className={`hover-zoom group relative w-full overflow-hidden rounded-[24px] transition-transform duration-300 hover:-translate-y-1.5 ${bg} ${textColor} ${
         big
-          ? "min-h-[520px] px-6 pb-[220px] pt-6 md:min-h-[690px] md:px-12 md:pb-[440px] md:pt-12"
-          : "min-h-[420px] px-6 pb-[180px] pt-6 md:min-h-[491px] md:px-12 md:pb-[240px] md:pt-12"
+          ? "min-h-[560px] px-6 pb-[280px] pt-6 md:min-h-[690px] md:px-12 md:pb-[340px] md:pt-12"
+          : "min-h-[460px] px-6 pb-[220px] pt-6 md:min-h-[491px] md:px-12 md:pb-[240px] md:pt-12"
       }`}
     >
       <h3 className="relative z-10 text-[28px] font-extrabold leading-[1.2] tracking-normal">
@@ -59,8 +59,8 @@ function DealCard({ variant, items, price, save, bg, images, darkText = false, b
       </div>
 
       <div
-        className={`pointer-events-none absolute inset-x-0 bottom-0 z-[1] flex items-start justify-center overflow-visible ${
-          big ? "h-[200px] sm:h-[260px] md:h-[456px]" : "h-[160px] sm:h-[200px] md:h-[216px]"
+        className={`pointer-events-none absolute inset-x-0 bottom-0 z-[1] overflow-hidden ${
+          big ? "h-[260px] md:h-[340px]" : "h-[200px] md:h-[240px]"
         }`}
         aria-hidden
       >
@@ -68,20 +68,20 @@ function DealCard({ variant, items, price, save, bg, images, darkText = false, b
           src={images[0]}
           alt=""
           loading="eager"
-          className={`absolute top-0 select-none object-contain transition-transform duration-700 ease-out group-hover:-rotate-6 group-hover:scale-105 ${
+          className={`absolute bottom-[-30%] select-none object-contain transition-transform duration-700 ease-out group-hover:-rotate-6 group-hover:scale-105 ${
             big
-              ? "left-[-10px] h-[260px] w-[260px] sm:left-[-100px] sm:h-[520px] sm:w-[520px] md:left-[-120px] md:h-[720px] md:w-[720px]"
-              : "left-[-5px] h-[210px] w-[210px] sm:left-[-60px] sm:h-[340px] sm:w-[340px] md:left-[-48px] md:h-[400px] md:w-[400px]"
+              ? "left-[-8%] h-[380px] w-[380px] md:h-[520px] md:w-[520px]"
+              : "left-[-6%] h-[280px] w-[280px] md:h-[340px] md:w-[340px]"
           }`}
         />
         <img
           src={images[1]}
           alt=""
           loading="eager"
-          className={`absolute top-0 select-none object-contain transition-transform duration-700 ease-out group-hover:rotate-6 group-hover:scale-105 ${
+          className={`absolute bottom-[-30%] select-none object-contain transition-transform duration-700 ease-out group-hover:rotate-6 group-hover:scale-105 ${
             big
-              ? "right-[-10px] h-[260px] w-[260px] sm:right-[-100px] sm:h-[520px] sm:w-[520px] md:right-[-120px] md:h-[720px] md:w-[720px]"
-              : "right-[-5px] h-[210px] w-[210px] sm:right-[-60px] sm:h-[340px] sm:w-[340px] md:right-[-48px] md:h-[400px] md:w-[400px]"
+              ? "right-[-8%] h-[380px] w-[380px] md:h-[520px] md:w-[520px]"
+              : "right-[-6%] h-[280px] w-[280px] md:h-[340px] md:w-[340px]"
           }`}
         />
       </div>
