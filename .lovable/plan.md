@@ -1,74 +1,96 @@
-## Goal
+# Home Page Content Management System
 
-Add a **Zone Admin** role alongside the existing **Main Admin** (super) so a user can be scoped to exactly one delivery zone. Main Admin keeps full cross-zone access; Zone Admin sees only their assigned zone's orders, analytics/dashboard, inventory view, and their own zone entry in Delivery Zones. Unauthorized navigation redirects to their zone dashboard with an "Access Restricted" toast. RLS enforces isolation server-side — UI guards alone are not enough.
+Build a full Admin module to manage all Home Page promotional content (Popular Items, Hot Deals, Specials, Featured Products, Banners), replacing hardcoded data with live database-driven content synced in real-time.
 
-## Database (one migration)
+## Current State
 
-1. `ALTER TYPE app_role ADD VALUE 'zone_admin'`.
-2. `ALTER TABLE user_roles ADD COLUMN assigned_zone_id uuid REFERENCES delivery_zones(id) ON DELETE SET NULL`.
-   - Partial unique index: one zone_admin row per user.
-   - Trigger: if `role = 'zone_admin'`, `assigned_zone_id` must be NOT NULL; for other roles it must be NULL.
-3. Security-definer helpers (search_path = public):
-   - `is_main_admin(uid uuid) returns boolean` — `has_role(uid, 'admin')`.
-   - `get_user_zone(uid uuid) returns uuid` — assigned_zone_id of zone_admin row, else NULL.
-   - `can_access_zone(uid uuid, zid uuid) returns boolean` — true if main admin, or zone_admin and `zid = assigned`.
-   - `GRANT EXECUTE ... TO authenticated`.
-4. RLS policy updates (drop & recreate; keep existing admin policies as `is_main_admin` checks):
-   - `delivery_zones`: zone_admin can `SELECT` and `UPDATE` (fee_zar/min_order_zar/hours_text/active only — enforced via column grants + a `WITH CHECK` keeping name/slug unchanged) where `id = get_user_zone(auth.uid())`. Only main admin can `INSERT`/`DELETE`.
-   - `orders`: zone_admin can `SELECT`/`UPDATE` where `delivery_zone_id = get_user_zone(auth.uid())`.
-   - `order_items`: zone_admin can `SELECT` where parent order's zone matches.
-   - `inventory_movements`: zone_admin can `SELECT` rows whose `order_id` belongs to their zone (NULL order_id rows hidden).
-   - `products`/`categories`: zone_admin can `SELECT` (stock is global per current schema; read-only for them).
-   - `user_roles`: only main admin can mutate; zone_admin can read only their own row.
-   - `audit_logs`, `system_settings`, `integrations`, `discounts`, `promotions`, `banners`, `content_pages`, `featured_items`, `loyalty_*`, `reviews`, `reservations`, `store_hours`, `notifications`: main-admin-only writes; zone_admin no access (existing admin-only policies remain).
+The Home Page (`src/routes/index.tsx`) currently pulls from hardcoded arrays in `src/data/menu.ts`:
+- `FEATURED_PRODUCTS` → "Fan Favorites / Popular"
+- `DESSERTS` → "Save Room for Dessert"
+- `TESTIMONIALS` → reviews
+- `OfferGrid` → hardcoded offers (`src/components/offer-grid.tsx`)
 
-## Server functions
+The DB already has partially-shaped tables (`home_popular_items`, `home_hot_deals`, `home_specials`, `home_banners`, `featured_items`, `home_section_visibility`, `home_content_events`, `promotions`) — I'll audit and reuse/extend rather than duplicate.
 
-- `src/lib/admin/server-helpers.server.ts`: add `requireMainAdmin(supabase, userId)` and `getCallerZone(supabase, userId)` → `{ isMain: boolean, zoneId: string | null }`.
-- Update zone-scopable server fns to enforce the scope (defense-in-depth on top of RLS):
-  - `admin/orders.functions.ts` (list/get/update): inject zone filter if caller is zone_admin.
-  - `admin/zones.functions.ts`: list returns only caller's zone for zone_admin; create/delete throw Forbidden; update allowed only for own zone.
-  - `admin/analytics.functions.ts` + `admin-dashboard.functions.ts`: zone-filter all KPI queries when caller is zone_admin.
-  - `admin/inventory.functions.ts`: read-only for zone_admin (block `adjust_product_stock` calls).
-  - `admin/users.functions.ts` + `admin/roles.functions.ts`: main-admin-only; add `assignZoneAdmin(userId, zoneId)` and `revokeZoneAdmin(userId)`.
+## Database (single migration)
 
-## Client / routing
+Audit existing `home_*` tables; add missing columns and standardize schema across all four content types. Each table will have:
 
-- `src/lib/auth-context.tsx`: extend with `role: 'admin' | 'zone_admin' | 'user' | null`, `assignedZoneId: string | null`, `isMainAdmin`, `canAccessZone(id)`. Fetch on session change via a new `getCallerRole` server fn.
-- New `src/components/admin/zone-admin-guard.tsx`: wraps admin routes; if caller is zone_admin and the route is global-only, `navigate('/admin')` + toast "Access Restricted — showing your zone".
-- `src/routes/_authenticated/admin.tsx` (admin shell):
-  - On mount, if zone_admin, force the global zone filter to their zone and lock the zone switcher (disabled select showing their zone name).
-  - Hide nav items zone_admin shouldn't see: Users, Roles/Permissions, Audit, Integrations, Settings, Content, Promotions, Discounts, Reviews, Reservations, Loyalty. Keep: Dashboard, Orders, Delivery Zones (their zone only), Inventory (read), Analytics (their zone).
-- Per-route guards using the new component:
-  - `admin.users.tsx`, `admin.audit.tsx`, `admin.integrations.tsx`, `admin.settings.tsx`, `admin.content.tsx`, `admin.security.tsx`, `admin.notifications.tsx`, `admin.reviews.tsx`, `admin.reports.tsx`, `admin.categories.tsx`, `admin.products.tsx`: **main-admin only** → redirect.
-  - `admin.delivery-zones.tsx`: render only the caller's zone card with edit (fee/min/hours/active); hide "Add Zone" and delete actions for zone_admin.
-  - `admin.orders.tsx`: hide zone filter for zone_admin (show static badge); list already RLS-filtered.
-  - `admin.analytics.tsx` / `admin.index.tsx`: show a "Viewing: <Zone>" badge for zone_admin.
-- `admin.users.tsx` (main admin only): add a "Role" column with a row action **"Make Zone Admin"** that opens a dialog to pick one zone, and **"Revoke Zone Admin"**. Reflects in `user_roles`.
+- `id`, `title`, `description`, `image_url`, `price_zar`, `original_price_zar` (hot deals), `discount_pct` (hot deals), `cta_label`, `cta_href`, `product_id` (optional FK to `products`), `position` (int for ordering), `is_active` (bool), `starts_at`, `ends_at` (nullable, for scheduling), `zone_id` (nullable FK to `delivery_zones`), `created_by`, `created_at`, `updated_at`
+- `promotional_banners` table (new if missing): image, headline, subhead, CTA, link, position, active, schedule, zone
+- `home_section_visibility`: rows for `popular`, `hot_deals`, `specials`, `featured`, `banners`, `desserts` with `is_visible` bool
+- Click-tracking table: `home_content_clicks` (content_type, content_id, clicked_at, session_id) for analytics
+- Triggers: `updated_at`, and a "scheduled visibility" view/function that treats a row as live when `is_active AND (starts_at IS NULL OR starts_at <= now()) AND (ends_at IS NULL OR ends_at > now())`
+- RLS:
+  - Public `SELECT` (anon + authenticated) filtered to live rows only via policy
+  - Admins (`has_role admin`) full CRUD on all zones
+  - Zone admins CRUD scoped to `zone_id = get_user_zone(auth.uid())`
+- Realtime: `ALTER PUBLICATION supabase_realtime ADD TABLE` for all home content tables
+- Grants: standard `authenticated`/`service_role` + `anon SELECT`
 
-## Auth gate behavior
+## Server Functions
 
-- Existing managed `_authenticated/route.tsx` handles sign-in.
-- New behavior in admin shell: if `role` is neither `admin` nor `zone_admin`, redirect to `/` with toast "Admin access required".
-- Zone Admins landing on `/admin` default to their zone dashboard (filter pre-applied) — never the global aggregate.
+New files under `src/lib/admin/home-content/`:
+- `popular.functions.ts` — list/create/update/delete/reorder/toggle for popular items
+- `hot-deals.functions.ts` — same + price/discount validation, schedule
+- `specials.functions.ts` — same, with combo/meal-deal fields
+- `featured.functions.ts` — same
+- `banners.functions.ts` — same
+- `section-visibility.functions.ts` — toggle each home section
+- `analytics.functions.ts` — click counts, top items, conversion (best-effort)
 
-## Files
+New public read module `src/lib/home-content.functions.ts` — returns live content for the home page via publishable-key server client (SSR-safe, respects scheduling).
 
-**New**
-- `supabase/migrations/<ts>_zone_admin_role.sql`
-- `src/components/admin/zone-admin-guard.tsx`
-- `src/lib/admin/role-context.ts` (server fn `getCallerRole`)
+All admin fns use `requireSupabaseAuth` + `requireAdminScope` from existing helpers; zone admins are auto-scoped.
 
-**Edited**
-- `src/lib/auth-context.tsx`
-- `src/components/admin/admin-sidebar.tsx`
-- `src/lib/admin/server-helpers.server.ts`
-- `src/lib/admin/{orders,zones,analytics,inventory,users,roles}.functions.ts`
-- `src/lib/admin-dashboard.functions.ts`
-- `src/routes/_authenticated/admin.tsx` + the per-module admin route files listed above
+## Admin UI
 
-## Security notes
+New route: `src/routes/_authenticated/admin.home-content.tsx` — tabbed shell with sub-sections:
+- **Popular Items** — data table + create/edit drawer, drag-to-reorder, activate toggle, image upload, product picker from `products` table
+- **Hot Deals** — same UI shape + original/discounted price fields, auto-computed savings, date range picker
+- **Specials** — combo builder (link multiple products), image, schedule
+- **Featured Products** — simple product picker + position
+- **Promotional Banners** — image upload, headline/CTA/link, schedule
+- **Section Visibility** — toggle each home page section on/off
+- **Analytics** — top clicks per category, conversion snapshot
 
-- All zone scoping enforced in **RLS first**, server fns second, UI third. A compromised client cannot read another zone's data.
-- Zone Admins cannot grant roles, cannot create/delete zones, cannot mutate products/inventory, cannot view audit/users/settings.
-- Main Admin promotion still requires existing main admin to perform; no self-elevation path.
+Add sidebar entry "Home Content" in `src/components/admin/admin-sidebar.tsx`. Uses existing `PageHeader`, `SectionCard`, `DataShell`, `StatusBadge` patterns.
+
+Product picker component reuses existing `products` queries. Image uploads go through the existing `avatars` bucket pattern (or create a public `home-content` bucket).
+
+## Customer Home Page Rewiring
+
+Rewrite `src/routes/index.tsx` to fetch live content via TanStack Query:
+- Replace `FEATURED_PRODUCTS` usage → `usePopularItems()`
+- Replace `DESSERTS` → `useFeaturedProducts()` (kept as separate section, or merged; will confirm during build)
+- Replace `OfferGrid` static offers → `useHotDeals()` and/or `useSpecials()`
+- Wrap each section with `home_section_visibility` gate — hide entirely if admin toggled off
+- Subscribe via `useRealtimeInvalidate` to all home content tables so admin edits appear instantly with no refresh
+- Preserve every current animation, style, layout, and component (`ProductGrid`, `OfferGrid`, `Reveal`, hero, etc.) — only the data source changes
+- Loading state: use current data shape with skeletons matching the existing card sizes
+
+Public banners section added above/below hero based on active banner rows (rendered only if any exist, to preserve current design when empty).
+
+## Analytics Hooks
+
+Lightweight click logger fires from `ProductGrid`/`OfferGrid` when a home-content-sourced card is clicked; writes to `home_content_clicks`. Admin analytics tab aggregates via server fn.
+
+## Cleanup
+
+- Remove `FEATURED_PRODUCTS`, `DESSERTS` usage on home from `src/data/menu.ts` (keep file for `/menu/full-menu` if still referenced; otherwise trim)
+- Remove hardcoded offer arrays in `src/components/offer-grid.tsx` and rewire to prop-driven live data
+
+## Out of Scope / Assumptions
+
+- "Seasonal Campaigns" treated as `promotions` table already present + banner scheduling — no separate UI unless you ask
+- Full drag-and-drop uses simple up/down + position number initially; kanban-style DnD can be added later
+- Analytics is basic aggregation (counts, top N); no funnel/attribution modeling
+- Images uploaded to Supabase Storage; existing image URLs also supported
+
+## Deliverables
+
+1. One migration creating/extending tables, RLS, realtime, grants
+2. Admin server functions (7 modules) + public read module
+3. Admin route `admin.home-content.tsx` with all sub-sections + sidebar entry
+4. Rewired `src/routes/index.tsx` using live data + realtime + section visibility
+5. Removed hardcoded home content

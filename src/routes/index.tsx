@@ -1,18 +1,23 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Link } from "@tanstack/react-router";
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { SiteHeader } from "@/components/site-header";
 import { Section } from "@/components/section";
 import { ProductGrid } from "@/components/product-grid";
 import { CityGrid } from "@/components/city-grid";
 import { DeliveryFaqList } from "@/components/delivery-faq-list";
-import { OfferGrid } from "@/components/offer-grid";
 import { SiteFooter } from "@/components/site-footer";
 import { Testimonials } from "@/components/testimonials";
 import { Reveal } from "@/components/reveal";
 import MenuTabFramerComponent from "@/framer/menu-products/menu-tab";
-import { FEATURED_PRODUCTS, DESSERTS, TESTIMONIALS } from "@/data/menu";
+import { DESSERTS, TESTIMONIALS } from "@/data/menu";
 import { useActiveZoneCities } from "@/hooks/use-active-zones";
+import { getHomeContent } from "@/lib/home-content.functions";
+import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
+import { AddToCartButton } from "@/components/cart/add-to-cart-button";
+import type { Product } from "@/components/product-grid";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -69,9 +74,36 @@ export const Route = createFileRoute("/")({
 
 function Index() {
   const { cities } = useActiveZoneCities();
+  const fetchContent = useServerFn(getHomeContent);
+  const { data: content } = useQuery({
+    queryKey: ["home-content"],
+    queryFn: () => fetchContent(),
+    staleTime: 30_000,
+  });
+  useRealtimeInvalidate(
+    ["home_popular_items", "home_hot_deals", "home_specials", "home_banners", "featured_items", "home_section_visibility"],
+    [["home-content"]],
+  );
+
+  const visibility = content?.visibility ?? {};
+  const showSection = (key: string) => visibility[key] !== false;
+
+  const popular: Product[] = (content?.popular ?? []).map((p) => ({
+    id: p.id,
+    title: p.title,
+    price: p.price ?? "",
+    image: p.image_url ?? undefined,
+    content: p.description ?? undefined,
+    nutrition: "from",
+  }));
+
+  const banners = (content?.banners ?? []).filter((b) => b.is_active !== false);
+
   return (
     <div className="min-h-screen bg-white text-neutral-900">
       <SiteHeader />
+
+      {banners.length > 0 && showSection("banners") && <HeroBanners banners={banners} />}
 
       <section className="relative h-[calc(100vh-88px)] max-h-[640px] min-h-[560px] w-full overflow-hidden px-4 pt-12 sm:px-6 md:pt-20 lg:px-8">
         <HeroIngredients />
@@ -105,9 +137,10 @@ function Index() {
       </section>
 
       {/* Fan Favorites */}
-      <FanFavoritesSection />
+      {showSection("popular") && popular.length > 0 && <FanFavoritesSection items={popular} />}
 
       {/* Hot Pizza, Hotter Deals */}
+      {showSection("hot_deals") && (content?.hotDeals ?? []).length > 0 && (
       <section id="deals" className="w-full px-4 py-16 sm:px-6 md:py-24 lg:px-8">
         <div className="mx-auto max-w-7xl">
           <Reveal className="mb-12 text-center">
@@ -118,11 +151,28 @@ function Index() {
               From family-sized deals to solo slices, find the perfect offer for your pizza cravings.
             </p>
           </Reveal>
-          <OfferGrid />
+          <HotDealGrid deals={content?.hotDeals ?? []} />
         </div>
       </section>
+      )}
+
+      {/* Specials */}
+      {showSection("specials") && (content?.specials ?? []).length > 0 && (
+        <section className="w-full bg-white px-4 py-16 sm:px-6 md:py-24 lg:px-8">
+          <div className="mx-auto max-w-7xl">
+            <Reveal className="mb-12 text-center">
+              <h2 className="text-4xl font-extrabold tracking-tight md:text-5xl">Today&apos;s Specials</h2>
+              <p className="mt-4 text-base text-neutral-700 md:text-lg">
+                Handpicked combos and meal deals — for a limited time only.
+              </p>
+            </Reveal>
+            <SpecialsGrid specials={content?.specials ?? []} />
+          </div>
+        </section>
+      )}
 
       {/* Desserts */}
+      {showSection("desserts") && (
       <section id="desserts" className="w-full bg-white px-4 py-16 sm:px-6 md:py-24 lg:px-8">
         <div className="mx-auto max-w-7xl">
           <Reveal className="mb-12 text-center">
@@ -144,6 +194,7 @@ function Index() {
           </div>
         </div>
       </section>
+      )}
 
       {/* Find Your Nearest Pizza Spot */}
       <section id="locations" className="w-full bg-neutral-50 px-4 py-16 sm:px-6 md:py-24 lg:px-8">
@@ -176,6 +227,112 @@ function Index() {
       <NewsletterSection />
 
       <SiteFooter />
+    </div>
+  );
+}
+
+function HeroBanners({ banners }: { banners: Array<{ id: string; title: string; subtitle: string | null; image_url: string | null; cta_label: string | null; cta_href: string | null }> }) {
+  return (
+    <div className="w-full bg-[#fff5f7] px-4 py-4 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-7xl grid gap-3 md:grid-cols-2">
+        {banners.slice(0, 4).map((b) => (
+          <a
+            key={b.id}
+            href={b.cta_href ?? "#"}
+            className="group relative overflow-hidden rounded-2xl border border-neutral-200 bg-white transition hover:shadow-lg"
+          >
+            {b.image_url && (
+              <img src={b.image_url} alt={b.title} className="h-32 w-full object-cover transition group-hover:scale-105" />
+            )}
+            <div className="p-4">
+              <p className="text-base font-bold text-neutral-900">{b.title}</p>
+              {b.subtitle && <p className="text-sm text-neutral-600">{b.subtitle}</p>}
+              {b.cta_label && (
+                <span className="mt-2 inline-flex items-center rounded-full bg-[#ff003c] px-3 py-1 text-xs font-semibold text-white">
+                  {b.cta_label}
+                </span>
+              )}
+            </div>
+          </a>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function HotDealGrid({ deals }: { deals: Array<{ id: string; title: string; description: string | null; image_url: string | null; original_price: number | null; discounted_price: number | null; discount_pct: number | null; label: string | null }> }) {
+  const colors = ["bg-[#ff003c] text-white", "bg-[#ffcc00] text-neutral-900", "bg-[#333333] text-white", "bg-[#0a9900] text-white", "bg-[#ff9100] text-white"];
+  return (
+    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      {deals.map((d, i) => {
+        const orig = d.original_price != null ? Number(d.original_price) : null;
+        const disc = d.discounted_price != null ? Number(d.discounted_price) : null;
+        const save = orig != null && disc != null ? (orig - disc).toFixed(0) : null;
+        return (
+          <Reveal key={d.id} className="w-full" delay={i * 60}>
+            <article className={`relative overflow-hidden rounded-[24px] p-6 transition-transform hover:-translate-y-1.5 min-h-[380px] flex flex-col ${colors[i % colors.length]}`}>
+              <h3 className="text-[26px] font-extrabold leading-tight">{d.title}</h3>
+              {(d.label || d.description) && (
+                <p className="mt-3 text-[15px] opacity-90 whitespace-pre-line">{d.label ?? d.description}</p>
+              )}
+              <div className="mt-auto flex flex-wrap items-end justify-between gap-3 pt-6">
+                <AddToCartButton
+                  item={{
+                    id: `deal-${d.id}`,
+                    title: d.title,
+                    price: disc != null ? `R${disc.toFixed(0)}` : "",
+                    image: d.image_url ?? undefined,
+                    variation: d.label ?? undefined,
+                  }}
+                  className="h-9 px-6 text-[14px]"
+                />
+                <p className="flex items-end gap-2 whitespace-nowrap text-[20px] font-extrabold leading-none">
+                  {disc != null ? `R${disc.toFixed(0)}` : ""}
+                  {save && <span className="text-[16px] font-light">- Save R{save}</span>}
+                </p>
+              </div>
+              {d.image_url && (
+                <img
+                  src={d.image_url}
+                  alt=""
+                  aria-hidden
+                  className="pointer-events-none absolute -right-12 -top-8 h-56 w-56 select-none object-contain opacity-90 transition-transform duration-700 group-hover:rotate-6"
+                />
+              )}
+            </article>
+          </Reveal>
+        );
+      })}
+    </div>
+  );
+}
+
+function SpecialsGrid({ specials }: { specials: Array<{ id: string; title: string; description: string | null; image_url: string | null; price: string | null; kind: string }> }) {
+  return (
+    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      {specials.map((s, i) => (
+        <Reveal key={s.id} delay={i * 60}>
+          <article className="group flex h-full flex-col overflow-hidden rounded-3xl border border-neutral-200 bg-[#fff5f7] transition-shadow hover:shadow-lg">
+            {s.image_url && (
+              <img src={s.image_url} alt={s.title} className="h-48 w-full object-cover transition-transform duration-500 group-hover:scale-105" />
+            )}
+            <div className="flex flex-1 flex-col p-5">
+              <span className="inline-block w-fit rounded-full bg-[#ff003c] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">
+                {s.kind.replace("_", " ")}
+              </span>
+              <h3 className="mt-2 text-xl font-extrabold">{s.title}</h3>
+              {s.description && <p className="mt-1 text-sm text-neutral-600 line-clamp-3">{s.description}</p>}
+              <div className="mt-auto flex items-center justify-between pt-4">
+                <span className="text-lg font-bold text-[#ff003c]">{s.price ?? ""}</span>
+                <AddToCartButton
+                  item={{ id: `special-${s.id}`, title: s.title, price: s.price ?? "", image: s.image_url ?? undefined }}
+                  className="h-9 px-5 text-[13px]"
+                />
+              </div>
+            </div>
+          </article>
+        </Reveal>
+      ))}
     </div>
   );
 }
