@@ -40,18 +40,20 @@ export function SiteHeader() {
         hidden ? "-translate-y-full md:translate-y-0" : "translate-y-0"
       }`}
     >
-      <div className="relative w-full bg-[#ff003c]/95 backdrop-blur supports-[backdrop-filter]:bg-[#ff003c]/85">
+      <div className="relative w-full overflow-hidden bg-[#ff003c]/95 backdrop-blur supports-[backdrop-filter]:bg-[#ff003c]/85">
         <FramerBoundary fallback={<div className="h-16 w-full" aria-hidden />}>
-          <NavFramerComponent.Responsive
-            variants={{
-              base: "Mobile - Default",
-              sm: "Mobile - Default",
-              md: "Tablet",
-              lg: "Desktop",
-              xl: "Desktop",
-              "2xl": "Desktop",
-            }}
-          />
+          <div className="w-full bg-white">
+            <NavFramerComponent.Responsive
+              variants={{
+                base: "Mobile - Default",
+                sm: "Mobile - Default",
+                md: "Tablet",
+                lg: "Desktop",
+                xl: "Desktop",
+                "2xl": "Desktop",
+              }}
+            />
+          </div>
         </FramerBoundary>
         <div className="pointer-events-none absolute right-2 top-full z-40 mt-2 flex items-center justify-end gap-2 sm:right-4 md:right-6">
           <NotificationBell />
