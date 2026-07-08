@@ -79,6 +79,9 @@ function CheckoutPage() {
   const [form, setForm] = React.useState<FormState>(initialForm);
   const [errors, setErrors] = React.useState<Partial<Record<keyof FormState, string>>>({});
   const [paying, setPaying] = React.useState(false);
+  // Once the order is placed we navigate to /checkout/success. Prevent the
+  // "empty cart" effect below from racing that navigation back to /cart.
+  const orderPlacedRef = React.useRef(false);
   const [config, setConfig] = React.useState<{ publicKey: string; configured: boolean } | null>(
     null,
   );
@@ -105,6 +108,7 @@ function CheckoutPage() {
 
   // Redirect to /cart if empty (but only after mount so we don't fight SSR)
   React.useEffect(() => {
+    if (orderPlacedRef.current) return;
     if (items.length === 0) {
       navigate({ to: "/cart" });
     }
@@ -267,6 +271,7 @@ function CheckoutPage() {
               toast.success(
                 `Order ${res.orderNumber ? `#${res.orderNumber} ` : ""}confirmed — thank you!`,
               );
+              orderPlacedRef.current = true;
               clear();
               // Send the customer to the dedicated confirmation page so they
               // see their order number, ETA, and receipt — not an empty cart.
