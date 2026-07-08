@@ -19,11 +19,12 @@ function publicClient() {
 
 export const getHomeContent = createServerFn({ method: "GET" }).handler(async () => {
   const sb = publicClient();
-  const [popular, deals, specials, banners, featured, visibility] = await Promise.all([
+  const [popular, deals, specials, banners, desserts, featured, visibility] = await Promise.all([
     sb.from("home_popular_items").select("*").order("position").order("created_at"),
     sb.from("home_hot_deals").select("*").order("position").order("created_at"),
     sb.from("home_specials").select("*").order("position").order("created_at"),
     sb.from("home_banners").select("*").order("position").order("created_at"),
+    sb.from("home_desserts").select("*").order("position").order("created_at"),
     sb
       .from("featured_items")
       .select("id, product_slug, placement, sort_order, products:product_slug(slug, title, image, price_zar, description)")
@@ -40,6 +41,7 @@ export const getHomeContent = createServerFn({ method: "GET" }).handler(async ()
     hotDeals: deals.data ?? [],
     specials: specials.data ?? [],
     banners: banners.data ?? [],
+    desserts: desserts.data ?? [],
     featured: featured.data ?? [],
     visibility: visMap,
   };
@@ -49,7 +51,7 @@ export const trackHomeContentEvent = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) =>
     z
       .object({
-        content_type: z.enum(["popular", "hot_deal", "special", "banner", "featured"]),
+        content_type: z.enum(["popular", "hot_deal", "special", "banner", "featured", "dessert"]),
         content_id: z.string().uuid(),
         event_type: z.enum(["view", "click"]).default("click"),
       })
