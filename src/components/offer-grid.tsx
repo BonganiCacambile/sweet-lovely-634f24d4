@@ -24,18 +24,23 @@ function DealCard({ variant, items, price, save, bg, images, darkText = false, b
 
   return (
     <article
-      className={`hover-zoom group relative w-full overflow-hidden rounded-[24px] transition-transform duration-300 hover:-translate-y-1.5 ${bg} ${textColor} ${
+      className={`hover-zoom group relative flex w-full flex-col overflow-hidden rounded-[24px] transition-transform duration-300 hover:-translate-y-1.5 ${bg} ${textColor} ${
         big
-          ? "min-h-[420px] p-6 md:min-h-[460px] md:p-10"
-          : "min-h-[360px] p-6 md:min-h-[400px] md:p-10"
-      } flex flex-col`}
+          ? "min-h-[640px] px-8 pb-[280px] pt-10 md:min-h-[720px] md:px-12 md:pb-[340px] md:pt-14"
+          : "min-h-[560px] px-8 pb-[240px] pt-10 md:min-h-[600px] md:px-12 md:pb-[280px] md:pt-14"
+      }`}
     >
-      <h3 className="relative z-10 max-w-[60%] text-[28px] font-extrabold leading-[1.2] tracking-normal md:text-[32px]">
+      <h3 className="relative z-10 text-[28px] font-extrabold leading-[1.15] tracking-normal md:text-[32px]">
         {variant}
       </h3>
-      <p className="relative z-10 mt-3 max-w-[55%] text-[16px] leading-[1.4] tracking-normal md:text-[18px]">
-        {items.join(" + ")}
-      </p>
+      <ul className="relative z-10 mt-6 flex flex-col gap-3 text-[18px] leading-[1.35] tracking-normal md:text-[20px]">
+        {items.map((item) => (
+          <li key={item} className="flex gap-3">
+            <span className="mt-[0.55em] h-[6px] w-[6px] shrink-0 rounded-full bg-current" />
+            <span>{item}</span>
+          </li>
+        ))}
+      </ul>
       <div className="relative z-10 mt-auto flex w-full flex-wrap items-center justify-between gap-3 pt-8">
         <AddToCartButton
           item={{
@@ -45,25 +50,41 @@ function DealCard({ variant, items, price, save, bg, images, darkText = false, b
             image: images[0],
             variation: items.join(" + "),
           }}
-          className="h-9 px-6 text-[15px]"
+          className="h-10 px-6 text-[15px]"
         />
         <p className="flex items-end gap-2 whitespace-nowrap text-[20px] font-extrabold leading-none tracking-normal md:text-[22px]">
           {price}
-          <span className="text-[18px] font-light leading-none md:text-[22px]">- Save {save}</span>
+          <span className="text-[18px] font-light leading-none md:text-[20px]">- Save {save}</span>
         </p>
       </div>
 
-      <img
-        src={images[0]}
-        alt=""
-        loading="eager"
-        aria-hidden
-        className={`pointer-events-none absolute z-[1] select-none rounded-full object-cover shadow-2xl transition-transform duration-700 ease-out group-hover:rotate-6 group-hover:scale-105 ${
-          big
-            ? "right-[-70px] top-[-70px] h-[320px] w-[320px] md:right-[-90px] md:top-[-90px] md:h-[420px] md:w-[420px]"
-            : "right-[-60px] top-[-60px] h-[260px] w-[260px] md:right-[-80px] md:top-[-80px] md:h-[340px] md:w-[340px]"
+      <div
+        className={`pointer-events-none absolute inset-x-0 bottom-0 z-[1] ${
+          big ? "h-[260px] md:h-[320px]" : "h-[220px] md:h-[260px]"
         }`}
-      />
+        aria-hidden
+      >
+        <img
+          src={images[0]}
+          alt=""
+          loading="eager"
+          className={`absolute select-none rounded-full object-cover transition-transform duration-700 ease-out group-hover:-rotate-6 group-hover:scale-105 ${
+            big
+              ? "left-[4%] bottom-[-45%] h-[360px] w-[360px] md:h-[440px] md:w-[440px]"
+              : "left-[2%] bottom-[-45%] h-[300px] w-[300px] md:h-[360px] md:w-[360px]"
+          }`}
+        />
+        <img
+          src={images[1]}
+          alt=""
+          loading="eager"
+          className={`absolute select-none rounded-full object-cover transition-transform duration-700 ease-out group-hover:rotate-6 group-hover:scale-105 ${
+            big
+              ? "right-[4%] bottom-[-45%] h-[360px] w-[360px] md:h-[440px] md:w-[440px]"
+              : "right-[2%] bottom-[-45%] h-[300px] w-[300px] md:h-[360px] md:w-[360px]"
+          }`}
+        />
+      </div>
     </article>
   );
 }
