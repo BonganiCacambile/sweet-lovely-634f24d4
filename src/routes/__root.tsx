@@ -8,7 +8,7 @@ import {
   Scripts,
 } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
-import { useRouterState, Navigate } from "@tanstack/react-router";
+import { useRouterState } from "@tanstack/react-router";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
@@ -194,25 +194,13 @@ function FloatingZoneChip() {
   );
 }
 
-const PUBLIC_PREFIXES = ["/auth"];
-
+// The storefront (home, menu, cart, checkout, contact, locations) is public.
+// Only account/admin routes require auth — they live under
+// `src/routes/_authenticated/` and are gated by that layout's `beforeLoad`.
+// This gate only renders transition loading screens during sign-in / sign-out.
 function AuthGate({ children }: { children: ReactNode }) {
-  const { user, loading, authTransition } = useAuth();
-  const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const isPublic = PUBLIC_PREFIXES.some((p) => pathname === p || pathname.startsWith(p + "/") || pathname.startsWith(p));
-
-  if (authTransition === "signing-out") {
-    return <LoadingScreen />;
-  }
-  if (authTransition === "signing-in" && !user) {
-    return <LoadingScreen />;
-  }
-  if (isPublic) return <>{children}</>;
-  if (loading) {
-    return <LoadingScreen />;
-  }
-  if (!user) {
-    return <Navigate to="/auth" search={{ redirect: pathname } as never} replace />;
-  }
+  const { user, authTransition } = useAuth();
+  if (authTransition === "signing-out") return <LoadingScreen />;
+  if (authTransition === "signing-in" && !user) return <LoadingScreen />;
   return <>{children}</>;
 }
