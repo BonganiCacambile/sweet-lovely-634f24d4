@@ -268,10 +268,15 @@ function CheckoutPage() {
                 `Order ${res.orderNumber ? `#${res.orderNumber} ` : ""}confirmed — thank you!`,
               );
               clear();
-              // Send the customer back to the (now empty) cart, matching the
-              // pre-cleanup behaviour. Order details still flow through the
-              // success page via the link in the toast / order history.
-              navigate({ to: "/cart" });
+              // Send the customer to the dedicated confirmation page so they
+              // see their order number, ETA, and receipt — not an empty cart.
+              navigate({
+                to: "/checkout/success",
+                search: {
+                  ref: response.reference,
+                  ...(res.orderNumber ? { order: res.orderNumber } : {}),
+                },
+              });
             } else {
               toast.error(res.error || "We couldn't confirm your order. Please contact support.");
               setPaying(false);
