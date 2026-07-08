@@ -410,6 +410,223 @@ function PopularForm({
   );
 }
 
+// ----------------------------- Desserts ------------------------------------
+
+function DessertsTab() {
+  const qc = useQueryClient();
+  const list = useServerFn(listDesserts);
+  const del = useServerFn(deleteDessert);
+  const { data, isLoading, error, refetch } = useQuery({
+    queryKey: ["admin", "home-content", "desserts"],
+    queryFn: () => list(),
+  });
+  const [editing, setEditing] = useState<Row | "new" | null>(null);
+  const removeMut = useMutation({
+    mutationFn: (id: string) => del({ data: { id } }),
+    onSuccess: () => {
+      toast.success("Deleted");
+      qc.invalidateQueries({ queryKey: ["admin", "home-content", "desserts"] });
+    },
+    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Failed"),
+  });
+
+  return (
+    <SectionCard
+      title="Desserts"
+      action={
+        <button
+          onClick={() => setEditing("new")}
+          className="inline-flex items-center gap-1.5 rounded-full bg-[#ff003c] px-3 py-1.5 text-xs font-semibold text-white"
+        >
+          <Plus className="h-3.5 w-3.5" /> New
+        </button>
+      }
+    >
+      {isLoading ? (
+        <LoadingRows />
+      ) : error ? (
+        <ErrorPanel error={error} onRetry={refetch} />
+      ) : (data?.rows ?? []).length === 0 ? (
+        <EmptyState title="No desserts yet" hint="Add desserts to feature in the Save Room for Dessert section." />
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-neutral-50 text-left text-[11px] uppercase tracking-wide text-neutral-500">
+              <tr>
+                <th className="p-3">#</th>
+                <th className="p-3">Item</th>
+                <th className="p-3">Price</th>
+                <th className="p-3">Category</th>
+                <th className="p-3">Status</th>
+                <th className="p-3" />
+              </tr>
+            </thead>
+            <tbody>
+              {(data?.rows ?? []).map((r) => (
+                <tr key={r.id} className="border-t border-neutral-100">
+                  <td className="p-3 text-neutral-500">{r.position}</td>
+                  <td className="p-3">
+                    <div className="flex items-center gap-3">
+                      {r.image_url && (
+                        <img src={r.image_url} alt="" className="h-10 w-10 rounded-lg object-cover" />
+                      )}
+                      <div>
+                        <p className="font-medium text-neutral-900">{r.title}</p>
+                        {r.description && (
+                          <p className="line-clamp-1 text-[11px] text-neutral-500">{r.description}</p>
+                        )}
+                      </div>
+                    </div>
+                  </td>
+                  <td className="p-3">{r.price ?? "—"}</td>
+                  <td className="p-3">{r.category ?? "—"}</td>
+                  <td className="p-3">
+                    <StatusPill active={!!r.is_active} />
+                  </td>
+                  <td className="p-3 text-right">
+                    <button
+                      onClick={() => setEditing(r as unknown as Row)}
+                      className="mr-2 rounded-full border border-neutral-200 p-1.5 hover:bg-neutral-100"
+                      aria-label="Edit"
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      onClick={() => confirm("Delete this dessert?") && removeMut.mutate(r.id)}
+                      className="rounded-full border border-neutral-200 p-1.5 text-red-600 hover:bg-red-50"
+                      aria-label="Delete"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+      {editing && (
+        <DessertForm
+          initial={editing === "new" ? null : (editing as Record<string, unknown>)}
+          onClose={() => setEditing(null)}
+          onSaved={() => {
+            setEditing(null);
+            qc.invalidateQueries({ queryKey: ["admin", "home-content", "desserts"] });
+          }}
+        />
+      )}
+    </SectionCard>
+  );
+}
+
+function DessertForm({
+  initial,
+  onClose,
+  onSaved,
+}: {
+  initial: Record<string, unknown> | null;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const save = useServerFn(upsertDessert);
+  const [title, setTitle] = useState(String(initial?.title ?? ""));
+  const [description, setDescription] = useState(String(initial?.description ?? ""));
+  const [image_url, setImage] = useState(String(initial?.image_url ?? ""));
+  const [price, setPrice] = useState(String(initial?.price ?? ""));
+  const [category, setCategory] = useState(String(initial?.category ?? ""));
+  const [product_slug, setSlug] = useState(String(initial?.product_slug ?? ""));
+  const [position, setPosition] = useState(Number(initial?.position ?? 0));
+  const [is_active, setActive] = useState(initial?.is_active !== false);
+  const [starts_at, setStarts] = useState(fromIso(initial?.starts_at as string | null));
+  const [ends_at, setEnds] = useState(fromIso(initial?.ends_at as string | null));
+
+  const mut = useMutation({
+    mutationFn: () =>
+      save({
+        data: {
+          id: (initial?.id as string | undefined) ?? undefined,
+          patch: {
+            title,
+            description: description || null,
+            image_url: image_url || null,
+            price: price || null,
+            category: category || null,
+            product_slug: product_slug || null,
+            position,
+            is_active,
+            starts_at: toIsoOrNull(starts_at),
+            ends_at: toIsoOrNull(ends_at),
+          },
+        },
+      }),
+    onSuccess: () => {
+      toast.success("Saved");
+      onSaved();
+    },
+    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Failed"),
+  });
+
+  return (
+    <Modal title={initial ? "Edit Dessert" : "New Dessert"} onClose={onClose}>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Field label="Title">
+          <input className={inputCls} value={title} onChange={(e) => setTitle(e.target.value)} />
+        </Field>
+        <Field label="Position">
+          <input type="number" className={inputCls} value={position} onChange={(e) => setPosition(Number(e.target.value))} />
+        </Field>
+        <Field label="Product" hint="Optional — link to an inventory product">
+          <ProductPicker
+            value={product_slug}
+            onChange={(slug, p) => {
+              setSlug(slug);
+              if (p) {
+                if (!title) setTitle(p.title);
+                if (!image_url && p.image) setImage(p.image);
+                if (!price && p.price_zar) setPrice(`R${p.price_zar.toFixed(2)}`);
+              }
+            }}
+          />
+        </Field>
+        <Field label="Category">
+          <input className={inputCls} value={category} onChange={(e) => setCategory(e.target.value)} />
+        </Field>
+        <Field label="Price (display)" hint="e.g. R45 or 'from R45'">
+          <input className={inputCls} value={price} onChange={(e) => setPrice(e.target.value)} />
+        </Field>
+        <Field label="Image URL">
+          <input className={inputCls} value={image_url} onChange={(e) => setImage(e.target.value)} />
+        </Field>
+        <Field label="Description">
+          <textarea className={inputCls} rows={2} value={description} onChange={(e) => setDescription(e.target.value)} />
+        </Field>
+        <Field label="Starts at">
+          <input type="datetime-local" className={inputCls} value={starts_at} onChange={(e) => setStarts(e.target.value)} />
+        </Field>
+        <Field label="Ends at">
+          <input type="datetime-local" className={inputCls} value={ends_at} onChange={(e) => setEnds(e.target.value)} />
+        </Field>
+        <label className="col-span-full mt-1 inline-flex items-center gap-2 text-sm">
+          <input type="checkbox" checked={is_active} onChange={(e) => setActive(e.target.checked)} />
+          <span>Active</span>
+        </label>
+      </div>
+      <div className="mt-5 flex justify-end gap-2">
+        <button onClick={onClose} className="rounded-full border border-neutral-200 px-4 py-2 text-xs font-medium">
+          Cancel
+        </button>
+        <button
+          disabled={!title || mut.isPending}
+          onClick={() => mut.mutate()}
+          className="rounded-full bg-[#ff003c] px-4 py-2 text-xs font-semibold text-white disabled:opacity-50"
+        >
+          {mut.isPending ? "Saving…" : "Save"}
+        </button>
+      </div>
+    </Modal>
+  );
+}
+
 // ----------------------------- Hot Deals -----------------------------------
 
 function HotDealsTab() {
