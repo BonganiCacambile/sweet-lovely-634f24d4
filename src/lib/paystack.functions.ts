@@ -246,18 +246,9 @@ export const verifyAndCreateOrder = createServerFn({ method: "POST" })
     const serverSubtotal = Number(
       priced.reduce((s, p) => s + p.lineTotal, 0).toFixed(2),
     );
-    // Trust client shipping/tax only as upper bounds (cap to a sane max).
-    const shipping = Math.max(0, Math.min(data.shipping, 10_000));
+    // Trust client tax only as an upper bound (cap to a sane max). Shipping
+    // is derived from the zone below — never trusted from the client.
     const tax = Math.max(0, Math.min(data.tax, 1_000_000));
-    const serverTotal = Number((serverSubtotal + shipping + tax).toFixed(2));
-    const expectedAmount = Math.round(serverTotal * 100);
-    if (paystackData && paystackData.amount < expectedAmount) {
-      console.error("Amount mismatch:", {
-        expected: expectedAmount,
-        got: paystackData.amount,
-      });
-      return { success: false as const, error: "Payment amount does not match order" };
-    }
 
     // 3) Persist order + items (service role; works for guest checkout).
     // Unique index on paystack_reference prevents reference replay.
@@ -267,7 +258,7 @@ export const verifyAndCreateOrder = createServerFn({ method: "POST" })
     // Look up the selected delivery zone for snapshot + fee validation.
     const { data: zone, error: zoneErr } = await supabaseAdmin
       .from("delivery_zones")
-      .select("id, name, fee_zar, min_order_zar, is_active")
+      .select("id, name, fee_zar, min_order_zar, free_delivery_threshold_zar, is_active")
       .eq("id", data.deliveryZoneId)
       .maybeSingle();
     if (zoneErr || !zone) {
@@ -282,6 +273,25 @@ export const verifyAndCreateOrder = createServerFn({ method: "POST" })
         success: false as const,
         error: `Order below ${zone.name} minimum (R${Number(zone.min_order_zar).toFixed(2)})`,
       };
+    }
+
+    // Re-derive the delivery fee server-side. If the zone offers free delivery
+    // above a threshold and the subtotal qualifies, waive the fee — never trust
+    // the client-supplied shipping amount to be lower than what our rule says.
+    const freeThreshold = Number(
+      (zone as { free_delivery_threshold_zar: number | null }).free_delivery_threshold_zar ?? 0,
+    );
+    const zoneFee = Number(zone.fee_zar);
+    const shipping =
+      freeThreshold > 0 && serverSubtotal >= freeThreshold ? 0 : zoneFee;
+    const serverTotal = Number((serverSubtotal + shipping + tax).toFixed(2));
+    const expectedAmount = Math.round(serverTotal * 100);
+    if (paystackData && paystackData.amount < expectedAmount) {
+      console.error("Amount mismatch:", {
+        expected: expectedAmount,
+        got: paystackData.amount,
+      });
+      return { success: false as const, error: "Payment amount does not match order" };
     }
 
     const { data: order, error: orderErr } = await supabaseAdmin

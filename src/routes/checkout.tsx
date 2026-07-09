@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { motion, AnimatePresence } from "framer-motion";
-import { Check, ArrowLeft, ArrowRight, Lock, CreditCard, Loader2 } from "lucide-react";
+import { Check, ArrowLeft, ArrowRight, Lock, CreditCard, Loader2, PartyPopper } from "lucide-react";
 import * as React from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -70,9 +70,14 @@ function CheckoutPage() {
   const navigate = useNavigate();
   const { items, subtotal, clear } = useCart();
   const { selected: zone, openPicker } = useZone();
-  // Zone delivery fee replaces the default flat shipping. Free over the
-  // standard FREE_SHIPPING_THRESHOLD still applies.
-  const zoneFee = zone ? zone.fee_zar : 0;
+  // Zone delivery fee replaces the default flat shipping. If the zone has a
+  // free-delivery threshold configured (> 0) and the subtotal meets it, we
+  // waive the fee automatically — the same rule is re-enforced server-side
+  // before Paystack verification so it can't be bypassed client-side.
+  const freeDeliveryThreshold = zone?.free_delivery_threshold_zar ?? 0;
+  const qualifiesForFreeDelivery =
+    !!zone && freeDeliveryThreshold > 0 && subtotal >= freeDeliveryThreshold;
+  const zoneFee = zone ? (qualifiesForFreeDelivery ? 0 : zone.fee_zar) : 0;
   const { shipping, tax, total } = computeTotals(subtotal, 0, zoneFee);
   const belowMin = !!zone && subtotal < zone.min_order_zar;
   const [step, setStep] = React.useState(0);
@@ -421,6 +426,20 @@ function CheckoutPage() {
                   Add {formatPrice(zone.min_order_zar - subtotal)} more to reach the {zone.name} minimum order.
                 </p>
               )}
+              {qualifiesForFreeDelivery && (
+                <div className="mb-3 flex items-start gap-2 rounded-xl bg-emerald-50 px-3 py-2 text-xs text-emerald-800">
+                  <PartyPopper className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                  <p>
+                    <span className="font-semibold">Congratulations! You've unlocked Free Delivery.</span>{" "}
+                    Your delivery fee has been waived.
+                  </p>
+                </div>
+              )}
+              {zone && !qualifiesForFreeDelivery && freeDeliveryThreshold > 0 && subtotal > 0 && (
+                <p className="mb-3 rounded-xl bg-neutral-50 px-3 py-2 text-xs text-neutral-700">
+                  Add {formatPrice(freeDeliveryThreshold - subtotal)} more to unlock <span className="font-semibold">Free Delivery</span>.
+                </p>
+              )}
               <h2 className="text-lg font-bold">In your bag</h2>
               <ul className="mt-4 space-y-4">
                 {items.map((it) => (
@@ -447,7 +466,17 @@ function CheckoutPage() {
               </ul>
               <dl className="mt-6 space-y-2 border-t border-dashed border-neutral-200 pt-4 text-sm">
                 <Row label="Subtotal" value={formatPrice(subtotal)} />
-                <Row label="Delivery" value={shipping === 0 ? "Free" : formatPrice(shipping)} />
+                <Row
+                  label="Delivery"
+                  value={
+                    shipping === 0
+                      ? qualifiesForFreeDelivery
+                        ? "FREE (R0.00)"
+                        : "Free"
+                      : formatPrice(shipping)
+                  }
+                  highlight={shipping === 0 && qualifiesForFreeDelivery}
+                />
                 <Row label="Tax" value={formatPrice(tax)} muted />
               </dl>
               <div className="mt-3 flex items-center justify-between border-t border-dashed border-neutral-200 pt-3">
@@ -509,11 +538,11 @@ function Stepper({ step }: { step: number }) {
   );
 }
 
-function Row({ label, value, muted }: { label: string; value: string; muted?: boolean }) {
+function Row({ label, value, muted, highlight }: { label: string; value: string; muted?: boolean; highlight?: boolean }) {
   return (
     <div className="flex items-center justify-between">
       <dt className={muted ? "text-neutral-500" : "text-neutral-600"}>{label}</dt>
-      <dd className="font-medium text-neutral-900">{value}</dd>
+      <dd className={highlight ? "font-semibold text-emerald-700" : "font-medium text-neutral-900"}>{value}</dd>
     </div>
   );
 }
