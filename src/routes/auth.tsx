@@ -1,13 +1,12 @@
 import { createFileRoute, Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
-import { ShieldCheck, UserRound, ArrowLeft, ArrowRight } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { AuthLayout } from "@/components/auth/auth-layout";
 import { LoginForm } from "@/components/auth/login-form";
 import { RegisterForm } from "@/components/auth/register-form";
 
 type Tab = "signin" | "signup";
-type Role = "customer" | "admin" | null;
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
@@ -25,37 +24,10 @@ export const Route = createFileRoute("/auth")({
 });
 
 function AuthPage() {
-  const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [tab, setTab] = useState<Tab>("signin");
-  const [role, setRole] = useState<Role>(null);
 
   if (pathname !== "/auth") return <Outlet />;
-
-  if (!role) {
-    return (
-      <AuthLayout
-        eyebrow="Welcome"
-        title="How are you signing in?"
-        subtitle="Choose how you'd like to continue. You can switch anytime."
-      >
-        <RoleChooser
-          onPick={(r) => {
-            if (r === "admin") {
-              navigate({ to: "/auth/admin" });
-              return;
-            }
-            setRole(r);
-          }}
-        />
-        <div className="mt-6 text-center text-xs text-neutral-500">
-          <Link to="/" className="inline-flex items-center gap-1 hover:text-neutral-700">
-            <ArrowLeft className="h-3.5 w-3.5" /> Back to home
-          </Link>
-        </div>
-      </AuthLayout>
-    );
-  }
 
   return (
     <AuthLayout
@@ -67,14 +39,6 @@ function AuthPage() {
           : "Order faster, track deliveries, and unlock member-only deals."
       }
     >
-      <button
-        type="button"
-        onClick={() => setRole(null)}
-        className="mb-4 inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-3 py-1 text-xs font-medium text-neutral-600 hover:bg-neutral-50"
-      >
-        <ArrowLeft className="h-3.5 w-3.5" /> Change account type
-      </button>
-
       <Tabs tab={tab} setTab={setTab} />
 
       <div className="mt-6">
@@ -91,71 +55,12 @@ function AuthPage() {
         </AnimatePresence>
       </div>
 
-      <div className="mt-6 flex items-center justify-between text-xs text-neutral-500">
-        <button
-          type="button"
-          onClick={() => navigate({ to: "/auth/admin" })}
-          className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 hover:bg-neutral-100"
-        >
-          <ShieldCheck className="h-3.5 w-3.5" />
-          Admin sign-in
-        </button>
-        <Link to="/" className="hover:text-neutral-700">
-          ← Back to home
+      <div className="mt-6 flex items-center justify-end text-xs text-neutral-500">
+        <Link to="/" className="inline-flex items-center gap-1 hover:text-neutral-700">
+          <ArrowLeft className="h-3.5 w-3.5" /> Back to home
         </Link>
       </div>
     </AuthLayout>
-  );
-}
-
-function RoleChooser({ onPick }: { onPick: (r: Exclude<Role, null>) => void }) {
-  const options = [
-    {
-      id: "customer" as const,
-      title: "I'm a customer",
-      desc: "Order pizza, track deliveries, and earn rewards.",
-      icon: UserRound,
-      accent: "from-pink-500 to-rose-500",
-    },
-    {
-      id: "admin" as const,
-      title: "I'm an admin",
-      desc: "Manage menu, orders, and store operations.",
-      icon: ShieldCheck,
-      accent: "from-neutral-800 to-neutral-600",
-    },
-  ];
-
-  return (
-    <div className="grid gap-3 sm:grid-cols-2">
-      {options.map((o, i) => {
-        const Icon = o.icon;
-        return (
-          <motion.button
-            key={o.id}
-            type="button"
-            onClick={() => onPick(o.id)}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.2, delay: i * 0.05 }}
-            whileHover={{ y: -2 }}
-            whileTap={{ scale: 0.98 }}
-            className="group relative overflow-hidden rounded-2xl border border-neutral-200 bg-white p-4 text-left shadow-sm transition-all hover:border-neutral-300 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900"
-          >
-            <div className={`mb-3 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br ${o.accent} text-white shadow-sm`}>
-              <Icon className="h-5 w-5" />
-            </div>
-            <div className="flex items-start justify-between gap-2">
-              <div>
-                <div className="text-sm font-semibold text-neutral-900">{o.title}</div>
-                <p className="mt-0.5 text-xs leading-relaxed text-neutral-500">{o.desc}</p>
-              </div>
-              <ArrowRight className="mt-0.5 h-4 w-4 shrink-0 text-neutral-400 transition-transform group-hover:translate-x-0.5 group-hover:text-neutral-700" />
-            </div>
-          </motion.button>
-        );
-      })}
-    </div>
   );
 }
 
