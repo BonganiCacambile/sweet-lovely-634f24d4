@@ -28,6 +28,7 @@ const empty: ZoneDraft = {
   description: "",
   fee_zar: 0,
   min_order_zar: 0,
+  free_delivery_threshold_zar: 0,
   eta_minutes: 30,
   is_active: true,
   sort_order: 0,
@@ -46,6 +47,7 @@ interface ZoneDraft {
   description: string;
   fee_zar: number;
   min_order_zar: number;
+  free_delivery_threshold_zar: number;
   eta_minutes: number;
   is_active: boolean;
   sort_order: number;
@@ -83,6 +85,7 @@ function DeliveryZonesPage() {
           description: d.description.trim() || null,
           fee_zar: Number(d.fee_zar) || 0,
           min_order_zar: Number(d.min_order_zar) || 0,
+          free_delivery_threshold_zar: Number(d.free_delivery_threshold_zar) || 0,
           eta_minutes: Number(d.eta_minutes) || 0,
           is_active: d.is_active,
           sort_order: Number(d.sort_order) || 0,
@@ -121,6 +124,9 @@ function DeliveryZonesPage() {
       description: z.description ?? "",
       fee_zar: Number(z.fee_zar),
       min_order_zar: Number(z.min_order_zar),
+      free_delivery_threshold_zar: Number(
+        (z as { free_delivery_threshold_zar: number | null }).free_delivery_threshold_zar ?? 0,
+      ),
       eta_minutes: z.eta_minutes,
       is_active: z.is_active,
       sort_order: z.sort_order,
@@ -287,6 +293,20 @@ function ZoneEditor({
             <Field label="Min order (R)"><input type="number" min={0} step="0.01" value={draft.min_order_zar} onChange={(e) => set("min_order_zar", Number(e.target.value))} className={inputCls} /></Field>
             <Field label="ETA (min)"><input type="number" min={0} value={draft.eta_minutes} onChange={(e) => set("eta_minutes", Number(e.target.value))} className={inputCls} /></Field>
           </div>
+          <Field label="Free delivery over (R) — set 0 to disable">
+            <input
+              type="number"
+              min={0}
+              step="0.01"
+              value={draft.free_delivery_threshold_zar}
+              onChange={(e) => set("free_delivery_threshold_zar", Number(e.target.value))}
+              className={inputCls}
+              placeholder="e.g. 250"
+            />
+            <p className="mt-1 text-xs text-neutral-500">
+              When an order subtotal reaches this amount, delivery is automatically free for this zone.
+            </p>
+          </Field>
           <Field label="Postal codes (comma-separated)">
             <input value={draft.postal_codes_text} onChange={(e) => set("postal_codes_text", e.target.value)} placeholder="2196, 2031" className={inputCls} />
           </Field>
