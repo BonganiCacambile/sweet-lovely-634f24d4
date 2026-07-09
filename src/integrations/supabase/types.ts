@@ -224,6 +224,7 @@ export type Database = {
           description: string | null
           eta_minutes: number
           fee_zar: number
+          free_delivery_threshold_zar: number
           hours_text: string | null
           id: string
           image_url: string | null
@@ -243,6 +244,7 @@ export type Database = {
           description?: string | null
           eta_minutes?: number
           fee_zar?: number
+          free_delivery_threshold_zar?: number
           hours_text?: string | null
           id?: string
           image_url?: string | null
@@ -262,6 +264,7 @@ export type Database = {
           description?: string | null
           eta_minutes?: number
           fee_zar?: number
+          free_delivery_threshold_zar?: number
           hours_text?: string | null
           id?: string
           image_url?: string | null
