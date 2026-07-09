@@ -246,18 +246,9 @@ export const verifyAndCreateOrder = createServerFn({ method: "POST" })
     const serverSubtotal = Number(
       priced.reduce((s, p) => s + p.lineTotal, 0).toFixed(2),
     );
-    // Trust client shipping/tax only as upper bounds (cap to a sane max).
-    const shipping = Math.max(0, Math.min(data.shipping, 10_000));
+    // Trust client tax only as an upper bound (cap to a sane max). Shipping
+    // is derived from the zone below — never trusted from the client.
     const tax = Math.max(0, Math.min(data.tax, 1_000_000));
-    const serverTotal = Number((serverSubtotal + shipping + tax).toFixed(2));
-    const expectedAmount = Math.round(serverTotal * 100);
-    if (paystackData && paystackData.amount < expectedAmount) {
-      console.error("Amount mismatch:", {
-        expected: expectedAmount,
-        got: paystackData.amount,
-      });
-      return { success: false as const, error: "Payment amount does not match order" };
-    }
 
     // 3) Persist order + items (service role; works for guest checkout).
     // Unique index on paystack_reference prevents reference replay.
@@ -291,8 +282,17 @@ export const verifyAndCreateOrder = createServerFn({ method: "POST" })
       (zone as { free_delivery_threshold_zar: number | null }).free_delivery_threshold_zar ?? 0,
     );
     const zoneFee = Number(zone.fee_zar);
-    const serverShipping =
+    const shipping =
       freeThreshold > 0 && serverSubtotal >= freeThreshold ? 0 : zoneFee;
+    const serverTotal = Number((serverSubtotal + shipping + tax).toFixed(2));
+    const expectedAmount = Math.round(serverTotal * 100);
+    if (paystackData && paystackData.amount < expectedAmount) {
+      console.error("Amount mismatch:", {
+        expected: expectedAmount,
+        got: paystackData.amount,
+      });
+      return { success: false as const, error: "Payment amount does not match order" };
+    }
 
     const { data: order, error: orderErr } = await supabaseAdmin
       .from("orders")
