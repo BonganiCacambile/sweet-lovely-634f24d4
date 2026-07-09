@@ -13,6 +13,8 @@ import { Testimonials } from "@/components/testimonials";
 import { Reveal } from "@/components/reveal";
 import MenuTabFramerComponent from "@/framer/menu-products/menu-tab";
 import { DESSERTS, TESTIMONIALS } from "@/data/menu";
+import { FEATURED_PRODUCTS } from "@/data/menu";
+import { OfferGrid } from "@/components/offer-grid";
 import { useActiveZoneCities } from "@/hooks/use-active-zones";
 import { getHomeContent } from "@/lib/home-content.functions";
 import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
@@ -88,7 +90,7 @@ function Index() {
   const visibility = content?.visibility ?? {};
   const showSection = (key: string) => visibility[key] !== false;
 
-  const popular: Product[] = (content?.popular ?? []).map((p) => ({
+  const popularFromAdmin: Product[] = (content?.popular ?? []).map((p) => ({
     id: p.id,
     title: p.title,
     price: p.price ?? "",
@@ -96,6 +98,8 @@ function Index() {
     content: p.description ?? undefined,
     nutrition: "from",
   }));
+  const popular: Product[] = popularFromAdmin.length > 0 ? popularFromAdmin : FEATURED_PRODUCTS;
+  const hotDeals = content?.hotDeals ?? [];
 
   const banners = (content?.banners ?? []).filter((b) => b.is_active !== false);
 
@@ -150,7 +154,7 @@ function Index() {
       {showSection("popular") && popular.length > 0 && <FanFavoritesSection items={popular} />}
 
       {/* Hot Pizza, Hotter Deals */}
-      {showSection("hot_deals") && (content?.hotDeals ?? []).length > 0 && (
+      {showSection("hot_deals") && (
       <section id="deals" className="w-full px-4 py-16 sm:px-6 md:py-24 lg:px-8">
         <div className="mx-auto max-w-7xl">
           <Reveal className="mb-12 text-center">
@@ -161,7 +165,7 @@ function Index() {
               From family-sized deals to solo slices, find the perfect offer for your pizza cravings.
             </p>
           </Reveal>
-          <HotDealGrid deals={content?.hotDeals ?? []} />
+          {hotDeals.length > 0 ? <HotDealGrid deals={hotDeals} /> : <OfferGrid />}
         </div>
       </section>
       )}
