@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { motion, AnimatePresence } from "framer-motion";
-import { Check, ArrowLeft, ArrowRight, Lock, CreditCard, Loader2 } from "lucide-react";
+import { Check, ArrowLeft, ArrowRight, Lock, CreditCard, Loader2, PartyPopper } from "lucide-react";
 import * as React from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -70,9 +70,14 @@ function CheckoutPage() {
   const navigate = useNavigate();
   const { items, subtotal, clear } = useCart();
   const { selected: zone, openPicker } = useZone();
-  // Zone delivery fee replaces the default flat shipping. Free over the
-  // standard FREE_SHIPPING_THRESHOLD still applies.
-  const zoneFee = zone ? zone.fee_zar : 0;
+  // Zone delivery fee replaces the default flat shipping. If the zone has a
+  // free-delivery threshold configured (> 0) and the subtotal meets it, we
+  // waive the fee automatically — the same rule is re-enforced server-side
+  // before Paystack verification so it can't be bypassed client-side.
+  const freeDeliveryThreshold = zone?.free_delivery_threshold_zar ?? 0;
+  const qualifiesForFreeDelivery =
+    !!zone && freeDeliveryThreshold > 0 && subtotal >= freeDeliveryThreshold;
+  const zoneFee = zone ? (qualifiesForFreeDelivery ? 0 : zone.fee_zar) : 0;
   const { shipping, tax, total } = computeTotals(subtotal, 0, zoneFee);
   const belowMin = !!zone && subtotal < zone.min_order_zar;
   const [step, setStep] = React.useState(0);
