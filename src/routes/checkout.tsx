@@ -426,6 +426,20 @@ function CheckoutPage() {
                   Add {formatPrice(zone.min_order_zar - subtotal)} more to reach the {zone.name} minimum order.
                 </p>
               )}
+              {qualifiesForFreeDelivery && (
+                <div className="mb-3 flex items-start gap-2 rounded-xl bg-emerald-50 px-3 py-2 text-xs text-emerald-800">
+                  <PartyPopper className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                  <p>
+                    <span className="font-semibold">Congratulations! You've unlocked Free Delivery.</span>{" "}
+                    Your delivery fee has been waived.
+                  </p>
+                </div>
+              )}
+              {zone && !qualifiesForFreeDelivery && freeDeliveryThreshold > 0 && subtotal > 0 && (
+                <p className="mb-3 rounded-xl bg-neutral-50 px-3 py-2 text-xs text-neutral-700">
+                  Add {formatPrice(freeDeliveryThreshold - subtotal)} more to unlock <span className="font-semibold">Free Delivery</span>.
+                </p>
+              )}
               <h2 className="text-lg font-bold">In your bag</h2>
               <ul className="mt-4 space-y-4">
                 {items.map((it) => (
