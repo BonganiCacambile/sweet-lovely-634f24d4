@@ -538,11 +538,11 @@ function Stepper({ step }: { step: number }) {
   );
 }
 
-function Row({ label, value, muted }: { label: string; value: string; muted?: boolean }) {
+function Row({ label, value, muted, highlight }: { label: string; value: string; muted?: boolean; highlight?: boolean }) {
   return (
     <div className="flex items-center justify-between">
       <dt className={muted ? "text-neutral-500" : "text-neutral-600"}>{label}</dt>
-      <dd className="font-medium text-neutral-900">{value}</dd>
+      <dd className={highlight ? "font-semibold text-emerald-700" : "font-medium text-neutral-900"}>{value}</dd>
     </div>
   );
 }
