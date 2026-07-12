@@ -1102,6 +1102,8 @@ export type Database = {
           low_stock_threshold: number
           nutrition: string | null
           portion: string | null
+          price_large_zar: number | null
+          price_medium_zar: number | null
           price_zar: number
           slug: string
           sort_order: number
@@ -1119,6 +1121,8 @@ export type Database = {
           low_stock_threshold?: number
           nutrition?: string | null
           portion?: string | null
+          price_large_zar?: number | null
+          price_medium_zar?: number | null
           price_zar?: number
           slug: string
           sort_order?: number
@@ -1136,6 +1140,8 @@ export type Database = {
           low_stock_threshold?: number
           nutrition?: string | null
           portion?: string | null
+          price_large_zar?: number | null
+          price_medium_zar?: number | null
           price_zar?: number
           slug?: string
           sort_order?: number

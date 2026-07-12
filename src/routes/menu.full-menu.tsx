@@ -53,6 +53,8 @@ function FullMenuPage() {
       nutrition: fallback?.nutrition,
       allergens: fallback?.allergens,
       portion: fallback?.portion,
+      priceMedium: p.price_medium_zar != null ? Number(p.price_medium_zar) : undefined,
+      priceLarge: p.price_large_zar != null ? Number(p.price_large_zar) : undefined,
     } satisfies MenuItem;
   });
   const items: MenuItem[] = liveItems.length > 0 ? liveItems : MENU_ITEMS;

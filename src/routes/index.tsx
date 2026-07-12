@@ -90,14 +90,19 @@ function Index() {
   const visibility = content?.visibility ?? {};
   const showSection = (key: string) => visibility[key] !== false;
 
-  const popularFromAdmin: Product[] = (content?.popular ?? []).map((p) => ({
-    id: p.id,
-    title: p.title,
-    price: p.price ?? "",
-    image: p.image_url ?? undefined,
-    content: p.description ?? undefined,
-    nutrition: "from",
-  }));
+  const popularFromAdmin: Product[] = (content?.popular ?? []).map((p) => {
+    const linked = (p as unknown as { product?: { price_medium_zar: number | null; price_large_zar: number | null } | null }).product;
+    return {
+      id: p.id,
+      title: p.title,
+      price: p.price ?? "",
+      image: p.image_url ?? undefined,
+      content: p.description ?? undefined,
+      nutrition: "from",
+      priceMedium: linked?.price_medium_zar != null ? Number(linked.price_medium_zar) : undefined,
+      priceLarge: linked?.price_large_zar != null ? Number(linked.price_large_zar) : undefined,
+    };
+  });
   const popular: Product[] = popularFromAdmin.length > 0 ? popularFromAdmin : FEATURED_PRODUCTS;
   const hotDeals = content?.hotDeals ?? [];
 

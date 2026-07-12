@@ -20,7 +20,11 @@ function publicClient() {
 export const getHomeContent = createServerFn({ method: "GET" }).handler(async () => {
   const sb = publicClient();
   const [popular, deals, specials, banners, desserts, featured, visibility] = await Promise.all([
-    sb.from("home_popular_items").select("*").order("position").order("created_at"),
+    sb
+      .from("home_popular_items")
+      .select("*, product:product_slug(price_medium_zar, price_large_zar)")
+      .order("position")
+      .order("created_at"),
     sb.from("home_hot_deals").select("*").order("position").order("created_at"),
     sb.from("home_specials").select("*").order("position").order("created_at"),
     sb.from("home_banners").select("*").order("position").order("created_at"),
