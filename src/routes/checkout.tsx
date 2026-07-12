@@ -209,6 +209,7 @@ function CheckoutPage() {
   const back = () => setStep((s) => Math.max(0, s - 1));
 
   const handlePay = async () => {
+    setPayError(null);
     if (!validateStep(0) || !validateStep(1)) {
       toast.error("Please complete all required fields");
       setStep(0);
@@ -236,6 +237,7 @@ function CheckoutPage() {
       return;
     }
     setPaying(true);
+    setPayStatus("processing");
     // Block oversells BEFORE we open Paystack.
     try {
       const stock = await checkStock({
@@ -256,12 +258,16 @@ function CheckoutPage() {
           : "One or more items are out of stock.";
         toast.error(msg);
         setPaying(false);
+        setPayStatus("failed");
+        setPayError(msg);
         return;
       }
     } catch (err) {
       console.error("Stock check failed:", err);
       toast.error("Could not verify stock. Please try again.");
       setPaying(false);
+      setPayStatus("failed");
+      setPayError("Could not verify stock. Please try again.");
       return;
     }
     // Paystack amount: smallest unit (cents/kobo).
@@ -346,34 +352,48 @@ function CheckoutPage() {
                 `Order ${res.orderNumber ? `#${res.orderNumber} ` : ""}confirmed — thank you!`,
               );
               orderPlacedRef.current = true;
+              setPayStatus("success");
               clear();
-              // Send the customer to the dedicated confirmation page so they
-              // see their order number, ETA, and receipt — not an empty cart.
-              navigate({
-                to: "/checkout/success",
-                search: {
-                  ref: response.reference,
-                  ...(res.orderNumber ? { order: res.orderNumber } : {}),
-                },
-              });
+              // Let the success animation play briefly before we route
+              // to the dedicated confirmation page (order number, ETA, receipt).
+              window.setTimeout(() => {
+                navigate({
+                  to: "/checkout/success",
+                  search: {
+                    ref: response.reference,
+                    ...(res.orderNumber ? { order: res.orderNumber } : {}),
+                  },
+                });
+              }, 1400);
             } else {
-              toast.error(res.error || "We couldn't confirm your order. Please contact support.");
+              const msg = res.error || "We couldn't confirm your order. Please contact support.";
+              toast.error(msg);
               setPaying(false);
+              setPayStatus("failed");
+              setPayError(msg);
             }
           } catch (err) {
             console.error(err);
-            toast.error(
+            const msg =
               "Network error confirming your payment. Your payment reference is " +
-                response.reference +
-                " — please contact support if your order doesn't appear shortly.",
-            );
+              response.reference +
+              " — please contact support if your order doesn't appear shortly.";
+            toast.error(msg);
             setPaying(false);
+            setPayStatus("failed");
+            setPayError(msg);
           }
         })();
       },
       onClose: () => {
+        // Only treat close as cancel if we haven't already succeeded/failed.
         setPaying(false);
-        toast("Payment cancelled");
+        setPayStatus((prev) => {
+          if (prev === "success") return prev;
+          setPayError("Payment cancelled. Your cart is safe — you can try again anytime.");
+          toast("Payment cancelled");
+          return "failed";
+        });
       },
     });
     handler.openIframe();
