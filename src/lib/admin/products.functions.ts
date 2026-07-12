@@ -18,6 +18,8 @@ const productPayload = z.object({
   title: z.string().min(1).max(200),
   description: z.string().max(2000).optional().nullable(),
   price_zar: z.number().min(0),
+  price_medium_zar: z.number().min(0).nullable().optional(),
+  price_large_zar: z.number().min(0).nullable().optional(),
   category_slug: z.string().min(1),
   image: z.string().max(2000).optional().nullable(),
   is_active: z.boolean(),
@@ -33,7 +35,7 @@ export const listProducts = createServerFn({ method: "POST" })
     await requireAdmin(context.supabase, context.userId);
     let q = context.supabase
       .from("products")
-      .select("slug, title, description, price_zar, category_slug, image, is_active, stock, low_stock_threshold, sort_order, updated_at", { count: "exact" });
+      .select("slug, title, description, price_zar, price_medium_zar, price_large_zar, category_slug, image, is_active, stock, low_stock_threshold, sort_order, updated_at", { count: "exact" });
     if (data.category) q = q.eq("category_slug", data.category);
     if (data.active === "true") q = q.eq("is_active", true);
     if (data.active === "false") q = q.eq("is_active", false);
