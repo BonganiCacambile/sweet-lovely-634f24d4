@@ -78,7 +78,7 @@ async function insertOrder() {
       status: "pending",
       total_zar: 123.45,
       subtotal_zar: 123.45,
-      delivery_fee_zar: 0,
+      delivery_zar: 0,
     })
     .select("id")
     .single();

@@ -207,7 +207,11 @@ async function run() {
     process.exitCode = 1;
   } finally {
     if (auditId) {
-      await admin.from("audit_logs").delete().eq("id", auditId).catch(() => {});
+      try {
+        await admin.from("audit_logs").delete().eq("id", auditId);
+      } catch {
+        /* ignore cleanup errors */
+      }
     }
     await browser.close();
   }

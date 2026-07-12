@@ -81,7 +81,7 @@ async function insertOrderForCustomer(userId) {
       status: "pending",
       total_zar: 99.0,
       subtotal_zar: 99.0,
-      delivery_fee_zar: 0,
+      delivery_zar: 0,
     })
     .select("id")
     .single();
@@ -150,7 +150,7 @@ async function run() {
     );
 
     // Sonner toaster region must be mounted before the toast can render.
-    await page.waitForSelector('ol[data-sonner-toaster], section[data-sonner-toaster]', {
+    await page.waitForSelector('section[aria-label*="Notifications"]', {
       timeout: 10_000,
     });
     await page.screenshot({ path: join(ARTIFACTS, "notif_1_before.png") });
