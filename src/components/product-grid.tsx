@@ -11,6 +11,8 @@ export interface Product {
   nutrition?: string;
   content?: string;
   image?: string;
+  priceMedium?: number;
+  priceLarge?: number;
 }
 
 interface ProductGridProps {
