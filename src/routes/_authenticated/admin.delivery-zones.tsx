@@ -106,6 +106,11 @@ function DeliveryZonesPage() {
           hours_text: d.hours_text.trim() || null,
           color: d.color.trim() || null,
           image_url: d.image_url.trim() || null,
+        delivery_enabled: d.delivery_enabled,
+        collection_enabled: d.collection_enabled,
+        collection_instructions: d.collection_instructions.trim() || null,
+        collection_prep_minutes: Number(d.collection_prep_minutes) || 0,
+        collection_address: d.collection_address.trim() || null,
         },
       }),
     onSuccess: () => {
