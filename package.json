@@ -19,7 +19,8 @@
     "test:regression:checkout": "node tests/regression/checkout-delivery-vs-collection.mjs",
     "test:regression:paystack-webhook": "node tests/regression/paystack-webhook.mjs",
     "test:regression:mcp-auth": "node tests/regression/mcp-auth.mjs",
-    "test:regression": "bun run test:regression:realtime && bun run test:regression:checkout && bun run test:regression:paystack-webhook && bun run test:regression:mcp-auth"
+    "test:regression:zone-leak": "node tests/regression/realtime-delivery-zones-leak.mjs",
+    "test:regression": "bun run test:regression:realtime && bun run test:regression:checkout && bun run test:regression:paystack-webhook && bun run test:regression:mcp-auth && bun run test:regression:zone-leak"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
