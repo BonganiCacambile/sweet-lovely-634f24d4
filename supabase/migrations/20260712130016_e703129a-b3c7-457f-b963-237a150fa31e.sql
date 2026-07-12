@@ -1,0 +1,1 @@
+GRANT SELECT (contact_phone, contact_email, free_delivery_threshold_zar) ON public.delivery_zones TO anon, authenticated;
