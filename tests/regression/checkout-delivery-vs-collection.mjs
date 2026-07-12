@@ -227,7 +227,7 @@ async function testDeliveryCollectionToggle(page) {
   await page.waitForSelector("#address", { state: "visible", timeout: 5_000 });
 
   await selectFulfillment(page, "Collection");
-  await page.waitForSelector("h2:has-text('Collection details')", { timeout: 5_000 });
+  await page.waitForSelector('div:has-text("Collection details")', { timeout: 5_000 });
   assert.equal(await getSummaryRow(page, "Delivery"), "R0.00 (Collection)");
   assert.equal(await getSummaryRow(page, "Total"), "R168.00");
   await page.waitForSelector("#address", { state: "hidden", timeout: 5_000 });
