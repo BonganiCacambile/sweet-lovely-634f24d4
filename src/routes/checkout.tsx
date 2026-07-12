@@ -53,7 +53,7 @@ interface PaystackSetupOptions {
   onClose: () => void;
 }
 
-const STEPS = ["Customer", "Delivery", "Payment"] as const;
+const STEPS = ["Customer", "Fulfilment", "Payment"] as const;
 
 type Fulfillment = "delivery" | "collection";
 
