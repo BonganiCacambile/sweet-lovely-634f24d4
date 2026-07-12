@@ -327,8 +327,8 @@ async function testPaymentFailureAndRetry(page) {
   await installPaystackMock(page, { type: "failure" });
   await page.click('button:has-text("Pay")');
   await page.waitForSelector('p:has-text("Processing payment")', { timeout: 5_000 });
-  await page.waitForSelector('p:has-text("Payment didn\\'t go through")', { timeout: 10_000 });
-  await page.waitForSelector('p:has-text("Payment cancelled")', { timeout: 10_000 });
+  await page.waitForSelector(':has-text("Payment did not go through")', { timeout: 10_000 });
+  await page.waitForSelector(':has-text("Payment cancelled")', { timeout: 10_000 });
   await page.waitForSelector('button:has-text("Try again")', { timeout: 10_000 });
   await page.click('button:has-text("Try again")');
   await page.waitForSelector('button:has-text("Pay")', { timeout: 10_000 });
