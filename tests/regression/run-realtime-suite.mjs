@@ -155,6 +155,10 @@ async function main() {
     ADMIN_PASSWORD,
     CUSTOMER_EMAIL,
     CUSTOMER_PASSWORD,
+    // Generous budgets for the sandbox/dev server environment.
+    PAGE_BUDGET_MS: "12000",
+    SERVER_FN_BUDGET_MS: "8000",
+    REALTIME_BUDGET_MS: "15000",
   };
 
   const scripts = [
