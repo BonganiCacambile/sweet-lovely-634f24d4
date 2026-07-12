@@ -5,12 +5,8 @@ import * as React from "react";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { QtyControl } from "@/components/cart/cart-drawer";
-import {
-  useCart,
-  formatPrice,
-  computeTotals,
-  FREE_SHIPPING_THRESHOLD,
-} from "@/lib/cart-context";
+import { useCart, formatPrice, computeTotals } from "@/lib/cart-context";
+import { useZone } from "@/lib/zone-context";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/cart")({
@@ -32,7 +28,16 @@ function CartPage() {
   const { items, subtotal, setQuantity, removeItem } = useCart();
   const [promo, setPromo] = React.useState("");
   const [discount, setDiscount] = React.useState(0);
-  const { shipping, tax, total, discounted } = computeTotals(subtotal, discount);
+  const { selected: zone } = useZone();
+  const freeThreshold = zone?.free_delivery_threshold_zar ?? 0;
+  const qualifiesForFree =
+    !!zone && freeThreshold > 0 && subtotal >= freeThreshold;
+  const zoneFee = zone ? (qualifiesForFree ? 0 : zone.fee_zar) : undefined;
+  const { shipping, tax, total, discounted } = computeTotals(
+    subtotal,
+    discount,
+    zoneFee,
+  );
 
   const applyPromo = () => {
     const code = promo.trim().toUpperCase();
@@ -178,10 +183,15 @@ function CartPage() {
                   <SummaryRow label="VAT (est.)" value={formatPrice(tax)} muted />
                 </dl>
 
-                {subtotal < FREE_SHIPPING_THRESHOLD && (
+                {zone && freeThreshold > 0 && !qualifiesForFree && (
                   <p className="mt-4 rounded-2xl bg-[#fff5f7] px-4 py-3 text-xs text-neutral-600">
-                    Spend {formatPrice(FREE_SHIPPING_THRESHOLD - subtotal)} more for{" "}
-                    <span className="font-semibold text-[#ff003c]">free delivery</span>.
+                    Spend {formatPrice(freeThreshold - subtotal)} more for{" "}
+                    <span className="font-semibold text-[#ff003c]">free delivery</span> to {zone.name}.
+                  </p>
+                )}
+                {qualifiesForFree && (
+                  <p className="mt-4 rounded-2xl bg-emerald-50 px-4 py-3 text-xs font-medium text-emerald-700">
+                    🎉 You've unlocked free delivery to {zone.name}.
                   </p>
                 )}
 
