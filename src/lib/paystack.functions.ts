@@ -108,14 +108,14 @@ export const checkCartStock = createServerFn({ method: "POST" })
     return { ok: r.ok, shortages: r.shortages ?? [] };
   });
 
-// Server-authoritative pizza size prices (must match PIZZA_SIZES in
-// src/components/cart/add-to-cart-button.tsx). Cart ids for pizzas are
-// `${slug}-medium` / `${slug}-large`.
-const PIZZA_SIZE_PRICES: Record<string, number> = {
+// Global fallback size prices, used only when a pizza product has no
+// per-item Medium/Large price set in the Admin dashboard. Cart ids for
+// pizzas are `${slug}-medium` / `${slug}-large`.
+const PIZZA_SIZE_FALLBACK: Record<string, number> = {
   medium: 80,
   large: 150,
 };
-const PIZZA_SUFFIXES = Object.keys(PIZZA_SIZE_PRICES);
+const PIZZA_SUFFIXES = Object.keys(PIZZA_SIZE_FALLBACK);
 
 function splitPizzaId(id: string): { slug: string; size: string | null } {
   for (const suffix of PIZZA_SUFFIXES) {
@@ -189,7 +189,7 @@ export const verifyAndCreateOrder = createServerFn({ method: "POST" })
     const slugs = Array.from(new Set(parsedItems.map((p) => p.slug)));
     const { data: products, error: prodErr } = await supabaseAdmin
       .from("products")
-      .select("slug, price_zar, title, is_active")
+      .select("slug, price_zar, price_medium_zar, price_large_zar, title, is_active")
       .in("slug", slugs);
     if (prodErr) {
       console.error("Product lookup error:", prodErr);
@@ -218,11 +218,16 @@ export const verifyAndCreateOrder = createServerFn({ method: "POST" })
        //  only ever undercharge us — never overcharge the customer.
       let unitPrice: number;
       if (it.size) {
-        const sizePrice = PIZZA_SIZE_PRICES[it.size];
-        if (typeof sizePrice !== "number") {
+        const fallback = PIZZA_SIZE_FALLBACK[it.size];
+        if (typeof fallback !== "number") {
           return { success: false as const, error: `Invalid size: ${it.size}` };
         }
-        unitPrice = sizePrice;
+        const perProduct = product
+          ? it.size === "medium"
+            ? (product as { price_medium_zar: number | null }).price_medium_zar
+            : (product as { price_large_zar: number | null }).price_large_zar
+          : null;
+        unitPrice = perProduct != null ? Number(perProduct) : fallback;
       } else if (product && product.is_active !== false) {
         unitPrice = Number(product.price_zar);
       } else {
