@@ -151,6 +151,7 @@ async function run() {
 
     // Sonner toaster region must be mounted before the toast can render.
     await page.waitForSelector('section[aria-label*="Notifications"]', {
+      state: "attached",
       timeout: 10_000,
     });
     await page.screenshot({ path: join(ARTIFACTS, "notif_1_before.png") });
