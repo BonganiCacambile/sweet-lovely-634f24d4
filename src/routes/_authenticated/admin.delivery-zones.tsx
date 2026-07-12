@@ -38,6 +38,11 @@ const empty: ZoneDraft = {
   hours_text: "",
   color: "#ff003c",
   image_url: "",
+  delivery_enabled: true,
+  collection_enabled: false,
+  collection_instructions: "",
+  collection_prep_minutes: 20,
+  collection_address: "",
 };
 
 interface ZoneDraft {
@@ -57,6 +62,11 @@ interface ZoneDraft {
   hours_text: string;
   color: string;
   image_url: string;
+  delivery_enabled: boolean;
+  collection_enabled: boolean;
+  collection_instructions: string;
+  collection_prep_minutes: number;
+  collection_address: string;
 }
 
 function DeliveryZonesPage() {
