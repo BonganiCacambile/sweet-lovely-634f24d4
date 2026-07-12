@@ -165,12 +165,46 @@ function OrderDetailPage() {
 
         {/* Customer */}
         <Card>
-          <p className="text-sm font-semibold text-neutral-900">Delivery & contact</p>
+          <p className="text-sm font-semibold text-neutral-900">
+            {String((o as { fulfillment_method?: string }).fulfillment_method) === "collection"
+              ? "Collection & contact"
+              : "Delivery & contact"}
+          </p>
           <dl className="mt-3 space-y-1 text-sm">
+            <Row
+              label="Order type"
+              value={
+                String((o as { fulfillment_method?: string }).fulfillment_method) === "collection"
+                  ? "🛍️ Collection"
+                  : "🚚 Delivery"
+              }
+            />
+            {(o as { delivery_zone_name?: string | null }).delivery_zone_name && (
+              <Row label="Zone" value={(o as { delivery_zone_name: string }).delivery_zone_name} />
+            )}
+            {String((o as { fulfillment_method?: string }).fulfillment_method) === "collection" ? (
+              <>
+                <Row
+                  label="Pick up at"
+                  value={
+                    (o as { collection_location?: string | null }).collection_location ??
+                    (o as { delivery_zone_name?: string | null }).delivery_zone_name ??
+                    "—"
+                  }
+                />
+                {(o as { estimated_minutes?: number | null }).estimated_minutes && (
+                  <Row
+                    label="Ready in"
+                    value={`~${(o as { estimated_minutes: number }).estimated_minutes} min`}
+                  />
+                )}
+              </>
+            ) : (
+              <Row label="Address" value={o.address ?? "—"} />
+            )}
             <Row label="Name" value={o.customer_name} />
             <Row label="Email" value={o.customer_email ?? "—"} />
             <Row label="Phone" value={o.customer_phone ?? "—"} />
-            <Row label="Address" value={o.address ?? "—"} />
             {o.notes && <Row label="Notes" value={o.notes} />}
             {o.paystack_reference && <Row label="Payment ref" value={o.paystack_reference} />}
           </dl>
