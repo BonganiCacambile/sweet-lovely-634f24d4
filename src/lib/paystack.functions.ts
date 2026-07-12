@@ -60,11 +60,11 @@ const createOrderSchema = z.object({
     lastName: z.string().min(1).max(120),
     email: z.string().email().max(200),
     phone: z.string().min(3).max(40),
-    address: z.string().min(1).max(400),
-    city: z.string().min(1).max(120),
-    state: z.string().min(1).max(120),
-    country: z.string().min(1).max(120),
-    postal: z.string().min(1).max(40),
+    address: z.string().max(400).optional().default(""),
+    city: z.string().max(120).optional().default(""),
+    state: z.string().max(120).optional().default(""),
+    country: z.string().max(120).optional().default(""),
+    postal: z.string().max(40).optional().default(""),
   }),
   items: z.array(cartItemSchema).min(1).max(100),
   subtotal: z.number().nonnegative(),
@@ -73,6 +73,7 @@ const createOrderSchema = z.object({
   total: z.number().nonnegative(),
   userId: z.string().uuid().nullable().optional(),
   deliveryZoneId: z.string().uuid(),
+  fulfillmentMethod: z.enum(["delivery", "collection"]).default("delivery"),
 });
 
 const stockCheckSchema = z.object({
