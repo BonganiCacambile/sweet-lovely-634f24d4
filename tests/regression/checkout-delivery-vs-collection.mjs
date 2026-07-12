@@ -106,6 +106,9 @@ async function selectFulfillment(page, label) {
 }
 
 async function getSummaryRow(page, label) {
+  if (label === "Total") {
+    return await page.locator("aside span.text-xl.font-extrabold.tracking-tight").first().textContent();
+  }
   return await page.locator(`div:has(> dt:has-text("${label}")) dd`).first().textContent();
 }
 
