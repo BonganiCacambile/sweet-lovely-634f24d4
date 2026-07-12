@@ -401,7 +401,17 @@ function CheckoutPage() {
                   <StepCustomer form={form} errors={errors} update={update} />
                 )}
                 {step === 1 && (
-                  <StepDelivery form={form} errors={errors} update={update} />
+                  <StepFulfilment
+                    form={form}
+                    errors={errors}
+                    update={update}
+                    method={method}
+                    setMethod={setMethod}
+                    zone={zone}
+                    zoneOffersDelivery={zoneOffersDelivery}
+                    zoneOffersCollection={zoneOffersCollection}
+                    onOpenZonePicker={openPicker}
+                  />
                 )}
                 {step === 2 && <StepPayment configured={config?.configured ?? false} />}
               </motion.div>
