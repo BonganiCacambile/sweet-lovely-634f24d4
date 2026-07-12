@@ -171,7 +171,7 @@ async function run() {
         action: "presence.active",
         entity: "admin_presence",
         entity_id: userId,
-        metadata: { run: RUN_TAG, source: "regression-perf" },
+        metadata: { reason: RUN_TAG, source: "regression-perf" },
       })
       .select("id")
       .single();
@@ -179,9 +179,11 @@ async function run() {
     auditId = ins.id;
 
     const tRT = performance.now();
-    await page.waitForFunction(
-      (prev) => document.querySelectorAll("ol > li").length > prev,
-      beforeRows,
+    // The feed is capped at 75 rows, so the count may not grow. Instead, wait
+    // for the newly inserted row (with our unique RUN_TAG in its metadata) to
+    // appear in the feed via realtime invalidation.
+    await page.waitForSelector(
+      `ol > li:has-text("${RUN_TAG}")`,
       { timeout: rtBudget + 2_000 },
     );
     const rtMs = performance.now() - tRT;
@@ -207,7 +209,11 @@ async function run() {
     process.exitCode = 1;
   } finally {
     if (auditId) {
-      await admin.from("audit_logs").delete().eq("id", auditId).catch(() => {});
+      try {
+        await admin.from("audit_logs").delete().eq("id", auditId);
+      } catch {
+        /* ignore cleanup errors */
+      }
     }
     await browser.close();
   }
