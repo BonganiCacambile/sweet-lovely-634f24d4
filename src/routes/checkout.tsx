@@ -83,7 +83,7 @@ const initialForm: FormState = {
 
 function CheckoutPage() {
   const navigate = useNavigate();
-  const { items, subtotal, clear } = useCart();
+  const { items, subtotal, clear, hydrated } = useCart();
   const { selected: zone, openPicker } = useZone();
 
   // Determine which fulfilment methods this zone offers. Default new zones to
@@ -156,13 +156,15 @@ function CheckoutPage() {
     document.body.appendChild(s);
   }, []);
 
-  // Redirect to /cart if empty (but only after mount so we don't fight SSR)
+  // Redirect to /cart if empty, but only after the cart has hydrated from
+  // localStorage so direct navigation doesn't redirect before saved items load.
   React.useEffect(() => {
+    if (!hydrated) return;
     if (orderPlacedRef.current) return;
     if (items.length === 0) {
       navigate({ to: "/cart" });
     }
-  }, [items.length, navigate]);
+  }, [hydrated, items.length, navigate]);
 
   const update = (k: keyof FormState, v: string) => {
     setForm((f) => ({ ...f, [k]: v }));
