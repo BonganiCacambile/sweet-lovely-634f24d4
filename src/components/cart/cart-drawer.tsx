@@ -2,16 +2,17 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, Plus, Minus, Trash2, ShoppingBag, ArrowRight } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import * as React from "react";
-import {
-  useCart,
-  formatPrice,
-  computeTotals,
-  FREE_SHIPPING_THRESHOLD,
-} from "@/lib/cart-context";
+import { useCart, formatPrice, computeTotals } from "@/lib/cart-context";
+import { useZone } from "@/lib/zone-context";
 
 export function CartDrawer() {
   const { isOpen, close, items, subtotal, setQuantity, removeItem } = useCart();
-  const { shipping, tax, total } = computeTotals(subtotal);
+  const { selected: zone } = useZone();
+  const freeThreshold = zone?.free_delivery_threshold_zar ?? 0;
+  const qualifiesForFree =
+    !!zone && freeThreshold > 0 && subtotal >= freeThreshold;
+  const zoneFee = zone ? (qualifiesForFree ? 0 : zone.fee_zar) : undefined;
+  const { shipping, tax, total } = computeTotals(subtotal, 0, zoneFee);
 
   // Close on Escape
   React.useEffect(() => {
@@ -76,27 +77,27 @@ export function CartDrawer() {
               </button>
             </header>
 
-            {/* Free delivery progress */}
-            {items.length > 0 && (
+            {/* Free delivery progress — only when the selected zone offers it */}
+            {items.length > 0 && zone && freeThreshold > 0 && (
               <div className="border-b border-neutral-100 bg-[#fffafb] px-6 py-3">
-                {subtotal >= FREE_SHIPPING_THRESHOLD ? (
+                {qualifiesForFree ? (
                   <p className="text-xs font-medium text-emerald-600">
-                    🎉 You've unlocked free delivery!
+                    🎉 You've unlocked free delivery to {zone.name}!
                   </p>
                 ) : (
                   <>
                     <p className="text-xs text-neutral-600">
                       Add{" "}
                       <span className="font-semibold text-[#ff003c]">
-                        {formatPrice(FREE_SHIPPING_THRESHOLD - subtotal)}
+                        {formatPrice(freeThreshold - subtotal)}
                       </span>{" "}
-                      more for free delivery
+                      more for free delivery to {zone.name}
                     </p>
                     <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-neutral-200">
                       <motion.div
                         initial={{ width: 0 }}
                         animate={{
-                          width: `${Math.min(100, (subtotal / FREE_SHIPPING_THRESHOLD) * 100)}%`,
+                          width: `${Math.min(100, (subtotal / freeThreshold) * 100)}%`,
                         }}
                         transition={{ duration: 0.4 }}
                         className="h-full rounded-full bg-[#ff003c]"
