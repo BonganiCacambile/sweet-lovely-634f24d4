@@ -13,6 +13,8 @@ import {
   MapPin,
   Clock,
   Info,
+  XCircle,
+  RefreshCw,
 } from "lucide-react";
 import * as React from "react";
 import { useServerFn } from "@tanstack/react-start";
@@ -129,6 +131,14 @@ function CheckoutPage() {
   const [form, setForm] = React.useState<FormState>(initialForm);
   const [errors, setErrors] = React.useState<Partial<Record<keyof FormState, string>>>({});
   const [paying, setPaying] = React.useState(false);
+  // Fine-grained payment status drives the in-panel animation/messaging.
+  // idle: default form; processing: Paystack modal is open or verifying;
+  // success: server confirmed order (brief celebration before redirect);
+  // failed: Paystack error, cancellation, or server verification error.
+  const [payStatus, setPayStatus] = React.useState<
+    "idle" | "processing" | "success" | "failed"
+  >("idle");
+  const [payError, setPayError] = React.useState<string | null>(null);
   // Once the order is placed we navigate to /checkout/success. Prevent the
   // "empty cart" effect below from racing that navigation back to /cart.
   const orderPlacedRef = React.useRef(false);
@@ -199,6 +209,7 @@ function CheckoutPage() {
   const back = () => setStep((s) => Math.max(0, s - 1));
 
   const handlePay = async () => {
+    setPayError(null);
     if (!validateStep(0) || !validateStep(1)) {
       toast.error("Please complete all required fields");
       setStep(0);
@@ -226,6 +237,7 @@ function CheckoutPage() {
       return;
     }
     setPaying(true);
+    setPayStatus("processing");
     // Block oversells BEFORE we open Paystack.
     try {
       const stock = await checkStock({
@@ -246,12 +258,16 @@ function CheckoutPage() {
           : "One or more items are out of stock.";
         toast.error(msg);
         setPaying(false);
+        setPayStatus("failed");
+        setPayError(msg);
         return;
       }
     } catch (err) {
       console.error("Stock check failed:", err);
       toast.error("Could not verify stock. Please try again.");
       setPaying(false);
+      setPayStatus("failed");
+      setPayError("Could not verify stock. Please try again.");
       return;
     }
     // Paystack amount: smallest unit (cents/kobo).
@@ -336,34 +352,48 @@ function CheckoutPage() {
                 `Order ${res.orderNumber ? `#${res.orderNumber} ` : ""}confirmed — thank you!`,
               );
               orderPlacedRef.current = true;
+              setPayStatus("success");
               clear();
-              // Send the customer to the dedicated confirmation page so they
-              // see their order number, ETA, and receipt — not an empty cart.
-              navigate({
-                to: "/checkout/success",
-                search: {
-                  ref: response.reference,
-                  ...(res.orderNumber ? { order: res.orderNumber } : {}),
-                },
-              });
+              // Let the success animation play briefly before we route
+              // to the dedicated confirmation page (order number, ETA, receipt).
+              window.setTimeout(() => {
+                navigate({
+                  to: "/checkout/success",
+                  search: {
+                    ref: response.reference,
+                    ...(res.orderNumber ? { order: res.orderNumber } : {}),
+                  },
+                });
+              }, 1400);
             } else {
-              toast.error(res.error || "We couldn't confirm your order. Please contact support.");
+              const msg = res.error || "We couldn't confirm your order. Please contact support.";
+              toast.error(msg);
               setPaying(false);
+              setPayStatus("failed");
+              setPayError(msg);
             }
           } catch (err) {
             console.error(err);
-            toast.error(
+            const msg =
               "Network error confirming your payment. Your payment reference is " +
-                response.reference +
-                " — please contact support if your order doesn't appear shortly.",
-            );
+              response.reference +
+              " — please contact support if your order doesn't appear shortly.";
+            toast.error(msg);
             setPaying(false);
+            setPayStatus("failed");
+            setPayError(msg);
           }
         })();
       },
       onClose: () => {
+        // Only treat close as cancel if we haven't already succeeded/failed.
         setPaying(false);
-        toast("Payment cancelled");
+        setPayStatus((prev) => {
+          if (prev === "success") return prev;
+          setPayError("Payment cancelled. Your cart is safe — you can try again anytime.");
+          toast("Payment cancelled");
+          return "failed";
+        });
       },
     });
     handler.openIframe();
@@ -423,7 +453,17 @@ function CheckoutPage() {
                     onOpenZonePicker={openPicker}
                   />
                 )}
-                {step === 2 && <StepPayment configured={config?.configured ?? false} />}
+                {step === 2 && (
+                  <StepPayment
+                    configured={config?.configured ?? false}
+                    status={payStatus}
+                    error={payError}
+                    onRetry={() => {
+                      setPayStatus("idle");
+                      setPayError(null);
+                    }}
+                  />
+                )}
               </motion.div>
             </AnimatePresence>
 
@@ -970,13 +1010,131 @@ function SummaryPill({
   );
 }
 
-function StepPayment({ configured }: { configured: boolean }) {
+function StepPayment({
+  configured,
+  status,
+  error,
+  onRetry,
+}: {
+  configured: boolean;
+  status: "idle" | "processing" | "success" | "failed";
+  error: string | null;
+  onRetry: () => void;
+}) {
   return (
     <div>
       <h2 className="text-xl font-bold">Payment</h2>
       <p className="mt-1 text-sm text-neutral-500">
-        You'll be redirected to a secure Paystack window to complete payment.
+        A secure Paystack window opens right here — you'll never leave this page.
       </p>
+
+      <AnimatePresence mode="wait">
+        {status === "processing" && (
+          <motion.div
+            key="processing"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.2 }}
+            className="mt-6 flex items-center gap-3 rounded-2xl border border-neutral-200 bg-white p-4"
+          >
+            <div className="relative flex h-10 w-10 shrink-0 items-center justify-center">
+              <span className="absolute inset-0 animate-ping rounded-full bg-[#ff003c]/20" />
+              <Loader2 className="h-5 w-5 animate-spin text-[#ff003c]" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-neutral-900">Processing payment…</p>
+              <p className="text-xs text-neutral-500">
+                Complete payment in the Paystack window — don't close this tab.
+              </p>
+            </div>
+          </motion.div>
+        )}
+
+        {status === "success" && (
+          <motion.div
+            key="success"
+            initial={{ opacity: 0, scale: 0.96 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="mt-6 overflow-hidden rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-white p-6 text-center"
+          >
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ type: "spring", stiffness: 220, damping: 14, delay: 0.05 }}
+              className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500 text-white shadow-[0_10px_30px_-10px_rgba(16,185,129,0.6)]"
+            >
+              <motion.span
+                initial={{ pathLength: 0, opacity: 0 }}
+                animate={{ pathLength: 1, opacity: 1 }}
+                transition={{ duration: 0.35, delay: 0.25 }}
+              >
+                <Check className="h-8 w-8" strokeWidth={3} />
+              </motion.span>
+            </motion.div>
+            <p className="mt-4 text-lg font-bold text-neutral-900">Payment successful</p>
+            <p className="mt-1 text-sm text-neutral-600">
+              Thank you! Taking you to your order confirmation…
+            </p>
+            <div className="mx-auto mt-4 h-1 w-32 overflow-hidden rounded-full bg-emerald-100">
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: "100%" }}
+                transition={{ duration: 1.3, ease: "easeInOut" }}
+                className="h-full bg-emerald-500"
+              />
+            </div>
+          </motion.div>
+        )}
+
+        {status === "failed" && (
+          <motion.div
+            key="failed"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25 }}
+            className="mt-6 rounded-2xl border border-red-200 bg-gradient-to-br from-red-50 to-white p-5"
+          >
+            <div className="flex items-start gap-3">
+              <motion.div
+                initial={{ scale: 0.6, rotate: -10 }}
+                animate={{ scale: 1, rotate: 0 }}
+                transition={{ type: "spring", stiffness: 240, damping: 12 }}
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-100 text-red-600"
+              >
+                <XCircle className="h-6 w-6" />
+              </motion.div>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-bold text-neutral-900">
+                  Payment didn't go through
+                </p>
+                <p className="mt-1 text-xs text-neutral-600">
+                  {error ||
+                    "Something interrupted your payment. Your cart is still safe — please try again."}
+                </p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={onRetry}
+                    className="inline-flex items-center gap-1.5 rounded-full bg-[#ff003c] px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm transition-transform hover:-translate-y-0.5"
+                  >
+                    <RefreshCw className="h-3.5 w-3.5" /> Try again
+                  </button>
+                  <a
+                    href="mailto:support@sweetandlovely.co.za"
+                    className="inline-flex items-center rounded-full border border-neutral-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-neutral-700 hover:bg-neutral-50"
+                  >
+                    Contact support
+                  </a>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <div className="mt-6 rounded-2xl border border-neutral-200 bg-gradient-to-br from-white to-[#fffafb] p-5">
         <div className="flex items-center justify-between">
