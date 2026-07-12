@@ -1010,13 +1010,131 @@ function SummaryPill({
   );
 }
 
-function StepPayment({ configured }: { configured: boolean }) {
+function StepPayment({
+  configured,
+  status,
+  error,
+  onRetry,
+}: {
+  configured: boolean;
+  status: "idle" | "processing" | "success" | "failed";
+  error: string | null;
+  onRetry: () => void;
+}) {
   return (
     <div>
       <h2 className="text-xl font-bold">Payment</h2>
       <p className="mt-1 text-sm text-neutral-500">
-        You'll be redirected to a secure Paystack window to complete payment.
+        A secure Paystack window opens right here — you'll never leave this page.
       </p>
+
+      <AnimatePresence mode="wait">
+        {status === "processing" && (
+          <motion.div
+            key="processing"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.2 }}
+            className="mt-6 flex items-center gap-3 rounded-2xl border border-neutral-200 bg-white p-4"
+          >
+            <div className="relative flex h-10 w-10 shrink-0 items-center justify-center">
+              <span className="absolute inset-0 animate-ping rounded-full bg-[#ff003c]/20" />
+              <Loader2 className="h-5 w-5 animate-spin text-[#ff003c]" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-neutral-900">Processing payment…</p>
+              <p className="text-xs text-neutral-500">
+                Complete payment in the Paystack window — don't close this tab.
+              </p>
+            </div>
+          </motion.div>
+        )}
+
+        {status === "success" && (
+          <motion.div
+            key="success"
+            initial={{ opacity: 0, scale: 0.96 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="mt-6 overflow-hidden rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-white p-6 text-center"
+          >
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ type: "spring", stiffness: 220, damping: 14, delay: 0.05 }}
+              className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500 text-white shadow-[0_10px_30px_-10px_rgba(16,185,129,0.6)]"
+            >
+              <motion.span
+                initial={{ pathLength: 0, opacity: 0 }}
+                animate={{ pathLength: 1, opacity: 1 }}
+                transition={{ duration: 0.35, delay: 0.25 }}
+              >
+                <Check className="h-8 w-8" strokeWidth={3} />
+              </motion.span>
+            </motion.div>
+            <p className="mt-4 text-lg font-bold text-neutral-900">Payment successful</p>
+            <p className="mt-1 text-sm text-neutral-600">
+              Thank you! Taking you to your order confirmation…
+            </p>
+            <div className="mx-auto mt-4 h-1 w-32 overflow-hidden rounded-full bg-emerald-100">
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: "100%" }}
+                transition={{ duration: 1.3, ease: "easeInOut" }}
+                className="h-full bg-emerald-500"
+              />
+            </div>
+          </motion.div>
+        )}
+
+        {status === "failed" && (
+          <motion.div
+            key="failed"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25 }}
+            className="mt-6 rounded-2xl border border-red-200 bg-gradient-to-br from-red-50 to-white p-5"
+          >
+            <div className="flex items-start gap-3">
+              <motion.div
+                initial={{ scale: 0.6, rotate: -10 }}
+                animate={{ scale: 1, rotate: 0 }}
+                transition={{ type: "spring", stiffness: 240, damping: 12 }}
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-100 text-red-600"
+              >
+                <XCircle className="h-6 w-6" />
+              </motion.div>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-bold text-neutral-900">
+                  Payment didn't go through
+                </p>
+                <p className="mt-1 text-xs text-neutral-600">
+                  {error ||
+                    "Something interrupted your payment. Your cart is still safe — please try again."}
+                </p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={onRetry}
+                    className="inline-flex items-center gap-1.5 rounded-full bg-[#ff003c] px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm transition-transform hover:-translate-y-0.5"
+                  >
+                    <RefreshCw className="h-3.5 w-3.5" /> Try again
+                  </button>
+                  <a
+                    href="mailto:support@sweetandlovely.co.za"
+                    className="inline-flex items-center rounded-full border border-neutral-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-neutral-700 hover:bg-neutral-50"
+                  >
+                    Contact support
+                  </a>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <div className="mt-6 rounded-2xl border border-neutral-200 bg-gradient-to-br from-white to-[#fffafb] p-5">
         <div className="flex items-center justify-between">
