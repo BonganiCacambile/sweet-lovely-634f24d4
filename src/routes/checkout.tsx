@@ -207,6 +207,14 @@ function CheckoutPage() {
       openPicker();
       return;
     }
+    if (isCollection && !zoneOffersCollection) {
+      toast.error(`${zone.name} does not offer collection right now`);
+      return;
+    }
+    if (!isCollection && !zoneOffersDelivery) {
+      toast.error(`${zone.name} does not offer delivery right now`);
+      return;
+    }
     if (subtotal < zone.min_order_zar) {
       toast.error(`Order below ${zone.name} minimum (${formatPrice(zone.min_order_zar)})`);
       return;
@@ -299,11 +307,11 @@ function CheckoutPage() {
                   lastName: form.lastName,
                   email: form.email,
                   phone: form.phone,
-                  address: form.address,
-                  city: form.city,
-                  state: form.state,
-                  country: form.country,
-                  postal: form.postal,
+                  address: isCollection ? "" : form.address,
+                  city: isCollection ? "" : form.city,
+                  state: isCollection ? "" : form.state,
+                  country: isCollection ? "" : form.country,
+                  postal: isCollection ? "" : form.postal,
                 },
                 items: items.map((it) => ({
                   id: it.id,
@@ -317,6 +325,7 @@ function CheckoutPage() {
                 total,
                 userId,
                 deliveryZoneId: zone.id,
+                fulfillmentMethod: method,
               },
             });
             if (res.success) {
