@@ -177,11 +177,14 @@ function CheckoutPage() {
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) e.email = "Valid email required";
       if (!form.phone.trim() || form.phone.replace(/\D/g, "").length < 6) e.phone = "Valid phone required";
     } else if (s === 1) {
-      if (!form.country.trim()) e.country = "Required";
-      if (!form.state.trim()) e.state = "Required";
-      if (!form.city.trim()) e.city = "Required";
-      if (!form.address.trim()) e.address = "Required";
-      if (!form.postal.trim()) e.postal = "Required";
+      // Delivery orders require a full address; collection orders don't.
+      if (!isCollection) {
+        if (!form.country.trim()) e.country = "Required";
+        if (!form.state.trim()) e.state = "Required";
+        if (!form.city.trim()) e.city = "Required";
+        if (!form.address.trim()) e.address = "Required";
+        if (!form.postal.trim()) e.postal = "Required";
+      }
     }
     setErrors(e);
     return Object.keys(e).length === 0;
