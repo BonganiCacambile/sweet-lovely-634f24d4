@@ -15,6 +15,7 @@ interface CartContextValue {
   count: number;
   subtotal: number;
   isOpen: boolean;
+  hydrated: boolean;
   open: () => void;
   close: () => void;
   toggle: () => void;
@@ -96,6 +97,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     count,
     subtotal,
     isOpen,
+    hydrated,
     open: () => setIsOpen(true),
     close: () => setIsOpen(false),
     toggle: () => setIsOpen((v) => !v),
