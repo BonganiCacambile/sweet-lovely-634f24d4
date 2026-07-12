@@ -453,7 +453,17 @@ function CheckoutPage() {
                     onOpenZonePicker={openPicker}
                   />
                 )}
-                {step === 2 && <StepPayment configured={config?.configured ?? false} />}
+                {step === 2 && (
+                  <StepPayment
+                    configured={config?.configured ?? false}
+                    status={payStatus}
+                    error={payError}
+                    onRetry={() => {
+                      setPayStatus("idle");
+                      setPayError(null);
+                    }}
+                  />
+                )}
               </motion.div>
             </AnimatePresence>
 
