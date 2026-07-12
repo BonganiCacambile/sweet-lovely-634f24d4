@@ -472,15 +472,38 @@ function CheckoutPage() {
           {/* Summary */}
           <aside className="lg:sticky lg:top-24 lg:self-start">
             <div className="rounded-3xl border border-neutral-100 bg-white p-6 shadow-[0_10px_40px_-20px_rgba(0,0,0,0.1)]">
+              <div className="mb-4 flex items-center gap-2 rounded-2xl border border-neutral-100 bg-white p-2">
+                <SummaryPill
+                  active={!isCollection}
+                  disabled={!!zone && !zoneOffersDelivery}
+                  icon={<Truck className="h-3.5 w-3.5" />}
+                  label="Delivery"
+                  onClick={() => zoneOffersDelivery && setMethod("delivery")}
+                />
+                <SummaryPill
+                  active={isCollection}
+                  disabled={!!zone && !zoneOffersCollection}
+                  icon={<ShoppingBag className="h-3.5 w-3.5" />}
+                  label="Collection"
+                  onClick={() => zoneOffersCollection && setMethod("collection")}
+                />
+              </div>
               <div className="mb-4 flex items-start justify-between gap-3 rounded-2xl bg-neutral-50 p-3">
                 <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-wider text-neutral-500">Delivery zone</p>
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-neutral-500">
+                    {isCollection ? "Collection location" : "Delivery zone"}
+                  </p>
                   <p className="mt-0.5 text-sm font-semibold text-neutral-900">
                     {zone ? zone.name : "Not selected"}
                   </p>
-                  {zone && (
+                  {zone && !isCollection && (
                     <p className="text-[11px] text-neutral-500">
                       {formatPrice(zone.fee_zar)} · ~{zone.eta_minutes} min · min {formatPrice(zone.min_order_zar)}
+                    </p>
+                  )}
+                  {zone && isCollection && (
+                    <p className="text-[11px] text-neutral-500">
+                      Pick up · ready in ~{zone.collection_prep_minutes ?? 20} min
                     </p>
                   )}
                 </div>
@@ -493,7 +516,7 @@ function CheckoutPage() {
                   Add {formatPrice(zone.min_order_zar - subtotal)} more to reach the {zone.name} minimum order.
                 </p>
               )}
-              {qualifiesForFreeDelivery && (
+              {!isCollection && qualifiesForFreeDelivery && (
                 <div className="mb-3 flex items-start gap-2 rounded-xl bg-emerald-50 px-3 py-2 text-xs text-emerald-800">
                   <PartyPopper className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                   <p>
@@ -502,10 +525,19 @@ function CheckoutPage() {
                   </p>
                 </div>
               )}
-              {zone && !qualifiesForFreeDelivery && freeDeliveryThreshold > 0 && subtotal > 0 && (
+              {zone && !isCollection && !qualifiesForFreeDelivery && freeDeliveryThreshold > 0 && subtotal > 0 && (
                 <p className="mb-3 rounded-xl bg-neutral-50 px-3 py-2 text-xs text-neutral-700">
                   Add {formatPrice(freeDeliveryThreshold - subtotal)} more to unlock <span className="font-semibold">Free Delivery</span>.
                 </p>
+              )}
+              {isCollection && (
+                <div className="mb-3 flex items-start gap-2 rounded-xl bg-neutral-50 px-3 py-2 text-xs text-neutral-700">
+                  <ShoppingBag className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                  <p>
+                    <span className="font-semibold">Collection order.</span> No delivery fee — we'll have it
+                    ready for you to pick up.
+                  </p>
+                </div>
               )}
               <h2 className="text-lg font-bold">In your bag</h2>
               <ul className="mt-4 space-y-4">
@@ -534,17 +566,31 @@ function CheckoutPage() {
               <dl className="mt-6 space-y-2 border-t border-dashed border-neutral-200 pt-4 text-sm">
                 <Row label="Subtotal" value={formatPrice(subtotal)} />
                 <Row
-                  label="Delivery"
+                  label={isCollection ? "Delivery" : "Delivery"}
                   value={
-                    shipping === 0
-                      ? qualifiesForFreeDelivery
-                        ? "FREE (R0.00)"
-                        : "Free"
-                      : formatPrice(shipping)
+                    isCollection
+                      ? "R0.00 (Collection)"
+                      : shipping === 0
+                        ? qualifiesForFreeDelivery
+                          ? "FREE (R0.00)"
+                          : "Free"
+                        : formatPrice(shipping)
                   }
-                  highlight={shipping === 0 && qualifiesForFreeDelivery}
+                  highlight={shipping === 0 && (isCollection || qualifiesForFreeDelivery)}
                 />
                 <Row label="Tax" value={formatPrice(tax)} muted />
+                {zone && estimatedMinutes > 0 && (
+                  <Row
+                    label={isCollection ? "Ready in" : "Estimated"}
+                    value={`~${estimatedMinutes} min`}
+                    muted
+                  />
+                )}
+                <Row
+                  label="Order type"
+                  value={isCollection ? "Collection" : "Delivery"}
+                  muted
+                />
               </dl>
               <div className="mt-3 flex items-center justify-between border-t border-dashed border-neutral-200 pt-3">
                 <span className="text-sm font-medium text-neutral-600">Total</span>
