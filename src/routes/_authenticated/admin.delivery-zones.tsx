@@ -38,6 +38,11 @@ const empty: ZoneDraft = {
   hours_text: "",
   color: "#ff003c",
   image_url: "",
+  delivery_enabled: true,
+  collection_enabled: false,
+  collection_instructions: "",
+  collection_prep_minutes: 20,
+  collection_address: "",
 };
 
 interface ZoneDraft {
@@ -57,6 +62,11 @@ interface ZoneDraft {
   hours_text: string;
   color: string;
   image_url: string;
+  delivery_enabled: boolean;
+  collection_enabled: boolean;
+  collection_instructions: string;
+  collection_prep_minutes: number;
+  collection_address: string;
 }
 
 function DeliveryZonesPage() {
@@ -96,6 +106,11 @@ function DeliveryZonesPage() {
           hours_text: d.hours_text.trim() || null,
           color: d.color.trim() || null,
           image_url: d.image_url.trim() || null,
+        delivery_enabled: d.delivery_enabled,
+        collection_enabled: d.collection_enabled,
+        collection_instructions: d.collection_instructions.trim() || null,
+        collection_prep_minutes: Number(d.collection_prep_minutes) || 0,
+        collection_address: d.collection_address.trim() || null,
         },
       }),
     onSuccess: () => {
@@ -136,6 +151,14 @@ function DeliveryZonesPage() {
       hours_text: z.hours_text ?? "",
       color: z.color ?? "#ff003c",
       image_url: (z as { image_url: string | null }).image_url ?? "",
+      delivery_enabled: (z as { delivery_enabled: boolean | null }).delivery_enabled ?? true,
+      collection_enabled: (z as { collection_enabled: boolean | null }).collection_enabled ?? false,
+      collection_instructions:
+        (z as { collection_instructions: string | null }).collection_instructions ?? "",
+      collection_prep_minutes: Number(
+        (z as { collection_prep_minutes: number | null }).collection_prep_minutes ?? 20,
+      ),
+      collection_address: (z as { collection_address: string | null }).collection_address ?? "",
     });
 
   return (
@@ -333,6 +356,64 @@ function ZoneEditor({
                 {draft.is_active ? "Active" : "Inactive"}
               </label>
             </Field>
+          </div>
+
+          <div className="rounded-xl border border-neutral-200 bg-neutral-50/50 p-3">
+            <p className="text-xs font-semibold uppercase tracking-wider text-neutral-500">
+              Fulfilment options
+            </p>
+            <p className="mt-1 text-xs text-neutral-500">
+              Control which methods customers see at checkout for this zone. Changes take effect immediately.
+            </p>
+            <div className="mt-3 grid grid-cols-2 gap-3">
+              <label className="inline-flex items-center gap-2 rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={draft.delivery_enabled}
+                  onChange={(e) => set("delivery_enabled", e.target.checked)}
+                />
+                🚚 Delivery
+              </label>
+              <label className="inline-flex items-center gap-2 rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={draft.collection_enabled}
+                  onChange={(e) => set("collection_enabled", e.target.checked)}
+                />
+                🛍️ Collection
+              </label>
+            </div>
+            <div className="mt-3 grid gap-3">
+              <Field label="Collection prep time (minutes)">
+                <input
+                  type="number"
+                  min={0}
+                  value={draft.collection_prep_minutes}
+                  onChange={(e) => set("collection_prep_minutes", Number(e.target.value))}
+                  className={inputCls}
+                  disabled={!draft.collection_enabled}
+                />
+              </Field>
+              <Field label="Collection address (shown to customers)">
+                <input
+                  value={draft.collection_address}
+                  onChange={(e) => set("collection_address", e.target.value)}
+                  placeholder="12 Main Rd, Khayelitsha"
+                  className={inputCls}
+                  disabled={!draft.collection_enabled}
+                />
+              </Field>
+              <Field label="Collection instructions">
+                <textarea
+                  value={draft.collection_instructions}
+                  onChange={(e) => set("collection_instructions", e.target.value)}
+                  rows={2}
+                  placeholder="Park at the rear, ask for your name at the counter…"
+                  className={inputCls}
+                  disabled={!draft.collection_enabled}
+                />
+              </Field>
+            </div>
           </div>
         </div>
         <footer className="flex items-center justify-end gap-2 border-t border-neutral-100 p-4">

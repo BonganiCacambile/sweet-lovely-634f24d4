@@ -203,6 +203,25 @@ function OrderDrawer({ id, onClose }: { id: string; onClose: () => void }) {
                 {data.customer_phone && <p className="text-neutral-600">{data.customer_phone}</p>}
                 {data.address && <p className="mt-1 text-neutral-600">{data.address}</p>}
               </section>
+              <section>
+                <p className="text-[11px] uppercase tracking-wider text-neutral-500">Order type</p>
+                <p className="font-medium">
+                  {String((data as { fulfillment_method?: string }).fulfillment_method) === "collection"
+                    ? "🛍️ Collection"
+                    : "🚚 Delivery"}
+                </p>
+                {String((data as { fulfillment_method?: string }).fulfillment_method) === "collection" &&
+                  (data as { collection_location?: string | null }).collection_location && (
+                    <p className="text-xs text-neutral-600">
+                      Pick up at {(data as { collection_location: string }).collection_location}
+                    </p>
+                  )}
+                {(data as { estimated_minutes?: number | null }).estimated_minutes && (
+                  <p className="text-xs text-neutral-500">
+                    ETA ~{(data as { estimated_minutes: number }).estimated_minutes} min
+                  </p>
+                )}
+              </section>
               {data.delivery_zone_name && (
                 <section>
                   <p className="text-[11px] uppercase tracking-wider text-neutral-500">Delivery zone</p>

@@ -217,10 +217,15 @@ export type Database = {
       }
       delivery_zones: {
         Row: {
+          collection_address: string | null
+          collection_enabled: boolean
+          collection_instructions: string | null
+          collection_prep_minutes: number
           color: string | null
           contact_email: string | null
           contact_phone: string | null
           created_at: string
+          delivery_enabled: boolean
           description: string | null
           eta_minutes: number
           fee_zar: number
@@ -237,10 +242,15 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          collection_address?: string | null
+          collection_enabled?: boolean
+          collection_instructions?: string | null
+          collection_prep_minutes?: number
           color?: string | null
           contact_email?: string | null
           contact_phone?: string | null
           created_at?: string
+          delivery_enabled?: boolean
           description?: string | null
           eta_minutes?: number
           fee_zar?: number
@@ -257,10 +267,15 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          collection_address?: string | null
+          collection_enabled?: boolean
+          collection_instructions?: string | null
+          collection_prep_minutes?: number
           color?: string | null
           contact_email?: string | null
           contact_phone?: string | null
           created_at?: string
+          delivery_enabled?: boolean
           description?: string | null
           eta_minutes?: number
           fee_zar?: number
@@ -1019,6 +1034,7 @@ export type Database = {
       orders: {
         Row: {
           address: string | null
+          collection_location: string | null
           created_at: string
           customer_email: string | null
           customer_name: string
@@ -1026,6 +1042,8 @@ export type Database = {
           delivery_zar: number
           delivery_zone_id: string | null
           delivery_zone_name: string | null
+          estimated_minutes: number | null
+          fulfillment_method: string
           id: string
           notes: string | null
           order_number: string
@@ -1038,6 +1056,7 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          collection_location?: string | null
           created_at?: string
           customer_email?: string | null
           customer_name: string
@@ -1045,6 +1064,8 @@ export type Database = {
           delivery_zar?: number
           delivery_zone_id?: string | null
           delivery_zone_name?: string | null
+          estimated_minutes?: number | null
+          fulfillment_method?: string
           id?: string
           notes?: string | null
           order_number?: string
@@ -1057,6 +1078,7 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          collection_location?: string | null
           created_at?: string
           customer_email?: string | null
           customer_name?: string
@@ -1064,6 +1086,8 @@ export type Database = {
           delivery_zar?: number
           delivery_zone_id?: string | null
           delivery_zone_name?: string | null
+          estimated_minutes?: number | null
+          fulfillment_method?: string
           id?: string
           notes?: string | null
           order_number?: string
@@ -1510,9 +1534,12 @@ export type Database = {
     Views: {
       delivery_zones_public: {
         Row: {
+          collection_address: string | null
+          collection_enabled: boolean | null
+          collection_instructions: string | null
+          collection_prep_minutes: number | null
           color: string | null
-          contact_email: string | null
-          contact_phone: string | null
+          delivery_enabled: boolean | null
           description: string | null
           eta_minutes: number | null
           fee_zar: number | null
@@ -1526,9 +1553,12 @@ export type Database = {
           sort_order: number | null
         }
         Insert: {
+          collection_address?: string | null
+          collection_enabled?: boolean | null
+          collection_instructions?: string | null
+          collection_prep_minutes?: number | null
           color?: string | null
-          contact_email?: string | null
-          contact_phone?: string | null
+          delivery_enabled?: boolean | null
           description?: string | null
           eta_minutes?: number | null
           fee_zar?: number | null
@@ -1542,9 +1572,12 @@ export type Database = {
           sort_order?: number | null
         }
         Update: {
+          collection_address?: string | null
+          collection_enabled?: boolean | null
+          collection_instructions?: string | null
+          collection_prep_minutes?: number | null
           color?: string | null
-          contact_email?: string | null
-          contact_phone?: string | null
+          delivery_enabled?: boolean | null
           description?: string | null
           eta_minutes?: number | null
           fee_zar?: number | null

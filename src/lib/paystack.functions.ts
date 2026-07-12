@@ -60,11 +60,11 @@ const createOrderSchema = z.object({
     lastName: z.string().min(1).max(120),
     email: z.string().email().max(200),
     phone: z.string().min(3).max(40),
-    address: z.string().min(1).max(400),
-    city: z.string().min(1).max(120),
-    state: z.string().min(1).max(120),
-    country: z.string().min(1).max(120),
-    postal: z.string().min(1).max(40),
+    address: z.string().max(400).optional().default(""),
+    city: z.string().max(120).optional().default(""),
+    state: z.string().max(120).optional().default(""),
+    country: z.string().max(120).optional().default(""),
+    postal: z.string().max(40).optional().default(""),
   }),
   items: z.array(cartItemSchema).min(1).max(100),
   subtotal: z.number().nonnegative(),
@@ -73,6 +73,7 @@ const createOrderSchema = z.object({
   total: z.number().nonnegative(),
   userId: z.string().uuid().nullable().optional(),
   deliveryZoneId: z.string().uuid(),
+  fulfillmentMethod: z.enum(["delivery", "collection"]).default("delivery"),
 });
 
 const stockCheckSchema = z.object({
@@ -258,12 +259,20 @@ export const verifyAndCreateOrder = createServerFn({ method: "POST" })
     // 3) Persist order + items (service role; works for guest checkout).
     // Unique index on paystack_reference prevents reference replay.
     const { customer } = data;
-    const fullAddress = `${customer.address}, ${customer.city}, ${customer.state}, ${customer.country} ${customer.postal}`;
+    const method = data.fulfillmentMethod ?? "delivery";
+    const isCollection = method === "collection";
+    const addressParts = [customer.address, customer.city, customer.state, customer.country, customer.postal]
+      .map((s) => (s ?? "").trim())
+      .filter(Boolean);
+    const fullAddress = addressParts.length ? addressParts.join(", ") : null;
+    if (!isCollection && !fullAddress) {
+      return { success: false as const, error: "Delivery address is required" };
+    }
 
     // Look up the selected delivery zone for snapshot + fee validation.
     const { data: zone, error: zoneErr } = await supabaseAdmin
       .from("delivery_zones")
-      .select("id, name, fee_zar, min_order_zar, free_delivery_threshold_zar, is_active")
+      .select("id, name, fee_zar, min_order_zar, free_delivery_threshold_zar, is_active, delivery_enabled, collection_enabled, collection_address, collection_prep_minutes, eta_minutes")
       .eq("id", data.deliveryZoneId)
       .maybeSingle();
     if (zoneErr || !zone) {
@@ -272,6 +281,22 @@ export const verifyAndCreateOrder = createServerFn({ method: "POST" })
     }
     if (!zone.is_active) {
       return { success: false as const, error: "Selected delivery zone is no longer active" };
+    }
+    // Enforce that the selected fulfilment method is actually offered by the zone.
+    // This is the server-side guard: even if the client is tampered with, we
+    // reject a Collection order in a zone that only offers Delivery (and vice versa).
+    const zoneAny = zone as {
+      delivery_enabled: boolean | null;
+      collection_enabled: boolean | null;
+      collection_address: string | null;
+      collection_prep_minutes: number | null;
+      eta_minutes: number;
+    };
+    if (isCollection && zoneAny.collection_enabled === false) {
+      return { success: false as const, error: `${zone.name} does not offer collection right now` };
+    }
+    if (!isCollection && zoneAny.delivery_enabled === false) {
+      return { success: false as const, error: `${zone.name} does not offer delivery right now` };
     }
     if (serverSubtotal < Number(zone.min_order_zar)) {
       return {
@@ -283,12 +308,16 @@ export const verifyAndCreateOrder = createServerFn({ method: "POST" })
     // Re-derive the delivery fee server-side. If the zone offers free delivery
     // above a threshold and the subtotal qualifies, waive the fee — never trust
     // the client-supplied shipping amount to be lower than what our rule says.
+    // Collection orders never incur a delivery fee.
     const freeThreshold = Number(
       (zone as { free_delivery_threshold_zar: number | null }).free_delivery_threshold_zar ?? 0,
     );
     const zoneFee = Number(zone.fee_zar);
-    const shipping =
-      freeThreshold > 0 && serverSubtotal >= freeThreshold ? 0 : zoneFee;
+    const shipping = isCollection
+      ? 0
+      : freeThreshold > 0 && serverSubtotal >= freeThreshold
+        ? 0
+        : zoneFee;
     const serverTotal = Number((serverSubtotal + shipping + tax).toFixed(2));
     const expectedAmount = Math.round(serverTotal * 100);
     if (paystackData && paystackData.amount < expectedAmount) {
@@ -299,6 +328,13 @@ export const verifyAndCreateOrder = createServerFn({ method: "POST" })
       return { success: false as const, error: "Payment amount does not match order" };
     }
 
+    const estimatedMinutes = isCollection
+      ? Number(zoneAny.collection_prep_minutes ?? 20)
+      : Number(zoneAny.eta_minutes);
+    const collectionLocation = isCollection
+      ? zoneAny.collection_address?.trim() || zone.name
+      : null;
+
     const { data: order, error: orderErr } = await supabaseAdmin
       .from("orders")
       .insert({
@@ -307,7 +343,7 @@ export const verifyAndCreateOrder = createServerFn({ method: "POST" })
         customer_name: `${customer.firstName} ${customer.lastName}`.trim(),
         customer_email: customer.email,
         customer_phone: customer.phone,
-        address: fullAddress,
+        address: isCollection ? null : fullAddress,
         notes: paystackData
           ? `Paystack ref: ${data.reference}`
           : `Paystack ref: ${data.reference} (verification deferred due to network error — please verify manually)`,
@@ -317,7 +353,10 @@ export const verifyAndCreateOrder = createServerFn({ method: "POST" })
         paystack_reference: data.reference,
         delivery_zone_id: zone.id,
         delivery_zone_name: zone.name,
-      })
+        fulfillment_method: method,
+        collection_location: collectionLocation,
+        estimated_minutes: estimatedMinutes,
+      } as never)
       .select("id, order_number")
       .single();
 
