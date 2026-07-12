@@ -17,7 +17,8 @@
     "test:regression:presence-perf": "node tests/regression/admin-presence-perf.mjs",
     "test:regression:realtime": "node tests/regression/run-realtime-suite.mjs",
     "test:regression:checkout": "node tests/regression/checkout-delivery-vs-collection.mjs",
-    "test:regression": "bun run test:regression:realtime && bun run test:regression:checkout"
+    "test:regression:paystack-webhook": "node tests/regression/paystack-webhook.mjs",
+    "test:regression": "bun run test:regression:realtime && bun run test:regression:checkout && bun run test:regression:paystack-webhook"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
