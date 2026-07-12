@@ -131,6 +131,14 @@ function CheckoutPage() {
   const [form, setForm] = React.useState<FormState>(initialForm);
   const [errors, setErrors] = React.useState<Partial<Record<keyof FormState, string>>>({});
   const [paying, setPaying] = React.useState(false);
+  // Fine-grained payment status drives the in-panel animation/messaging.
+  // idle: default form; processing: Paystack modal is open or verifying;
+  // success: server confirmed order (brief celebration before redirect);
+  // failed: Paystack error, cancellation, or server verification error.
+  const [payStatus, setPayStatus] = React.useState<
+    "idle" | "processing" | "success" | "failed"
+  >("idle");
+  const [payError, setPayError] = React.useState<string | null>(null);
   // Once the order is placed we navigate to /checkout/success. Prevent the
   // "empty cart" effect below from racing that navigation back to /cart.
   const orderPlacedRef = React.useRef(false);
