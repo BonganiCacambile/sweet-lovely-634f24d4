@@ -4,13 +4,27 @@ import * as React from "react";
 import { createPortal } from "react-dom";
 import { useCart, parsePrice, formatPrice, type CartItem } from "@/lib/cart-context";
 
-export const PIZZA_SIZES = [
-  { id: "medium", label: "Medium", price: 80, diameter: '10"', desc: "Perfect for one" },
-  { id: "large", label: "Large", price: 150, diameter: '14"', desc: "Great for sharing" },
-] as const;
+export const PIZZA_SIZE_DEFAULTS = {
+  medium: 80,
+  large: 150,
+} as const;
+
+type SizeId = "medium" | "large";
+const SIZE_META: Array<{ id: SizeId; label: string; diameter: string; desc: string; scale: string }> = [
+  { id: "medium", label: "Medium", diameter: '10"', desc: "Perfect for one", scale: "h-16 w-16 sm:h-20 sm:w-20" },
+  { id: "large", label: "Large", diameter: '14"', desc: "Great for sharing", scale: "h-24 w-24 sm:h-28 sm:w-28" },
+];
 
 interface Props {
-  item: { id: string; title: string; price: string | number; image?: string; variation?: string };
+  item: {
+    id: string;
+    title: string;
+    price: string | number;
+    image?: string;
+    variation?: string;
+    priceMedium?: number;
+    priceLarge?: number;
+  };
   className?: string;
   label?: string;
   /** If true, opens a Medium/Large size picker (R80 / R150) before adding. */
@@ -22,7 +36,12 @@ export function AddToCartButton({ item, className = "", label = "Add", isPizza =
   const { addItem } = useCart();
   const [added, setAdded] = React.useState(false);
   const [open, setOpen] = React.useState(false);
-  const [selected, setSelected] = React.useState<(typeof PIZZA_SIZES)[number]["id"]>("medium");
+  const [selected, setSelected] = React.useState<SizeId>("medium");
+
+  const sizePrices: Record<SizeId, number> = {
+    medium: item.priceMedium ?? PIZZA_SIZE_DEFAULTS.medium,
+    large: item.priceLarge ?? PIZZA_SIZE_DEFAULTS.large,
+  };
 
   React.useEffect(() => {
     if (!open) return;
@@ -57,12 +76,12 @@ export function AddToCartButton({ item, className = "", label = "Add", isPizza =
     flashAdded();
   };
 
-  const handlePickSize = (size: (typeof PIZZA_SIZES)[number]) => {
+  const handlePickSize = (size: { id: SizeId; label: string }) => {
     addItem(
       {
         id: `${item.id}-${size.id}`,
         title: item.title,
-        price: size.price,
+        price: sizePrices[size.id],
         image: item.image,
         variation: `${size.label} pizza`,
       } satisfies Omit<CartItem, "quantity">,
@@ -141,9 +160,8 @@ export function AddToCartButton({ item, className = "", label = "Add", isPizza =
 
                   {/* Size cards */}
                   <div className="grid grid-cols-2 gap-3 px-6">
-                    {PIZZA_SIZES.map((s) => {
+                    {SIZE_META.map((s) => {
                       const isActive = selected === s.id;
-                      const scale = s.id === "large" ? "h-20 w-20" : "h-14 w-14";
                       return (
                         <button
                           key={s.id}
@@ -160,19 +178,30 @@ export function AddToCartButton({ item, className = "", label = "Add", isPizza =
                               <Check className="h-3 w-3" strokeWidth={3} />
                             </span>
                           )}
-                          <div className="flex h-20 items-end justify-center">
-                            <div
-                              className={`${scale} rounded-full bg-gradient-to-br from-[#ffb199] to-[#ff003c] shadow-inner transition-transform ${
-                                isActive ? "scale-105" : "opacity-80 group-hover:opacity-100"
-                              }`}
-                            />
+                          <div className="flex h-28 items-end justify-center">
+                            {item.image ? (
+                              <img
+                                src={item.image}
+                                alt={`${item.title} — ${s.label}`}
+                                loading="lazy"
+                                className={`${s.scale} rounded-full object-cover shadow-inner transition-transform ${
+                                  isActive ? "scale-105" : "opacity-80 group-hover:opacity-100"
+                                }`}
+                              />
+                            ) : (
+                              <div
+                                className={`${s.scale} rounded-full bg-gradient-to-br from-[#ffb199] to-[#ff003c] shadow-inner transition-transform ${
+                                  isActive ? "scale-105" : "opacity-80 group-hover:opacity-100"
+                                }`}
+                              />
+                            )}
                           </div>
                           <span className="mt-2 text-sm font-bold text-neutral-900">
                             {s.label}
                           </span>
                           <span className="text-[11px] text-neutral-500">{s.diameter} · {s.desc}</span>
                           <span className="mt-1 text-sm font-extrabold text-[#ff003c]">
-                            {formatPrice(s.price)}
+                            {formatPrice(sizePrices[s.id])}
                           </span>
                         </button>
                       );
@@ -186,14 +215,14 @@ export function AddToCartButton({ item, className = "", label = "Add", isPizza =
                         Total
                       </span>
                       <span className="text-lg font-extrabold text-neutral-900">
-                        {formatPrice(PIZZA_SIZES.find((p) => p.id === selected)!.price)}
+                        {formatPrice(sizePrices[selected])}
                       </span>
                     </div>
                     <motion.button
                       type="button"
                       whileTap={{ scale: 0.97 }}
                       onClick={() =>
-                        handlePickSize(PIZZA_SIZES.find((p) => p.id === selected)!)
+                        handlePickSize(SIZE_META.find((p) => p.id === selected)!)
                       }
                       className="inline-flex flex-1 items-center justify-center gap-2 rounded-full bg-[#ff003c] px-5 py-3 text-sm font-bold text-white shadow-[0_12px_24px_-12px_rgba(255,0,60,0.7)] transition-all hover:-translate-y-0.5 hover:bg-[#e6003a]"
                     >
