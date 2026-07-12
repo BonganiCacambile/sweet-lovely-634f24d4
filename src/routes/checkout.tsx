@@ -729,27 +729,234 @@ function StepCustomer({
   );
 }
 
-function StepDelivery({
+function StepFulfilment({
   form,
   errors,
   update,
+  method,
+  setMethod,
+  zone,
+  zoneOffersDelivery,
+  zoneOffersCollection,
+  onOpenZonePicker,
 }: {
   form: FormState;
   errors: Partial<Record<keyof FormState, string>>;
   update: (k: keyof FormState, v: string) => void;
+  method: Fulfillment;
+  setMethod: (m: Fulfillment) => void;
+  zone: ReturnType<typeof useZone>["selected"];
+  zoneOffersDelivery: boolean;
+  zoneOffersCollection: boolean;
+  onOpenZonePicker: () => void;
 }) {
+  const isCollection = method === "collection";
+  const bothOffered = zoneOffersDelivery && zoneOffersCollection;
   return (
     <div>
-      <h2 className="text-xl font-bold">Delivery details</h2>
-      <p className="mt-1 text-sm text-neutral-500">Where should we send your order?</p>
-      <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <Field label="Country" id="country" value={form.country} onChange={(v) => update("country", v)} error={errors.country} autoComplete="country-name" />
-        <Field label="Province / State" id="state" value={form.state} onChange={(v) => update("state", v)} error={errors.state} autoComplete="address-level1" />
-        <Field label="City" id="city" value={form.city} onChange={(v) => update("city", v)} error={errors.city} autoComplete="address-level2" />
-        <Field label="Postal code" id="postal" value={form.postal} onChange={(v) => update("postal", v)} error={errors.postal} autoComplete="postal-code" />
-        <Field label="Street address" id="address" value={form.address} onChange={(v) => update("address", v)} error={errors.address} autoComplete="street-address" className="sm:col-span-2" />
+      <h2 className="text-xl font-bold">How would you like your order?</h2>
+      <p className="mt-1 text-sm text-neutral-500">
+        Choose delivery to your door or pick up from{" "}
+        {zone ? <span className="font-medium">{zone.name}</span> : "your local branch"}.
+      </p>
+
+      {!zone && (
+        <button
+          type="button"
+          onClick={onOpenZonePicker}
+          className="mt-4 inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-white px-4 py-2 text-xs font-medium text-neutral-700 hover:bg-neutral-50"
+        >
+          <MapPin className="h-3.5 w-3.5" /> Choose a delivery zone first
+        </button>
+      )}
+
+      <div className="mt-6 grid gap-3 sm:grid-cols-2">
+        <FulfilmentCard
+          active={!isCollection}
+          disabled={!!zone && !zoneOffersDelivery}
+          onClick={() => zoneOffersDelivery && setMethod("delivery")}
+          icon={<Truck className="h-5 w-5" />}
+          title="Delivery"
+          subtitle={
+            zone
+              ? zoneOffersDelivery
+                ? `${formatPrice(zone.fee_zar)} · ~${zone.eta_minutes} min`
+                : "Not available in this zone"
+              : "To your door"
+          }
+          badge="🚚"
+        />
+        <FulfilmentCard
+          active={isCollection}
+          disabled={!!zone && !zoneOffersCollection}
+          onClick={() => zoneOffersCollection && setMethod("collection")}
+          icon={<ShoppingBag className="h-5 w-5" />}
+          title="Collection"
+          subtitle={
+            zone
+              ? zoneOffersCollection
+                ? `Free · ready in ~${zone.collection_prep_minutes ?? 20} min`
+                : "Not available in this zone"
+              : "Pick up in-store"
+          }
+          badge="🛍️"
+        />
       </div>
+
+      {zone && !bothOffered && (
+        <p className="mt-3 inline-flex items-start gap-2 rounded-xl bg-neutral-50 px-3 py-2 text-xs text-neutral-600">
+          <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+          {zoneOffersDelivery && !zoneOffersCollection && (
+            <>Only Delivery is available in {zone.name} right now.</>
+          )}
+          {!zoneOffersDelivery && zoneOffersCollection && (
+            <>Only Collection is available in {zone.name} right now.</>
+          )}
+          {!zoneOffersDelivery && !zoneOffersCollection && (
+            <>No fulfilment options are currently available in {zone.name}. Please try a different zone.</>
+          )}
+        </p>
+      )}
+
+      <AnimatePresence mode="wait">
+        {isCollection ? (
+          <motion.div
+            key="collection-details"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.2 }}
+            className="mt-6 rounded-2xl border border-neutral-200 bg-gradient-to-br from-white to-[#fffafb] p-5"
+          >
+            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#ff003c]">
+              <ShoppingBag className="h-3.5 w-3.5" /> Collection details
+            </div>
+            <div className="mt-3 space-y-3 text-sm">
+              <div className="flex items-start gap-2">
+                <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-neutral-400" />
+                <div>
+                  <p className="font-semibold text-neutral-900">
+                    {zone?.name ?? "Choose a location"}
+                  </p>
+                  {zone?.collection_address && (
+                    <p className="text-xs text-neutral-600">{zone.collection_address}</p>
+                  )}
+                </div>
+              </div>
+              <div className="flex items-start gap-2">
+                <Clock className="mt-0.5 h-4 w-4 shrink-0 text-neutral-400" />
+                <p className="text-neutral-700">
+                  Ready in <span className="font-semibold">~{zone?.collection_prep_minutes ?? 20} minutes</span>{" "}
+                  after order confirmation
+                </p>
+              </div>
+              {zone?.collection_instructions && (
+                <div className="flex items-start gap-2">
+                  <Info className="mt-0.5 h-4 w-4 shrink-0 text-neutral-400" />
+                  <p className="text-neutral-700">{zone.collection_instructions}</p>
+                </div>
+              )}
+            </div>
+          </motion.div>
+        ) : (
+          <motion.div
+            key="delivery-details"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.2 }}
+            className="mt-6"
+          >
+            <h3 className="text-sm font-semibold text-neutral-900">Delivery address</h3>
+            <p className="mt-1 text-xs text-neutral-500">Where should we send your order?</p>
+            <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <Field label="Country" id="country" value={form.country} onChange={(v) => update("country", v)} error={errors.country} autoComplete="country-name" />
+              <Field label="Province / State" id="state" value={form.state} onChange={(v) => update("state", v)} error={errors.state} autoComplete="address-level1" />
+              <Field label="City" id="city" value={form.city} onChange={(v) => update("city", v)} error={errors.city} autoComplete="address-level2" />
+              <Field label="Postal code" id="postal" value={form.postal} onChange={(v) => update("postal", v)} error={errors.postal} autoComplete="postal-code" />
+              <Field label="Street address" id="address" value={form.address} onChange={(v) => update("address", v)} error={errors.address} autoComplete="street-address" className="sm:col-span-2" />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
+  );
+}
+
+function FulfilmentCard({
+  active, disabled, onClick, icon, title, subtitle, badge,
+}: {
+  active: boolean;
+  disabled: boolean;
+  onClick: () => void;
+  icon: React.ReactNode;
+  title: string;
+  subtitle: string;
+  badge: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      aria-pressed={active}
+      className={`group relative flex items-center gap-3 rounded-2xl border-2 p-4 text-left transition-all ${
+        active
+          ? "border-[#ff003c] bg-[#fff5f7] shadow-[0_10px_24px_-12px_rgba(255,0,60,0.35)]"
+          : disabled
+            ? "cursor-not-allowed border-neutral-100 bg-neutral-50 opacity-60"
+            : "border-neutral-200 bg-white hover:-translate-y-0.5 hover:border-neutral-300"
+      }`}
+    >
+      <div
+        className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${
+          active ? "bg-[#ff003c] text-white" : "bg-neutral-100 text-neutral-600"
+        }`}
+      >
+        {icon}
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2">
+          <span className="text-base">{badge}</span>
+          <p className="text-sm font-bold text-neutral-900">{title}</p>
+        </div>
+        <p className="mt-0.5 truncate text-xs text-neutral-500">{subtitle}</p>
+      </div>
+      {active && (
+        <span className="absolute right-3 top-3 flex h-5 w-5 items-center justify-center rounded-full bg-[#ff003c] text-white">
+          <Check className="h-3 w-3" strokeWidth={3} />
+        </span>
+      )}
+    </button>
+  );
+}
+
+function SummaryPill({
+  active, disabled, icon, label, onClick,
+}: {
+  active: boolean;
+  disabled: boolean;
+  icon: React.ReactNode;
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className={`inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-xs font-semibold transition-colors ${
+        active
+          ? "bg-[#ff003c] text-white shadow-sm"
+          : disabled
+            ? "cursor-not-allowed text-neutral-300"
+            : "text-neutral-600 hover:bg-neutral-50"
+      }`}
+      aria-pressed={active}
+    >
+      {icon}
+      {label}
+    </button>
   );
 }
 
