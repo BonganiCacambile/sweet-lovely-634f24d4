@@ -1,6 +1,19 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { motion, AnimatePresence } from "framer-motion";
-import { Check, ArrowLeft, ArrowRight, Lock, CreditCard, Loader2, PartyPopper } from "lucide-react";
+import {
+  Check,
+  ArrowLeft,
+  ArrowRight,
+  Lock,
+  CreditCard,
+  Loader2,
+  PartyPopper,
+  Truck,
+  ShoppingBag,
+  MapPin,
+  Clock,
+  Info,
+} from "lucide-react";
 import * as React from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -42,6 +55,8 @@ interface PaystackSetupOptions {
 
 const STEPS = ["Customer", "Delivery", "Payment"] as const;
 
+type Fulfillment = "delivery" | "collection";
+
 interface FormState {
   firstName: string;
   lastName: string;
@@ -70,15 +85,45 @@ function CheckoutPage() {
   const navigate = useNavigate();
   const { items, subtotal, clear } = useCart();
   const { selected: zone, openPicker } = useZone();
+
+  // Determine which fulfilment methods this zone offers. Default new zones to
+  // Delivery-only until an admin explicitly turns Collection on.
+  const zoneOffersDelivery = zone?.delivery_enabled ?? true;
+  const zoneOffersCollection = zone?.collection_enabled ?? false;
+
+  const [method, setMethod] = React.useState<Fulfillment>("delivery");
+  // Keep the selected method in sync with what the zone actually offers.
+  React.useEffect(() => {
+    if (!zone) return;
+    if (method === "delivery" && !zoneOffersDelivery && zoneOffersCollection) {
+      setMethod("collection");
+    } else if (method === "collection" && !zoneOffersCollection && zoneOffersDelivery) {
+      setMethod("delivery");
+    }
+  }, [zone, zoneOffersDelivery, zoneOffersCollection, method]);
+  const isCollection = method === "collection";
+
   // Zone delivery fee replaces the default flat shipping. If the zone has a
   // free-delivery threshold configured (> 0) and the subtotal meets it, we
   // waive the fee automatically — the same rule is re-enforced server-side
   // before Paystack verification so it can't be bypassed client-side.
+  // Collection orders never incur a delivery fee.
   const freeDeliveryThreshold = zone?.free_delivery_threshold_zar ?? 0;
   const qualifiesForFreeDelivery =
-    !!zone && freeDeliveryThreshold > 0 && subtotal >= freeDeliveryThreshold;
-  const zoneFee = zone ? (qualifiesForFreeDelivery ? 0 : zone.fee_zar) : 0;
+    !!zone && !isCollection && freeDeliveryThreshold > 0 && subtotal >= freeDeliveryThreshold;
+  const zoneFee = zone
+    ? isCollection
+      ? 0
+      : qualifiesForFreeDelivery
+        ? 0
+        : zone.fee_zar
+    : 0;
   const { shipping, tax, total } = computeTotals(subtotal, 0, zoneFee);
+  const estimatedMinutes = zone
+    ? isCollection
+      ? zone.collection_prep_minutes ?? 20
+      : zone.eta_minutes
+    : 0;
   const belowMin = !!zone && subtotal < zone.min_order_zar;
   const [step, setStep] = React.useState(0);
   const [form, setForm] = React.useState<FormState>(initialForm);
