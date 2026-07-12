@@ -157,6 +157,8 @@ function ProductForm({ initial, categories, onClose }: { initial: ProductRow | n
     title: initial?.title ?? "",
     description: initial?.description ?? "",
     price_zar: initial?.price_zar ?? 0,
+    price_medium_zar: initial?.price_medium_zar ?? 80,
+    price_large_zar: initial?.price_large_zar ?? 150,
     category_slug: initial?.category_slug ?? categories[0]?.slug ?? "",
     image: initial?.image ?? "",
     is_active: initial?.is_active ?? true,
@@ -167,7 +169,16 @@ function ProductForm({ initial, categories, onClose }: { initial: ProductRow | n
 
   const save = useMutation({
     mutationFn: async () => {
-      const payload = { ...form, price_zar: Number(form.price_zar), stock: Number(form.stock), low_stock_threshold: Number(form.low_stock_threshold), sort_order: Number(form.sort_order) };
+      const isPizza = form.category_slug === "pizza";
+      const payload = {
+        ...form,
+        price_zar: Number(form.price_zar),
+        price_medium_zar: isPizza ? Number(form.price_medium_zar) : null,
+        price_large_zar: isPizza ? Number(form.price_large_zar) : null,
+        stock: Number(form.stock),
+        low_stock_threshold: Number(form.low_stock_threshold),
+        sort_order: Number(form.sort_order),
+      };
       if (initial) {
         const { slug, ...patch } = payload;
         void slug;
@@ -208,6 +219,20 @@ function ProductForm({ initial, categories, onClose }: { initial: ProductRow | n
             <Field label="Low-stock threshold"><input type="number" min={0} value={form.low_stock_threshold} onChange={(e) => setForm({ ...form, low_stock_threshold: Number(e.target.value) })} className="input" /></Field>
             <Field label="Sort order"><input type="number" value={form.sort_order} onChange={(e) => setForm({ ...form, sort_order: Number(e.target.value) })} className="input" /></Field>
           </div>
+          {form.category_slug === "pizza" && (
+            <div className="rounded-2xl border border-dashed border-[#ff003c]/30 bg-[#fff5f7]/60 p-3">
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-[#ff003c]">Pizza size prices</p>
+              <p className="mb-3 text-xs text-neutral-600">Shown in the customer size picker. Leave defaults if unsure.</p>
+              <div className="grid grid-cols-2 gap-3">
+                <Field label='Medium (10") price (R)'>
+                  <input type="number" step="0.01" min={0} value={form.price_medium_zar ?? 0} onChange={(e) => setForm({ ...form, price_medium_zar: Number(e.target.value) })} className="input" />
+                </Field>
+                <Field label='Large (14") price (R)'>
+                  <input type="number" step="0.01" min={0} value={form.price_large_zar ?? 0} onChange={(e) => setForm({ ...form, price_large_zar: Number(e.target.value) })} className="input" />
+                </Field>
+              </div>
+            </div>
+          )}
           <Field label="Image URL"><input value={form.image ?? ""} onChange={(e) => setForm({ ...form, image: e.target.value })} placeholder="https://…" className="input" /></Field>
           <label className="flex items-center gap-2"><input type="checkbox" checked={form.is_active} onChange={(e) => setForm({ ...form, is_active: e.target.checked })} /> Active (visible to customers)</label>
 
