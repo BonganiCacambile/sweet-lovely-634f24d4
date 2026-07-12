@@ -40,7 +40,7 @@ export const Route = createFileRoute("/_authenticated/admin/")({
     const rows = (roleRows ?? []) as Array<{ role: string; assigned_zone_id: string | null }>;
     const isMain = rows.some((r) => r.role === "admin");
     const isZone = !isMain && rows.some((r) => r.assigned_zone_id);
-    if (isZone) throw redirect({ to: "/admin/orders", replace: true });
+    if (isZone) throw redirect({ to: "/admin/orders", search: { zoneId: "" }, replace: true });
   },
   component: DashboardHome,
   errorComponent: ({ error, reset }) => <DashboardRouteError error={error} reset={reset} />,
@@ -125,6 +125,7 @@ function DashboardHome() {
           action={
             <Link
               to="/admin/analytics"
+              search={{ zoneId: "" }}
               className="inline-flex items-center gap-1 text-xs font-medium text-[#ff003c] hover:underline"
             >
               View analytics <ArrowUpRight className="h-3.5 w-3.5" />
@@ -198,6 +199,7 @@ function DashboardHome() {
         action={
           <Link
             to="/admin/orders"
+            search={{ zoneId: "" }}
             className="inline-flex items-center gap-1 text-xs font-medium text-[#ff003c] hover:underline"
           >
             View all <ArrowUpRight className="h-3.5 w-3.5" />
