@@ -146,6 +146,14 @@ function DeliveryZonesPage() {
       hours_text: z.hours_text ?? "",
       color: z.color ?? "#ff003c",
       image_url: (z as { image_url: string | null }).image_url ?? "",
+      delivery_enabled: (z as { delivery_enabled: boolean | null }).delivery_enabled ?? true,
+      collection_enabled: (z as { collection_enabled: boolean | null }).collection_enabled ?? false,
+      collection_instructions:
+        (z as { collection_instructions: string | null }).collection_instructions ?? "",
+      collection_prep_minutes: Number(
+        (z as { collection_prep_minutes: number | null }).collection_prep_minutes ?? 20,
+      ),
+      collection_address: (z as { collection_address: string | null }).collection_address ?? "",
     });
 
   return (
