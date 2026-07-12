@@ -30,6 +30,7 @@ import { Route as AuthenticatedAccountRouteImport } from './routes/_authenticate
 import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
 import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
+import { Route as ApiPublicPaystackWebhookRouteImport } from './routes/api/public/paystack-webhook'
 import { Route as AuthenticatedAdminZoneAssignmentsRouteImport } from './routes/_authenticated/admin.zone-assignments'
 import { Route as AuthenticatedAdminUsersRouteImport } from './routes/_authenticated/admin.users'
 import { Route as AuthenticatedAdminSettingsRouteImport } from './routes/_authenticated/admin.settings'
@@ -164,6 +165,12 @@ const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthenticatedAdminRoute,
 } as any)
+const ApiPublicPaystackWebhookRoute =
+  ApiPublicPaystackWebhookRouteImport.update({
+    id: '/api/public/paystack-webhook',
+    path: '/api/public/paystack-webhook',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AuthenticatedAdminZoneAssignmentsRoute =
   AuthenticatedAdminZoneAssignmentsRouteImport.update({
     id: '/zone-assignments',
@@ -370,6 +377,7 @@ export interface FileRoutesByFullPath {
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/admin/zone-assignments': typeof AuthenticatedAdminZoneAssignmentsRoute
+  '/api/public/paystack-webhook': typeof ApiPublicPaystackWebhookRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/account/orders/$orderId': typeof AuthenticatedAccountOrdersOrderIdRoute
 }
@@ -418,6 +426,7 @@ export interface FileRoutesByTo {
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/admin/zone-assignments': typeof AuthenticatedAdminZoneAssignmentsRoute
+  '/api/public/paystack-webhook': typeof ApiPublicPaystackWebhookRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/account/orders/$orderId': typeof AuthenticatedAccountOrdersOrderIdRoute
 }
@@ -469,6 +478,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/_authenticated/admin/users': typeof AuthenticatedAdminUsersRoute
   '/_authenticated/admin/zone-assignments': typeof AuthenticatedAdminZoneAssignmentsRoute
+  '/api/public/paystack-webhook': typeof ApiPublicPaystackWebhookRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/account/orders/$orderId': typeof AuthenticatedAccountOrdersOrderIdRoute
 }
@@ -520,6 +530,7 @@ export interface FileRouteTypes {
     | '/admin/settings'
     | '/admin/users'
     | '/admin/zone-assignments'
+    | '/api/public/paystack-webhook'
     | '/admin/'
     | '/account/orders/$orderId'
   fileRoutesByTo: FileRoutesByTo
@@ -568,6 +579,7 @@ export interface FileRouteTypes {
     | '/admin/settings'
     | '/admin/users'
     | '/admin/zone-assignments'
+    | '/api/public/paystack-webhook'
     | '/admin'
     | '/account/orders/$orderId'
   id:
@@ -618,6 +630,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/settings'
     | '/_authenticated/admin/users'
     | '/_authenticated/admin/zone-assignments'
+    | '/api/public/paystack-webhook'
     | '/_authenticated/admin/'
     | '/_authenticated/account/orders/$orderId'
   fileRoutesById: FileRoutesById
@@ -639,6 +652,7 @@ export interface RootRouteChildren {
   CheckoutSuccessRoute: typeof CheckoutSuccessRoute
   MenuFullMenuRoute: typeof MenuFullMenuRoute
   Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
+  ApiPublicPaystackWebhookRoute: typeof ApiPublicPaystackWebhookRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -789,6 +803,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/'
       preLoaderRoute: typeof AuthenticatedAdminIndexRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/api/public/paystack-webhook': {
+      id: '/api/public/paystack-webhook'
+      path: '/api/public/paystack-webhook'
+      fullPath: '/api/public/paystack-webhook'
+      preLoaderRoute: typeof ApiPublicPaystackWebhookRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_authenticated/admin/zone-assignments': {
       id: '/_authenticated/admin/zone-assignments'
@@ -1115,6 +1136,7 @@ const rootRouteChildren: RootRouteChildren = {
   CheckoutSuccessRoute: CheckoutSuccessRoute,
   MenuFullMenuRoute: MenuFullMenuRoute,
   Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
+  ApiPublicPaystackWebhookRoute: ApiPublicPaystackWebhookRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
