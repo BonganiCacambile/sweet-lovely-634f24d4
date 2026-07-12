@@ -20,6 +20,11 @@ const upsertSchema = z.object({
   hours_text: z.string().max(200).nullable().optional(),
   color: z.string().max(20).nullable().optional(),
   image_url: z.string().max(2000).nullable().optional(),
+  delivery_enabled: z.boolean().default(true),
+  collection_enabled: z.boolean().default(false),
+  collection_instructions: z.string().max(1000).nullable().optional(),
+  collection_prep_minutes: z.number().int().min(0).max(720).default(20),
+  collection_address: z.string().max(400).nullable().optional(),
 });
 
 /**
@@ -85,6 +90,11 @@ export const upsertZone = createServerFn({ method: "POST" })
       hours_text: data.hours_text ?? null,
       color: data.color ?? null,
       image_url: normalizeImageUrl(data.image_url),
+      delivery_enabled: data.delivery_enabled,
+      collection_enabled: data.collection_enabled,
+      collection_instructions: data.collection_instructions ?? null,
+      collection_prep_minutes: data.collection_prep_minutes,
+      collection_address: data.collection_address ?? null,
     };
     if (data.id) {
       const { error } = await context.supabase
