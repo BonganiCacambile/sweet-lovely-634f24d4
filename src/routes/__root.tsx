@@ -8,7 +8,7 @@ import {
   Scripts,
 } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
-import { useRouterState } from "@tanstack/react-router";
+import { useRouterState, useNavigate } from "@tanstack/react-router";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
@@ -199,8 +199,29 @@ function FloatingZoneChip() {
 // `src/routes/_authenticated/` and are gated by that layout's `beforeLoad`.
 // This gate only renders transition loading screens during sign-in / sign-out.
 function AuthGate({ children }: { children: ReactNode }) {
-  const { user, authTransition } = useAuth();
+  const { user, loading, authTransition } = useAuth();
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const navigate = useNavigate();
+
+  const isPublicPath =
+    pathname.startsWith("/auth") ||
+    pathname.startsWith("/loading") ||
+    pathname.startsWith("/api/") ||
+    pathname.startsWith("/.mcp") ||
+    pathname.startsWith("/.well-known") ||
+    pathname === "/sitemap.xml" ||
+    pathname === "/mcp";
+
+  useEffect(() => {
+    if (loading) return;
+    if (!user && !isPublicPath) {
+      navigate({ to: "/auth", replace: true });
+    }
+  }, [user, loading, isPublicPath, navigate]);
+
   if (authTransition === "signing-out") return <LoadingScreen />;
   if (authTransition === "signing-in" && !user) return <LoadingScreen />;
+  if (loading) return <LoadingScreen />;
+  if (!user && !isPublicPath) return <LoadingScreen />;
   return <>{children}</>;
 }
