@@ -114,3 +114,47 @@ node tests/regression/admin-presence-perf.mjs
 # or
 bun run test:regression:presence-perf
 ```
+
+---
+
+# Home Route Performance Regression
+
+File: `tests/regression/home-perf.mjs`
+
+Asserts the two perf fixes shipped for `/` stay in place and that LCP / TTI
+do not regress against a stored baseline:
+
+1. The route loader prefetches `home-content` + active zones server-side —
+   verified by (a) home content strings appearing in the raw SSR HTML and
+   (b) zero `getHomeContent` server-fn calls fired from the client during
+   the initial load.
+2. The hero (LCP) image ships with a `<link rel="preload" as="image"
+   fetchpriority="high">` in the SSR head pointing at the same asset as
+   the rendered `<img>`.
+
+On top of the structural checks it captures LCP, `domInteractive`, and
+TTFB via the Performance API, compares them to
+`tests/regression/artifacts/home-perf-baseline.json`, and fails on
+regression beyond `REGRESSION_TOLERANCE_PCT` (default 25%). Absolute
+budgets act as hard ceilings on the first run.
+
+| Budget | Default | Env var |
+| --- | --- | --- |
+| LCP | 2500 ms | `LCP_BUDGET_MS` |
+| domInteractive (TTI proxy) | 3000 ms | `TTI_BUDGET_MS` |
+| TTFB | 800 ms | `TTFB_BUDGET_MS` |
+| Regression tolerance vs baseline | 25% | `REGRESSION_TOLERANCE_PCT` |
+
+The baseline auto-ratchets: any run with a better LCP than the stored one
+overwrites the file. Force a refresh with `UPDATE_BASELINE=1`.
+
+## Run
+
+```bash
+node tests/regression/home-perf.mjs
+# or
+bun run test:regression:home-perf
+
+# refresh the baseline after an intentional perf change:
+UPDATE_BASELINE=1 node tests/regression/home-perf.mjs
+```
