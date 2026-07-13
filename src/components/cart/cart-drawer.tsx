@@ -145,6 +145,18 @@ export function CartDrawer() {
                                   {item.variation}
                                 </p>
                               )}
+                              {item.extras && item.extras.length > 0 && (
+                                <ul className="mt-1.5 flex flex-wrap gap-1">
+                                  {item.extras.map((e) => (
+                                    <li
+                                      key={e.id}
+                                      className="inline-flex items-center gap-1 rounded-full bg-[#fff5f7] px-2 py-0.5 text-[10px] font-medium text-[#ff003c]"
+                                    >
+                                      + {e.name}
+                                    </li>
+                                  ))}
+                                </ul>
+                              )}
                             </div>
                             <p className="text-sm font-semibold">
                               {formatPrice(item.price * item.quantity)}

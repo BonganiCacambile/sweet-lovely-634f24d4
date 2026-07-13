@@ -51,6 +51,16 @@ const cartItemSchema = z.object({
   title: z.string().min(1).max(300),
   price: z.number().nonnegative(),
   quantity: z.number().int().positive().max(999),
+  extras: z
+    .array(
+      z.object({
+        id: z.string().max(200),
+        name: z.string().max(200),
+        price: z.number().nonnegative(),
+      }),
+    )
+    .optional()
+    .default([]),
 });
 
 const createOrderSchema = z.object({
@@ -205,6 +215,8 @@ export const verifyAndCreateOrder = createServerFn({ method: "POST" })
       quantity: number;
       unitPrice: number;
       lineTotal: number;
+      extras: Array<{ id: string; name: string; price: number }>;
+      extrasTotal: number;
     };
     const priced: PricedItem[] = [];
     for (const it of parsedItems) {
@@ -217,7 +229,7 @@ export const verifyAndCreateOrder = createServerFn({ method: "POST" })
        //  order after payment has already been captured. The charged amount
        //  is still verified against the computed total below, so this can
        //  only ever undercharge us — never overcharge the customer.
-      let unitPrice: number;
+      let basePrice: number;
       if (it.size) {
         const fallback = PIZZA_SIZE_FALLBACK[it.size];
         if (typeof fallback !== "number") {
@@ -228,17 +240,25 @@ export const verifyAndCreateOrder = createServerFn({ method: "POST" })
             ? (product as { price_medium_zar: number | null }).price_medium_zar
             : (product as { price_large_zar: number | null }).price_large_zar
           : null;
-        unitPrice = perProduct != null ? Number(perProduct) : fallback;
+        basePrice = perProduct != null ? Number(perProduct) : fallback;
       } else if (product && product.is_active !== false) {
-        unitPrice = Number(product.price_zar);
+        basePrice = Number(product.price_zar);
       } else {
-        unitPrice = Math.max(0, Number(it.price) || 0);
+        basePrice = Math.max(0, Number(it.price) || 0);
         console.warn("Order item not in products table — using snapshot price", {
           slug: it.slug,
           title: it.title,
         });
       }
+      const extras = (it.extras ?? []).map((e) => ({
+        id: String(e.id),
+        name: String(e.name),
+        price: Math.max(0, Number(e.price) || 0),
+      }));
+      const extrasPerUnit = extras.reduce((s, e) => s + e.price, 0);
+      const unitPrice = Number((basePrice + extrasPerUnit).toFixed(2));
       const lineTotal = Number((unitPrice * it.quantity).toFixed(2));
+      const extrasTotal = Number((extrasPerUnit * it.quantity).toFixed(2));
       priced.push({
         cartId: it.id,
         slug: product ? it.slug : null,
@@ -246,6 +266,8 @@ export const verifyAndCreateOrder = createServerFn({ method: "POST" })
         quantity: it.quantity,
         unitPrice,
         lineTotal,
+        extras,
+        extrasTotal,
       });
     }
 
@@ -379,6 +401,8 @@ export const verifyAndCreateOrder = createServerFn({ method: "POST" })
       quantity: it.quantity,
       unit_price_zar: it.unitPrice,
       line_total_zar: it.lineTotal,
+      extras: it.extras as unknown as never,
+      extras_total_zar: it.extrasTotal,
     }));
 
     const { error: itemsErr } = await supabaseAdmin.from("order_items").insert(itemRows);

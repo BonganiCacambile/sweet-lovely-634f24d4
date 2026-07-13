@@ -1,10 +1,21 @@
 import * as React from "react";
 import { toast } from "sonner";
 
+export interface CartExtra {
+  id: string;
+  name: string;
+  price: number;
+}
+
 export interface CartItem {
   id: string;
   title: string;
-  price: number; // unit price in major units (e.g. dollars)
+  /** Effective unit price (base + sum of extras) — used everywhere existing math depends on price. */
+  price: number;
+  /** Base price before extras (display only). */
+  basePrice?: number;
+  /** Selected pizza toppings (display + persistence). */
+  extras?: CartExtra[];
   image?: string;
   variation?: string;
   quantity: number;

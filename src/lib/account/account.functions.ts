@@ -263,7 +263,7 @@ export const getMyOrderDetail = createServerFn({ method: "GET" })
     const { data: order, error } = await context.supabase
       .from("orders")
       .select(
-        "id, order_number, status, customer_name, customer_email, customer_phone, address, notes, subtotal_zar, delivery_zar, total_zar, created_at, updated_at, paystack_reference, delivery_zone_name, fulfillment_method, collection_location, estimated_minutes, order_items(id, product_slug, title_snapshot, quantity, unit_price_zar, line_total_zar)",
+        "id, order_number, status, customer_name, customer_email, customer_phone, address, notes, subtotal_zar, delivery_zar, total_zar, created_at, updated_at, paystack_reference, delivery_zone_name, fulfillment_method, collection_location, estimated_minutes, order_items(id, product_slug, title_snapshot, quantity, unit_price_zar, line_total_zar, extras, extras_total_zar)",
       )
       .eq("id", data.id)
       .eq("user_id", context.userId)
