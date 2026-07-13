@@ -235,3 +235,35 @@ bun run test:regression:cart-checkout-perf-mobile
 
 UPDATE_BASELINE=1 node tests/regression/cart-checkout-perf-mobile.mjs
 ```
+
+---
+
+# Extras Pricing Consistency Regression
+
+File: `tests/regression/extras-pricing-consistency.mjs`
+
+Guards the "Customize Your Pizza" extras flow so the number a customer sees
+in the add-to-cart modal, the cart drawer, `/cart`, `/checkout`, and the
+server-side Paystack recompute all agree — on both mobile and desktop.
+
+Pure Node, no browser, no network. Verifies these invariants across a set
+of realistic cart fixtures (medium, large, mixed cart, fractional extras):
+
+1. `unitPrice = basePrice + Σ(extra.price)`
+2. `lineTotal = unitPrice × quantity`
+3. `basePrice × quantity + extrasTotal = lineTotal` (algebraic dual)
+4. Server-side recompute (`paystack.functions.ts`) matches the client build
+   for `unitPrice`, `lineTotal`, and `extrasTotal`.
+5. `cartSubtotal = Σ lineTotal`
+6. Subtotal survives a `JSON.stringify` / `JSON.parse` round-trip
+   (localStorage ↔ server payload).
+7. Every fixture produces byte-identical carts under a "mobile" and a
+   "desktop" label — pricing is required to be viewport-independent.
+
+## Run
+
+```bash
+node tests/regression/extras-pricing-consistency.mjs
+# or
+bun run test:regression:extras-pricing
+```
