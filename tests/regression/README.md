@@ -158,3 +158,38 @@ bun run test:regression:home-perf
 # refresh the baseline after an intentional perf change:
 UPDATE_BASELINE=1 node tests/regression/home-perf.mjs
 ```
+
+---
+
+# Home Route Performance Regression — Mobile
+
+File: `tests/regression/home-perf-mobile.mjs`
+
+Same structural + metric checks as `home-perf.mjs`, but run under a mobile
+emulation profile (Playwright's `iPhone 13` descriptor: 390×844 viewport,
+DPR 3, touch, mobile UA). Mobile is where the hero image preload and
+SSR loader prefetch have the biggest impact on LCP and TTI, so it gets
+its own baseline at
+`tests/regression/artifacts/home-perf-mobile-baseline.json` and looser
+absolute budgets to account for slower mobile CPU/network.
+
+| Budget | Default | Env var |
+| --- | --- | --- |
+| LCP | 3500 ms | `LCP_BUDGET_MS` |
+| domInteractive (TTI proxy) | 4000 ms | `TTI_BUDGET_MS` |
+| TTFB | 1000 ms | `TTFB_BUDGET_MS` |
+| Regression tolerance vs baseline | 25% | `REGRESSION_TOLERANCE_PCT` |
+
+In addition to the desktop checks, the mobile variant asserts the emulated
+viewport is actually mobile-sized (<768px) so future layout regressions
+that force a desktop breakpoint are caught.
+
+## Run
+
+```bash
+node tests/regression/home-perf-mobile.mjs
+# or
+bun run test:regression:home-perf-mobile
+
+UPDATE_BASELINE=1 node tests/regression/home-perf-mobile.mjs
+```
