@@ -16,6 +16,7 @@
     "test:regression:notifications": "node tests/regression/realtime-customer-notifications.mjs",
     "test:regression:presence-perf": "node tests/regression/admin-presence-perf.mjs",
     "test:regression:home-perf": "node tests/regression/home-perf.mjs",
+    "test:regression:home-perf-mobile": "node tests/regression/home-perf-mobile.mjs",
     "test:regression:realtime": "node tests/regression/run-realtime-suite.mjs",
     "test:regression:checkout": "node tests/regression/checkout-delivery-vs-collection.mjs",
     "test:regression:paystack-webhook": "node tests/regression/paystack-webhook.mjs",
