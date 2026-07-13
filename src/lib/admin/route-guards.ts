@@ -37,5 +37,10 @@ export async function requireMainAdminGuard() {
     }
     throw redirect({ to: "/admin", replace: true });
   }
+  if (typeof window !== "undefined") {
+    toast.error("Admin access required", {
+      description: "Your account doesn't have permission to access the admin area.",
+    });
+  }
   throw redirect({ to: "/account", replace: true });
 }
