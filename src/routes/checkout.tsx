@@ -523,20 +523,20 @@ function CheckoutPage() {
           <aside className="lg:sticky lg:top-24 lg:self-start">
             <div className="rounded-3xl border border-neutral-100 bg-white p-6 shadow-[0_10px_40px_-20px_rgba(0,0,0,0.1)]">
               <div className="mb-4 flex items-center gap-2 rounded-2xl border border-neutral-100 bg-white p-2">
-                <SummaryPill
-                  active={!isCollection}
-                  disabled={!!zone && !zoneOffersDelivery}
-                  icon={<Truck className="h-3.5 w-3.5" />}
-                  label="Delivery"
-                  onClick={() => zoneOffersDelivery && setMethod("delivery")}
-                />
-                <SummaryPill
-                  active={isCollection}
-                  disabled={!!zone && !zoneOffersCollection}
-                  icon={<ShoppingBag className="h-3.5 w-3.5" />}
-                  label="Collection"
-                  onClick={() => zoneOffersCollection && setMethod("collection")}
-                />
+                 <SummaryPill
+                   active={!isCollection}
+                   disabled={!zoneOffersDelivery}
+                   icon={<Truck className="h-3.5 w-3.5" />}
+                   label="Delivery"
+                   onClick={() => zoneOffersDelivery && setMethod("delivery")}
+                 />
+                 <SummaryPill
+                   active={isCollection}
+                   disabled={!zoneOffersCollection}
+                   icon={<ShoppingBag className="h-3.5 w-3.5" />}
+                   label="Collection"
+                   onClick={() => zoneOffersCollection && setMethod("collection")}
+                 />
               </div>
               <div className="mb-4 flex items-start justify-between gap-3 rounded-2xl bg-neutral-50 p-3">
                 <div>
