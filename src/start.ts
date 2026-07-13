@@ -4,7 +4,8 @@ import { renderErrorPage } from "./lib/error-page";
 import { attachSupabaseAuth } from "@/integrations/supabase/auth-attacher";
 import { reportSsrException } from "./lib/ssr-alerts";
 
-const errorMiddleware = createMiddleware().server(async ({ next, request }) => {
+const errorMiddleware = createMiddleware().server(async (ctx: any) => {
+  const { next, request } = ctx;
   try {
     return await next();
   } catch (error) {
