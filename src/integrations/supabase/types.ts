@@ -986,6 +986,8 @@ export type Database = {
       order_items: {
         Row: {
           created_at: string
+          extras: Json
+          extras_total_zar: number
           id: string
           line_total_zar: number
           order_id: string
@@ -996,6 +998,8 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          extras?: Json
+          extras_total_zar?: number
           id?: string
           line_total_zar: number
           order_id: string
@@ -1006,6 +1010,8 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          extras?: Json
+          extras_total_zar?: number
           id?: string
           line_total_zar?: number
           order_id?: string
@@ -1114,6 +1120,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      pizza_toppings: {
+        Row: {
+          created_at: string
+          display_order: number
+          id: string
+          image_url: string | null
+          is_active: boolean
+          is_available: boolean
+          name: string
+          price_zar: number
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          is_available?: boolean
+          name: string
+          price_zar?: number
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          is_available?: boolean
+          name?: string
+          price_zar?: number
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       products: {
         Row: {

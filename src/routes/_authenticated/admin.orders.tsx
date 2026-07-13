@@ -13,6 +13,7 @@ import { listAllZones } from "@/lib/admin/zones.functions";
 import { useAuth } from "@/lib/auth-context";
 import { useDebounced } from "@/hooks/use-debounced";
 import { useRealtimeTable } from "@/hooks/use-realtime-table";
+import { formatExtrasLabel } from "@/lib/order-extras";
 import { formatRelative, formatZar, formatDateTime } from "@/lib/admin/format";
 
 export const Route = createFileRoute("/_authenticated/admin/orders")({
@@ -242,15 +243,21 @@ function OrderDrawer({ id, onClose }: { id: string; onClose: () => void }) {
               <section>
                 <p className="text-[11px] uppercase tracking-wider text-neutral-500">Items</p>
                 <ul className="mt-1 divide-y divide-neutral-100">
-                  {data.order_items.map((it) => (
-                    <li key={it.id} className="flex items-center justify-between py-2">
-                      <div>
-                        <p className="font-medium">{it.title_snapshot}</p>
-                        <p className="text-xs text-neutral-500">{it.quantity} × {formatZar(Number(it.unit_price_zar))}</p>
-                      </div>
-                      <p className="tabular-nums">{formatZar(Number(it.line_total_zar))}</p>
-                    </li>
-                  ))}
+                  {data.order_items.map((it) => {
+                    const extrasLabel = formatExtrasLabel((it as { extras?: unknown }).extras);
+                    return (
+                      <li key={it.id} className="flex items-center justify-between py-2">
+                        <div>
+                          <p className="font-medium">{it.title_snapshot}</p>
+                          <p className="text-xs text-neutral-500">{it.quantity} × {formatZar(Number(it.unit_price_zar))}</p>
+                          {extrasLabel && (
+                            <p className="text-[11px] text-[#ff003c]">+ {extrasLabel}</p>
+                          )}
+                        </div>
+                        <p className="tabular-nums">{formatZar(Number(it.line_total_zar))}</p>
+                      </li>
+                    );
+                  })}
                 </ul>
               </section>
               <section className="border-t border-neutral-100 pt-3 text-right">

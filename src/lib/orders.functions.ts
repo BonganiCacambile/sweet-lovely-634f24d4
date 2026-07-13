@@ -9,7 +9,7 @@ export const getMyOrders = createServerFn({ method: "GET" })
     const { data: orders, error } = await supabase
       .from("orders")
       .select(
-        "id, order_number, status, subtotal_zar, delivery_zar, total_zar, created_at, address, delivery_zone_name, fulfillment_method, collection_location, estimated_minutes, order_items(id, product_slug, title_snapshot, quantity, unit_price_zar, line_total_zar)",
+        "id, order_number, status, subtotal_zar, delivery_zar, total_zar, created_at, address, delivery_zone_name, fulfillment_method, collection_location, estimated_minutes, order_items(id, product_slug, title_snapshot, quantity, unit_price_zar, line_total_zar, extras, extras_total_zar)",
       )
       .eq("user_id", userId)
       .order("created_at", { ascending: false });

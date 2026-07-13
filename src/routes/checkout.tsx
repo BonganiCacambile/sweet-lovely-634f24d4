@@ -336,6 +336,7 @@ function CheckoutPage() {
                   title: it.title,
                   price: it.price,
                   quantity: it.quantity,
+                  extras: it.extras ?? [],
                 })),
                 subtotal,
                 shipping,
@@ -606,6 +607,11 @@ function CheckoutPage() {
                       <p className="mt-0.5 text-xs text-neutral-500">
                         {formatPrice(it.price)} each
                       </p>
+                      {it.extras && it.extras.length > 0 && (
+                        <p className="mt-0.5 text-[11px] text-neutral-500">
+                          + {it.extras.map((e) => e.name).join(", ")}
+                        </p>
+                      )}
                     </div>
                     <p className="text-sm font-semibold">
                       {formatPrice(it.price * it.quantity)}

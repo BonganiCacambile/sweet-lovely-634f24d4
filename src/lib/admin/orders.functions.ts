@@ -64,7 +64,7 @@ export const getOrder = createServerFn({ method: "POST" })
     const { data: order, error } = await context.supabase
       .from("orders")
       .select(
-        "*, order_items(id, product_slug, title_snapshot, quantity, unit_price_zar, line_total_zar)",
+        "*, order_items(id, product_slug, title_snapshot, quantity, unit_price_zar, line_total_zar, extras, extras_total_zar)",
       )
       .eq("id", data.id)
       .maybeSingle();

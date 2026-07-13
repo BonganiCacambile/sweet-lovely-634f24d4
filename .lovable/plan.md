@@ -1,96 +1,65 @@
-# Home Page Content Management System
+# Customize Your Pizza — Extra Toppings
 
-Build a full Admin module to manage all Home Page promotional content (Popular Items, Hot Deals, Specials, Featured Products, Banners), replacing hardcoded data with live database-driven content synced in real-time.
+This is a large feature. Before I build, I want to confirm scope so we don't waste effort on parts you don't need yet.
 
-## Current State
+## What I'll build (proposed phasing)
 
-The Home Page (`src/routes/index.tsx`) currently pulls from hardcoded arrays in `src/data/menu.ts`:
-- `FEATURED_PRODUCTS` → "Fan Favorites / Popular"
-- `DESSERTS` → "Save Room for Dessert"
-- `TESTIMONIALS` → reviews
-- `OfferGrid` → hardcoded offers (`src/components/offer-grid.tsx`)
+### Phase 1 — Customer experience (core)
+Replace the current pizza size picker in `AddToCartButton` with a two-step **"Customize Your Pizza"** modal:
 
-The DB already has partially-shaped tables (`home_popular_items`, `home_hot_deals`, `home_specials`, `home_banners`, `featured_items`, `home_section_visibility`, `home_content_events`, `promotions`) — I'll audit and reuse/extend rather than duplicate.
+1. **Size step** — keep existing Medium (R80) / Large (R150) selection, same look.
+2. **Toppings step** — new premium section:
+   - Heading: 🍕 Customize Your Pizza, subtitle: "Make it your own by adding delicious extra toppings."
+   - Responsive grid of topping cards (image, name, price, animated checkbox, hover/scale, highlighted border on select).
+   - Multi-select, no limit.
+   - Live "Selected Extras" summary + live total (base + extras).
+   - Sticky "Add to cart — RXX.XX" CTA.
+   - Skip button ("No extras, add to cart").
+3. **Cart integration** — extend `CartItem` with `extras: {id,name,price}[]` and `extrasTotal`. Line-item id keys off size + sorted extras so "Large + Bacon + Cheese" and "Large + Cheese" are separate lines. Cart drawer, `/cart`, `/checkout`, checkout success, order history, admin order details, kitchen view, and receipts all render selected extras beneath the pizza title.
 
-## Database (single migration)
+### Phase 2 — Data model + realtime
+New Supabase table `pizza_toppings`:
 
-Audit existing `home_*` tables; add missing columns and standardize schema across all four content types. Each table will have:
+```text
+id uuid pk
+name text
+slug text unique
+price_zar numeric
+image_url text
+is_active boolean
+is_available boolean   -- derived from inventory or manual
+stock int nullable     -- optional inventory link
+display_order int
+created_at / updated_at
+```
 
-- `id`, `title`, `description`, `image_url`, `price_zar`, `original_price_zar` (hot deals), `discount_pct` (hot deals), `cta_label`, `cta_href`, `product_id` (optional FK to `products`), `position` (int for ordering), `is_active` (bool), `starts_at`, `ends_at` (nullable, for scheduling), `zone_id` (nullable FK to `delivery_zones`), `created_by`, `created_at`, `updated_at`
-- `promotional_banners` table (new if missing): image, headline, subhead, CTA, link, position, active, schedule, zone
-- `home_section_visibility`: rows for `popular`, `hot_deals`, `specials`, `featured`, `banners`, `desserts` with `is_visible` bool
-- Click-tracking table: `home_content_clicks` (content_type, content_id, clicked_at, session_id) for analytics
-- Triggers: `updated_at`, and a "scheduled visibility" view/function that treats a row as live when `is_active AND (starts_at IS NULL OR starts_at <= now()) AND (ends_at IS NULL OR ends_at > now())`
-- RLS:
-  - Public `SELECT` (anon + authenticated) filtered to live rows only via policy
-  - Admins (`has_role admin`) full CRUD on all zones
-  - Zone admins CRUD scoped to `zone_id = get_user_zone(auth.uid())`
-- Realtime: `ALTER PUBLICATION supabase_realtime ADD TABLE` for all home content tables
-- Grants: standard `authenticated`/`service_role` + `anon SELECT`
+- GRANT SELECT to `anon, authenticated`; full CRUD to admin via RLS + `has_role('admin')`.
+- Add table to `supabase_realtime` publication.
+- Seed the 11 toppings from your list.
+- Customer app subscribes via existing `useRealtimeInvalidate` on `pizza_toppings` so admin edits (price / image / availability / order / new items) appear instantly.
+- Out-of-stock toppings render disabled with "Currently unavailable" pill; can't be selected.
 
-## Server Functions
+### Phase 3 — Admin dashboard
+New route `admin.toppings.tsx` (main-admin only) with a table + drawer editor:
+- Add / edit / delete
+- Price, image upload (to existing storage bucket), enable/disable
+- Drag-to-reorder (display_order)
+- Manual "Out of stock" toggle
+Deferred unless you want it now: per-delivery-zone availability (needs a join table).
 
-New files under `src/lib/admin/home-content/`:
-- `popular.functions.ts` — list/create/update/delete/reorder/toggle for popular items
-- `hot-deals.functions.ts` — same + price/discount validation, schedule
-- `specials.functions.ts` — same, with combo/meal-deal fields
-- `featured.functions.ts` — same
-- `banners.functions.ts` — same
-- `section-visibility.functions.ts` — toggle each home section
-- `analytics.functions.ts` — click counts, top items, conversion (best-effort)
+### Phase 4 — Images
+Generate 11 restaurant-quality topping images (transparent PNGs, consistent top-down angle, matching lighting) via imagegen premium, upload as lovable-assets, seed URLs into `pizza_toppings.image_url`. Admin can replace later.
 
-New public read module `src/lib/home-content.functions.ts` — returns live content for the home page via publishable-key server client (SSR-safe, respects scheduling).
+## Technical details
 
-All admin fns use `requireSupabaseAuth` + `requireAdminScope` from existing helpers; zone admins are auto-scoped.
+- **Where the modal lives**: extend existing `src/components/cart/add-to-cart-button.tsx` — keep its portal, animations, and styling; add a second panel/step. No changes to `MenuCard` / `ProductGrid` / product page layout.
+- **Cart schema migration**: `CartItem` gains optional `extras` + `extrasTotal`. Storage key stays `sweet-lovely-cart-v1`; old carts load with `extras = []` (backward-compatible).
+- **Order persistence**: `order_items` already stores per-line data — add `extras jsonb` column (nullable) via migration so extras survive into orders, checkout success, order history, and admin. Kitchen/admin views read `extras` and render below the item title.
+- **No design changes**: reuses the existing red `#ff003c`, rounded-3xl cards, spring animations, and portal pattern already in `AddToCartButton`. Nothing on `/`, `/menu/full-menu`, or product cards changes visually until a user clicks Add.
 
-## Admin UI
+## Questions before I start
 
-New route: `src/routes/_authenticated/admin.home-content.tsx` — tabbed shell with sub-sections:
-- **Popular Items** — data table + create/edit drawer, drag-to-reorder, activate toggle, image upload, product picker from `products` table
-- **Hot Deals** — same UI shape + original/discounted price fields, auto-computed savings, date range picker
-- **Specials** — combo builder (link multiple products), image, schedule
-- **Featured Products** — simple product picker + position
-- **Promotional Banners** — image upload, headline/CTA/link, schedule
-- **Section Visibility** — toggle each home page section on/off
-- **Analytics** — top clicks per category, conversion snapshot
-
-Add sidebar entry "Home Content" in `src/components/admin/admin-sidebar.tsx`. Uses existing `PageHeader`, `SectionCard`, `DataShell`, `StatusBadge` patterns.
-
-Product picker component reuses existing `products` queries. Image uploads go through the existing `avatars` bucket pattern (or create a public `home-content` bucket).
-
-## Customer Home Page Rewiring
-
-Rewrite `src/routes/index.tsx` to fetch live content via TanStack Query:
-- Replace `FEATURED_PRODUCTS` usage → `usePopularItems()`
-- Replace `DESSERTS` → `useFeaturedProducts()` (kept as separate section, or merged; will confirm during build)
-- Replace `OfferGrid` static offers → `useHotDeals()` and/or `useSpecials()`
-- Wrap each section with `home_section_visibility` gate — hide entirely if admin toggled off
-- Subscribe via `useRealtimeInvalidate` to all home content tables so admin edits appear instantly with no refresh
-- Preserve every current animation, style, layout, and component (`ProductGrid`, `OfferGrid`, `Reveal`, hero, etc.) — only the data source changes
-- Loading state: use current data shape with skeletons matching the existing card sizes
-
-Public banners section added above/below hero based on active banner rows (rendered only if any exist, to preserve current design when empty).
-
-## Analytics Hooks
-
-Lightweight click logger fires from `ProductGrid`/`OfferGrid` when a home-content-sourced card is clicked; writes to `home_content_clicks`. Admin analytics tab aggregates via server fn.
-
-## Cleanup
-
-- Remove `FEATURED_PRODUCTS`, `DESSERTS` usage on home from `src/data/menu.ts` (keep file for `/menu/full-menu` if still referenced; otherwise trim)
-- Remove hardcoded offer arrays in `src/components/offer-grid.tsx` and rewire to prop-driven live data
-
-## Out of Scope / Assumptions
-
-- "Seasonal Campaigns" treated as `promotions` table already present + banner scheduling — no separate UI unless you ask
-- Full drag-and-drop uses simple up/down + position number initially; kanban-style DnD can be added later
-- Analytics is basic aggregation (counts, top N); no funnel/attribution modeling
-- Images uploaded to Supabase Storage; existing image URLs also supported
-
-## Deliverables
-
-1. One migration creating/extending tables, RLS, realtime, grants
-2. Admin server functions (7 modules) + public read module
-3. Admin route `admin.home-content.tsx` with all sub-sections + sidebar entry
-4. Rewired `src/routes/index.tsx` using live data + realtime + section visibility
-5. Removed hardcoded home content
+1. **Scope this turn** — build all four phases in one pass, or Phase 1+2+4 now (customer + data + images + realtime) and admin CRUD next turn? Phase 3 is the biggest chunk on its own.
+2. **Delivery-zone availability** — you listed it in requirements. Include now (needs a `topping_zone_availability` join table + zone-aware customer query) or defer?
+3. **Inventory link** — hard link toppings to a stock count that decrements on order, or just an admin-controlled `is_available` toggle for now? Full stock decrement means extending `process_order_stock_deduction` too.
+4. **Topping images** — OK to generate all 11 with imagegen premium (transparent PNGs), or will you upload your own reference photos?

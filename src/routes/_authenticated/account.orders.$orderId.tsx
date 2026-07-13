@@ -5,6 +5,7 @@ import { AccountShell, Card } from "@/components/auth/account-shell";
 import { getMyOrderDetail } from "@/lib/account/account.functions";
 import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
 import { formatPrice, useCart } from "@/lib/cart-context";
+import { formatExtrasLabel } from "@/lib/order-extras";
 import {
   ArrowLeft,
   Loader2,
@@ -146,15 +147,21 @@ function OrderDetailPage() {
             </div>
           </div>
           <ul className="mt-3 divide-y divide-neutral-100 text-sm">
-            {(o.order_items ?? []).map((it) => (
-              <li key={it.id} className="flex items-center justify-between py-2">
-                <span className="text-neutral-800">
-                  {it.title_snapshot}
-                  <span className="ml-2 text-xs text-neutral-500">× {it.quantity}</span>
-                </span>
-                <span className="font-medium text-neutral-900">{formatPrice(Number(it.line_total_zar))}</span>
-              </li>
-            ))}
+            {(o.order_items ?? []).map((it) => {
+              const extrasLabel = formatExtrasLabel((it as { extras?: unknown }).extras);
+              return (
+                <li key={it.id} className="flex items-center justify-between py-2">
+                  <span className="text-neutral-800">
+                    {it.title_snapshot}
+                    <span className="ml-2 text-xs text-neutral-500">× {it.quantity}</span>
+                    {extrasLabel && (
+                      <span className="mt-0.5 block text-xs text-neutral-500">+ {extrasLabel}</span>
+                    )}
+                  </span>
+                  <span className="font-medium text-neutral-900">{formatPrice(Number(it.line_total_zar))}</span>
+                </li>
+              );
+            })}
           </ul>
           <dl className="mt-4 space-y-1 border-t border-dashed border-neutral-200 pt-3 text-sm">
             <Row label="Subtotal" value={formatPrice(Number(o.subtotal_zar))} />

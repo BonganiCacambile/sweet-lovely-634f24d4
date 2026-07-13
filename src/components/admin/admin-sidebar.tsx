@@ -27,6 +27,7 @@ const SECTIONS: Array<{ heading: string; items: Item[] }> = [
     heading: "Management",
     items: [
       { to: "/admin/categories", label: "Categories", icon: Tags, mainOnly: true },
+      { to: "/admin/toppings", label: "Pizza Toppings", icon: Boxes, mainOnly: true },
       { to: "/admin/inventory", label: "Inventory", icon: Boxes },
       { to: "/admin/delivery-zones", label: "Delivery Zones", icon: MapPin },
       { to: "/admin/zone-assignments", label: "Zone Assignments", icon: Users2, mainOnly: true },
