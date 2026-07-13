@@ -1,0 +1,21 @@
+{
+  "cart": {
+    "lcp": 616,
+    "domInteractive": 445.19999999925494,
+    "ttfb": 233.29999999981374
+  },
+  "checkout": {
+    "lcp": 844,
+    "domInteractive": 81.20000000018626,
+    "ttfb": 27.100000000558794
+  },
+  "softNavMs": 282,
+  "serverFnTimings": {},
+  "device": "iPhone 13",
+  "viewport": {
+    "width": 390,
+    "height": 664
+  },
+  "recordedAt": "2026-07-13T13:24:50.343Z",
+  "appUrl": "http://localhost:8080"
+}

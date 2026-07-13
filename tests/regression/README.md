@@ -193,3 +193,45 @@ bun run test:regression:home-perf-mobile
 
 UPDATE_BASELINE=1 node tests/regression/home-perf-mobile.mjs
 ```
+
+---
+
+# Cart + Checkout Performance Regression — Mobile
+
+File: `tests/regression/cart-checkout-perf-mobile.mjs`
+
+Seeds a realistic cart and delivery zone into `localStorage`, then measures
+`/cart` and `/checkout` on an emulated iPhone 13 viewport. Enforces:
+
+1. LCP, `domInteractive` (TTI proxy), and TTFB stay within absolute mobile
+   budgets AND within tolerance of a saved baseline for both routes.
+2. Critical server-fn round-trips fired by the checkout page —
+   `getPaystackConfig` and `getActiveZones` — stay under a latency budget
+   (only enforced when the request is actually observed during the run).
+3. Client-side soft navigation `/cart → /checkout` (TanStack Router,
+   no reload) finishes within a soft-nav budget — the perceived
+   "review → pay" transition.
+4. The seeded cart items render on mobile, proving `CartProvider`
+   hydrated from `localStorage`.
+
+Baseline: `tests/regression/artifacts/cart-checkout-perf-mobile-baseline.json`.
+
+| Budget | Default | Env var |
+| --- | --- | --- |
+| LCP (per route) | 4000 ms | `LCP_BUDGET_MS` |
+| domInteractive (TTI proxy, per route) | 4500 ms | `TTI_BUDGET_MS` |
+| TTFB (per route) | 1000 ms | `TTFB_BUDGET_MS` |
+| Critical server-fn round trip | 1500 ms | `SERVER_FN_BUDGET_MS` |
+| Cart → checkout soft nav | 2500 ms | `SOFT_NAV_BUDGET_MS` |
+| Regression tolerance vs baseline | 25% | `REGRESSION_TOLERANCE_PCT` |
+| Seeded delivery zone slug | `lithapark` | `ZONE_SLUG` |
+
+## Run
+
+```bash
+node tests/regression/cart-checkout-perf-mobile.mjs
+# or
+bun run test:regression:cart-checkout-perf-mobile
+
+UPDATE_BASELINE=1 node tests/regression/cart-checkout-perf-mobile.mjs
+```
