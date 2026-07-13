@@ -823,7 +823,7 @@ function StepFulfilment({
       <div className="mt-6 grid gap-3 sm:grid-cols-2">
         <FulfilmentCard
           active={!isCollection}
-          disabled={!!zone && !zoneOffersDelivery}
+          disabled={!zoneOffersDelivery}
           onClick={() => zoneOffersDelivery && setMethod("delivery")}
           icon={<Truck className="h-5 w-5" />}
           title="Delivery"
@@ -838,7 +838,7 @@ function StepFulfilment({
         />
         <FulfilmentCard
           active={isCollection}
-          disabled={!!zone && !zoneOffersCollection}
+          disabled={!zoneOffersCollection}
           onClick={() => zoneOffersCollection && setMethod("collection")}
           icon={<ShoppingBag className="h-5 w-5" />}
           title="Collection"
