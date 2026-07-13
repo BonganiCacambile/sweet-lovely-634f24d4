@@ -18,6 +18,7 @@
     "test:regression:home-perf": "node tests/regression/home-perf.mjs",
     "test:regression:home-perf-mobile": "node tests/regression/home-perf-mobile.mjs",
     "test:regression:cart-checkout-perf-mobile": "node tests/regression/cart-checkout-perf-mobile.mjs",
+    "test:regression:extras-pricing": "node tests/regression/extras-pricing-consistency.mjs",
     "test:regression:realtime": "node tests/regression/run-realtime-suite.mjs",
     "test:regression:checkout": "node tests/regression/checkout-delivery-vs-collection.mjs",
     "test:regression:paystack-webhook": "node tests/regression/paystack-webhook.mjs",
