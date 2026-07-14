@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { PIZZA_SIZE_FALLBACK, splitPizzaId } from "./cart-id";
 
 /** Returns the Paystack public key for client-side inline checkout. */
 export const getPaystackConfig = createServerFn({ method: "GET" }).handler(async () => {
@@ -119,27 +120,6 @@ export const checkCartStock = createServerFn({ method: "POST" })
     return { ok: r.ok, shortages: r.shortages ?? [] };
   });
 
-// Global fallback size prices, used only when a pizza product has no
-// per-item Medium/Large price set in the Admin dashboard. Cart ids for
-// pizzas are `${slug}-medium` / `${slug}-large`.
-const PIZZA_SIZE_FALLBACK: Record<string, number> = {
-  medium: 80,
-  large: 150,
-};
-const PIZZA_SUFFIXES = Object.keys(PIZZA_SIZE_FALLBACK);
-
-function splitPizzaId(id: string): { slug: string; size: string | null } {
-  // Cart id format: `${slug}-${size}` optionally followed by `-x-<extras-hash>`
-  // when pizza toppings are selected (see add-to-cart-button.tsx).
-  const xIdx = id.indexOf("-x-");
-  const base = xIdx >= 0 ? id.slice(0, xIdx) : id;
-  for (const suffix of PIZZA_SUFFIXES) {
-    if (base.endsWith(`-${suffix}`)) {
-      return { slug: base.slice(0, -(suffix.length + 1)), size: suffix };
-    }
-  }
-  return { slug: base, size: null };
-}
 
 /**
  * Verifies the Paystack transaction and, on success, persists the order
