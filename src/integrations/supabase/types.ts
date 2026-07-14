@@ -1649,19 +1649,8 @@ export type Database = {
         }
         Returns: number
       }
-      can_access_zone: {
-        Args: { _uid: string; _zone_id: string }
-        Returns: boolean
-      }
       check_stock_availability: { Args: { _items: Json }; Returns: Json }
       get_user_zone: { Args: { _uid: string }; Returns: string }
-      has_permission: {
-        Args: {
-          _permission: Database["public"]["Enums"]["app_permission"]
-          _user_id: string
-        }
-        Returns: boolean
-      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
