@@ -129,12 +129,16 @@ const PIZZA_SIZE_FALLBACK: Record<string, number> = {
 const PIZZA_SUFFIXES = Object.keys(PIZZA_SIZE_FALLBACK);
 
 function splitPizzaId(id: string): { slug: string; size: string | null } {
+  // Cart id format: `${slug}-${size}` optionally followed by `-x-<extras-hash>`
+  // when pizza toppings are selected (see add-to-cart-button.tsx).
+  const xIdx = id.indexOf("-x-");
+  const base = xIdx >= 0 ? id.slice(0, xIdx) : id;
   for (const suffix of PIZZA_SUFFIXES) {
-    if (id.endsWith(`-${suffix}`)) {
-      return { slug: id.slice(0, -(suffix.length + 1)), size: suffix };
+    if (base.endsWith(`-${suffix}`)) {
+      return { slug: base.slice(0, -(suffix.length + 1)), size: suffix };
     }
   }
-  return { slug: id, size: null };
+  return { slug: base, size: null };
 }
 
 /**
