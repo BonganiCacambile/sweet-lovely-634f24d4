@@ -43,15 +43,25 @@ function FullMenuPage() {
   // Merge live DB rows with rich static metadata (ingredients/allergens/nutrition)
   const liveItems: MenuItem[] = (data?.products ?? []).map((p) => {
     const fallback = MENU_ITEMS.find((m) => m.id === p.slug);
+    const ingredients = (p as { ingredients?: string[] | null }).ingredients ?? [];
+    const ingredientsText = ingredients.length > 0 ? ingredients.join(", ") : fallback?.content;
+    const allergensDb = (p as { allergens?: string | null }).allergens;
+    const nutritionParts: string[] = [];
+    const px = p as { calories?: number | null; fat_g?: number | null; carbs_g?: number | null; protein_g?: number | null; nutrition?: string | null };
+    if (px.calories != null) nutritionParts.push(`Calories: ${px.calories}`);
+    if (px.fat_g != null) nutritionParts.push(`Fat: ${px.fat_g}g`);
+    if (px.carbs_g != null) nutritionParts.push(`Carbs: ${px.carbs_g}g`);
+    if (px.protein_g != null) nutritionParts.push(`Protein: ${px.protein_g}g`);
+    const nutritionText = nutritionParts.length > 0 ? nutritionParts.join(" · ") : (px.nutrition ?? fallback?.nutrition);
     return {
       id: p.slug,
       title: p.title,
       price: `R${Math.round(Number(p.price_zar))}`,
       image: p.image ?? fallback?.image ?? "",
       category: (p.category_slug as MenuCategory) ?? fallback?.category ?? "pizza",
-      content: fallback?.content,
-      nutrition: fallback?.nutrition,
-      allergens: fallback?.allergens,
+      content: ingredientsText,
+      nutrition: nutritionText,
+      allergens: allergensDb ?? fallback?.allergens,
       portion: fallback?.portion,
       priceMedium: p.price_medium_zar != null ? Number(p.price_medium_zar) : undefined,
       priceLarge: p.price_large_zar != null ? Number(p.price_large_zar) : undefined,
