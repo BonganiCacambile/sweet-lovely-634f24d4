@@ -9,7 +9,7 @@ export const getPublicMenu = createServerFn({ method: "GET" }).handler(async () 
       .order("sort_order", { ascending: true }),
     supabaseAdmin
       .from("products")
-      .select("slug, title, description, price_zar, price_medium_zar, price_large_zar, category_slug, image, stock, sort_order")
+      .select("slug, title, description, price_zar, price_medium_zar, price_large_zar, category_slug, image, stock, sort_order, ingredients, allergens, nutrition, calories, fat_g, carbs_g, protein_g")
       .eq("is_active", true)
       .order("sort_order", { ascending: true }),
   ]);
