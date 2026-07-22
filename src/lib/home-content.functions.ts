@@ -41,7 +41,7 @@ export const getHomeContent = createServerFn({ method: "GET" }).handler(async ()
     sb.from("home_desserts").select("*").order("position").order("created_at"),
     sb
       .from("featured_items")
-      .select("id, product_slug, placement, sort_order, products:product_slug(slug, title, image, price_zar, description)")
+      .select("id, product_slug, placement, sort_order, is_active, starts_at, ends_at, products:product_slug(slug, title, image, price_zar, description)")
       .eq("placement", "home")
       .order("sort_order"),
     sb.from("home_section_visibility").select("section, is_visible, zone_id"),
