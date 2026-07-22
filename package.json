@@ -25,6 +25,7 @@
     "test:regression:paystack-webhook": "node tests/regression/paystack-webhook.mjs",
     "test:regression:mcp-auth": "node tests/regression/mcp-auth.mjs",
     "test:regression:zone-leak": "node tests/regression/realtime-delivery-zones-leak.mjs",
+    "test:regression:admin-edit-e2e": "node tests/regression/admin-edit-propagation.e2e.mjs",
     "test:regression": "bun run test:regression:realtime && bun run test:regression:checkout && bun run test:regression:paystack-webhook && bun run test:regression:mcp-auth && bun run test:regression:zone-leak"
   },
   "dependencies": {
