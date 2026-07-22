@@ -44,8 +44,8 @@ if (SVC) {
   const admin = createClient(URL, SVC, { auth: { persistSession: false } });
   const { data: row } = await admin.from("products").select("slug,title").limit(1).maybeSingle();
   if (row) {
-    await admin.from("products").update({ title: row.title }).eq("slug", row.slug);
-    await new Promise((r) => setTimeout(r, 2500));
+    await admin.from("products").update({ updated_at: new Date().toISOString() }).eq("slug", row.slug);
+    await new Promise((r) => setTimeout(r, 5000));
     check("anon received products UPDATE broadcast", events.length > 0, `events=${events.length}`);
   } else {
     console.log("  ⚠ skipped broadcast test — no product rows");
