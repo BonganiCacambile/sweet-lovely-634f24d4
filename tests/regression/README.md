@@ -1,5 +1,45 @@
 # Realtime Orders Regression Test
 
+---
+
+# Home Content Realtime E2E (Playwright)
+
+File: `tests/regression/home-content-realtime.e2e.mjs`
+
+Drives the Admin → Home Content module end-to-end and asserts that every
+change surfaces on the customer home page in real time — no reload.
+
+Sections covered: **Popular Items, Desserts, Hot Deals, Specials, Featured,
+Banners, Section Visibility**.
+
+For each item-based section the test runs: insert, edit title / description
+(or subtitle) / price / image, disable + re-enable (`is_active`), reorder
+(swap positions and verify DOM order), and delete. The customer page is
+monitored for top-level navigations; any reload is a failure.
+
+## Required env vars
+
+| Variable | Purpose |
+| --- | --- |
+| `BASE_URL` | Running app URL (default `http://localhost:8080`) |
+| `ADMIN_EMAIL` / `ADMIN_PASSWORD` | User with the `admin` role |
+| `SUPABASE_URL` / `SUPABASE_PUBLISHABLE_KEY` | Used to pick a candidate product for the Featured section |
+| `PROPAGATION_TIMEOUT_MS` | Optional, default `15000` |
+| `SECTIONS` | Optional CSV filter, e.g. `popular,banners` |
+
+## Run
+
+```bash
+bun run test:regression:home-content-realtime-e2e
+```
+
+All sentinel rows are tagged `RT-<timestamp>` and best-effort deleted at the
+end of each section. Visibility toggles are restored on teardown.
+
+---
+
+# Realtime Orders Regression Test
+
 End-to-end regression that proves a newly inserted customer order shows up in
 the admin **Orders** dashboard in real time, without any page refresh.
 
