@@ -1,7 +1,3 @@
-# Realtime Orders Regression Test
-
----
-
 # Home Content Realtime E2E (Playwright)
 
 File: `tests/regression/home-content-realtime.e2e.mjs`
