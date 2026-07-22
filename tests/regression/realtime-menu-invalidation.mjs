@@ -42,7 +42,7 @@ check("anon subscription established", true);
 const SVC = process.env.SUPABASE_SERVICE_ROLE_KEY;
 if (SVC) {
   const admin = createClient(URL, SVC, { auth: { persistSession: false } });
-  const { data: row } = await admin.from("products").select("slug,title").limit(1).maybeSingle();
+  const { data: row } = await admin.from("products").select("slug,title").eq("is_active",true).limit(1).maybeSingle();
   if (row) {
     await admin.from("products").update({ updated_at: new Date().toISOString() }).eq("slug", row.slug);
     await new Promise((r) => setTimeout(r, 5000));
