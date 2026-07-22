@@ -253,6 +253,28 @@ function ProductForm({ initial, categories, onClose }: { initial: ProductRow | n
           <Field label="Image URL"><input value={form.image ?? ""} onChange={(e) => setForm({ ...form, image: e.target.value })} placeholder="https://…" className="input" /></Field>
           <label className="flex items-center gap-2"><input type="checkbox" checked={form.is_active} onChange={(e) => setForm({ ...form, is_active: e.target.checked })} /> Active (visible to customers)</label>
 
+          <fieldset className="space-y-3 rounded-2xl border border-neutral-200 bg-neutral-50/60 p-3">
+            <legend className="px-1 text-xs font-semibold uppercase tracking-wider text-neutral-600">Ingredients</legend>
+            <p className="text-xs text-neutral-500">One ingredient per line (or comma-separated). Shown to customers on the menu.</p>
+            <textarea rows={4} value={form.ingredients} onChange={(e) => setForm({ ...form, ingredients: e.target.value })} placeholder={"Mozzarella\nMarinara sauce\nBasil"} className="input" />
+          </fieldset>
+
+          <fieldset className="space-y-3 rounded-2xl border border-neutral-200 bg-neutral-50/60 p-3">
+            <legend className="px-1 text-xs font-semibold uppercase tracking-wider text-neutral-600">Nutritional information (per serving)</legend>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Calories (kcal)"><input type="number" min={0} value={form.calories} onChange={(e) => setForm({ ...form, calories: e.target.value === "" ? "" : Number(e.target.value) })} className="input" /></Field>
+              <Field label="Fat (g)"><input type="number" step="0.1" min={0} value={form.fat_g} onChange={(e) => setForm({ ...form, fat_g: e.target.value === "" ? "" : Number(e.target.value) })} className="input" /></Field>
+              <Field label="Carbs (g)"><input type="number" step="0.1" min={0} value={form.carbs_g} onChange={(e) => setForm({ ...form, carbs_g: e.target.value === "" ? "" : Number(e.target.value) })} className="input" /></Field>
+              <Field label="Protein (g)"><input type="number" step="0.1" min={0} value={form.protein_g} onChange={(e) => setForm({ ...form, protein_g: e.target.value === "" ? "" : Number(e.target.value) })} className="input" /></Field>
+            </div>
+          </fieldset>
+
+          <fieldset className="space-y-2 rounded-2xl border border-neutral-200 bg-neutral-50/60 p-3">
+            <legend className="px-1 text-xs font-semibold uppercase tracking-wider text-neutral-600">Allergens</legend>
+            <p className="text-xs text-neutral-500">Comma-separated (e.g. "Dairy, Gluten, Nuts").</p>
+            <input value={form.allergens} onChange={(e) => setForm({ ...form, allergens: e.target.value })} placeholder="Dairy, Gluten" className="input" />
+          </fieldset>
+
           <div className="flex items-center justify-between gap-2 pt-2">
             {initial ? (
               <button type="button" onClick={() => { if (confirm("Delete this product?")) remove.mutate(); }} disabled={remove.isPending} className="inline-flex items-center gap-1.5 rounded-full border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-medium text-rose-700 hover:bg-rose-100">
