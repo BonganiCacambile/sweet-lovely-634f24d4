@@ -110,7 +110,20 @@ function Index() {
     staleTime: 30_000,
   });
   useRealtimeInvalidate(
-    ["home_popular_items", "home_hot_deals", "home_specials", "home_banners", "home_desserts", "featured_items", "home_section_visibility"],
+    [
+      "home_popular_items",
+      "home_hot_deals",
+      "home_specials",
+      "home_banners",
+      "home_desserts",
+      "featured_items",
+      "home_section_visibility",
+      // Admin edits to the underlying products (price, image, description,
+      // stock) must instantly update Fan Favorites and any home card whose
+      // pricing/link joins back to public.products.
+      "products",
+      "categories",
+    ],
     [["home-content"]],
   );
 
