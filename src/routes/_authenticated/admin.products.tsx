@@ -165,11 +165,22 @@ function ProductForm({ initial, categories, onClose }: { initial: ProductRow | n
     stock: initial?.stock ?? 0,
     low_stock_threshold: initial?.low_stock_threshold ?? 5,
     sort_order: initial?.sort_order ?? 0,
+    ingredients: ((initial as unknown as { ingredients?: string[] } | null)?.ingredients ?? []).join("\n"),
+    allergens: ((initial as unknown as { allergens?: string | null } | null)?.allergens ?? "") as string,
+    calories: ((initial as unknown as { calories?: number | null } | null)?.calories ?? "") as number | "",
+    fat_g: ((initial as unknown as { fat_g?: number | null } | null)?.fat_g ?? "") as number | "",
+    carbs_g: ((initial as unknown as { carbs_g?: number | null } | null)?.carbs_g ?? "") as number | "",
+    protein_g: ((initial as unknown as { protein_g?: number | null } | null)?.protein_g ?? "") as number | "",
   });
 
   const save = useMutation({
     mutationFn: async () => {
       const isPizza = form.category_slug === "pizza";
+      const ingredientsArr = form.ingredients
+        .split(/\r?\n|,/)
+        .map((s) => s.trim())
+        .filter((s) => s.length > 0);
+      const num = (v: number | "") => (v === "" ? null : Number(v));
       const payload = {
         ...form,
         price_zar: Number(form.price_zar),
@@ -178,6 +189,12 @@ function ProductForm({ initial, categories, onClose }: { initial: ProductRow | n
         stock: Number(form.stock),
         low_stock_threshold: Number(form.low_stock_threshold),
         sort_order: Number(form.sort_order),
+        ingredients: ingredientsArr,
+        allergens: form.allergens.trim() === "" ? null : form.allergens.trim(),
+        calories: num(form.calories),
+        fat_g: num(form.fat_g),
+        carbs_g: num(form.carbs_g),
+        protein_g: num(form.protein_g),
       };
       if (initial) {
         const { slug, ...patch } = payload;
