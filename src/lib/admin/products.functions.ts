@@ -26,6 +26,12 @@ const productPayload = z.object({
   stock: z.number().int().min(0).optional().default(0),
   low_stock_threshold: z.number().int().min(0).optional().default(5),
   sort_order: z.number().int().optional().default(0),
+  ingredients: z.array(z.string().trim().min(1).max(80)).max(50).optional().default([]),
+  allergens: z.array(z.string().trim().min(1).max(60)).max(30).optional().default([]),
+  calories: z.number().int().min(0).max(10000).nullable().optional(),
+  fat_g: z.number().min(0).max(10000).nullable().optional(),
+  carbs_g: z.number().min(0).max(10000).nullable().optional(),
+  protein_g: z.number().min(0).max(10000).nullable().optional(),
 });
 
 export const listProducts = createServerFn({ method: "POST" })
@@ -35,7 +41,7 @@ export const listProducts = createServerFn({ method: "POST" })
     await requireAdmin(context.supabase, context.userId);
     let q = context.supabase
       .from("products")
-      .select("slug, title, description, price_zar, price_medium_zar, price_large_zar, category_slug, image, is_active, stock, low_stock_threshold, sort_order, updated_at", { count: "exact" });
+      .select("slug, title, description, price_zar, price_medium_zar, price_large_zar, category_slug, image, is_active, stock, low_stock_threshold, sort_order, updated_at, ingredients, allergens, calories, fat_g, carbs_g, protein_g", { count: "exact" });
     if (data.category) q = q.eq("category_slug", data.category);
     if (data.active === "true") q = q.eq("is_active", true);
     if (data.active === "false") q = q.eq("is_active", false);
