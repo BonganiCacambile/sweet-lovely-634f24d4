@@ -46,9 +46,10 @@ async function ensureActiveRow(table) {
   const { data } = await admin.from(table).select("id,is_active").eq("is_active", true).limit(1).maybeSingle();
   if (data) return { id: data.id, cleanup: async () => {} };
   // Seed a minimal row; use only guaranteed columns (id, is_active). Others use defaults.
+  const payload = { is_active: true, title: `RT-seed-${Date.now()}` };
   const { data: ins, error } = await admin
     .from(table)
-    .insert({ is_active: true })
+    .insert(payload)
     .select("id")
     .single();
   if (error) throw new Error(`seed ${table}: ${error.message}`);
