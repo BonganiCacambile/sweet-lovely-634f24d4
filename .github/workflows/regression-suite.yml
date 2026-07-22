@@ -1,0 +1,74 @@
+name: Regression Suite — Full Test Pipeline
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  regression:
+    name: Run full regression suite
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      APP_URL: http://localhost:8080
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+      SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
+      PAYSTACK_SECRET_KEY: ${{ secrets.PAYSTACK_SECRET_KEY }}
+      # Generous budgets for the CI runner / sandbox environment.
+      PAGE_BUDGET_MS: 12000
+      SERVER_FN_BUDGET_MS: 8000
+      REALTIME_BUDGET_MS: 15000
+      LCP_BUDGET_MS: 3500
+      TTI_BUDGET_MS: 4000
+      TTFB_BUDGET_MS: 1000
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: bunx playwright install --with-deps chromium
+
+      - name: Start dev server
+        run: |
+          bun run dev &
+          echo $! > /tmp/dev-server.pid
+          # Wait for the server to be ready.
+          for i in $(seq 1 60); do
+            if curl -sf http://localhost:8080/ > /dev/null 2>&1; then
+              echo "Dev server ready"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "Dev server failed to start"
+          exit 1
+
+      - name: Run regression suite
+        run: bun run test:regression
+
+      - name: Stop dev server
+        if: always()
+        run: |
+          if [ -f /tmp/dev-server.pid ]; then
+            kill $(cat /tmp/dev-server.pid) || true
+          fi
+
+      - name: Upload regression artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: regression-artifacts
+          path: tests/regression/artifacts/
+          if-no-files-found: ignore
