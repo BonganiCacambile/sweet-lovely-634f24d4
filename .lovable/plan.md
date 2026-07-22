@@ -1,65 +1,56 @@
-# Customize Your Pizza — Extra Toppings
+## Goal
 
-This is a large feature. Before I build, I want to confirm scope so we don't waste effort on parts you don't need yet.
+Add a single Playwright E2E test that exercises every Admin → Home Content section (Popular Items, Desserts, Hot Deals, Specials, Featured, Banners, Section Visibility) and asserts each mutation surfaces on the customer home page in real time — no reload — covering insert, update (title / description / image / price), enable/disable, reorder, and delete.
 
-## What I'll build (proposed phasing)
+## New file
 
-### Phase 1 — Customer experience (core)
-Replace the current pizza size picker in `AddToCartButton` with a two-step **"Customize Your Pizza"** modal:
+`tests/regression/home-content-realtime.e2e.mjs` — Playwright script following the existing conventions in `tests/regression/admin-edit-propagation.e2e.mjs`:
 
-1. **Size step** — keep existing Medium (R80) / Large (R150) selection, same look.
-2. **Toppings step** — new premium section:
-   - Heading: 🍕 Customize Your Pizza, subtitle: "Make it your own by adding delicious extra toppings."
-   - Responsive grid of topping cards (image, name, price, animated checkbox, hover/scale, highlighted border on select).
-   - Multi-select, no limit.
-   - Live "Selected Extras" summary + live total (base + extras).
-   - Sticky "Add to cart — RXX.XX" CTA.
-   - Skip button ("No extras, add to cart").
-3. **Cart integration** — extend `CartItem` with `extras: {id,name,price}[]` and `extrasTotal`. Line-item id keys off size + sorted extras so "Large + Bacon + Cheese" and "Large + Cheese" are separate lines. Cart drawer, `/cart`, `/checkout`, checkout success, order history, admin order details, kitchen view, and receipts all render selected extras beneath the pizza title.
+- Two browser contexts: `admin` (signed in) and `customer` (anonymous).
+- Customer opens `/` first so its Realtime subscription is live before any write.
+- Track `framenavigated` on the customer page to prove no reload occurred.
+- Each assertion waits for a unique `RT-<timestamp>-<section>` sentinel string to appear/disappear via `expect(locator).toBeVisible/toHaveCount` with a bounded timeout.
+- Uses the existing admin UI at `/admin/home-content` (tabs: popular, desserts, hot_deals, specials, featured, banners, visibility) — no direct DB writes for mutations, so the full server-fn + realtime path is covered.
+- Cleanup: every created row is deleted in a `finally` block; toggled visibility restored; edited featured item reverted.
 
-### Phase 2 — Data model + realtime
-New Supabase table `pizza_toppings`:
+## Section coverage matrix
 
-```text
-id uuid pk
-name text
-slug text unique
-price_zar numeric
-image_url text
-is_active boolean
-is_available boolean   -- derived from inventory or manual
-stock int nullable     -- optional inventory link
-display_order int
-created_at / updated_at
-```
+| Section | Create | Edit title | Edit price/desc | Edit image | Toggle active | Reorder (position) | Delete |
+|---|---|---|---|---|---|---|---|
+| Popular Items | ✓ | ✓ | ✓ price | ✓ image_url | ✓ | ✓ | ✓ |
+| Desserts | ✓ | ✓ | ✓ desc | ✓ | ✓ | ✓ | ✓ |
+| Hot Deals | ✓ | ✓ | ✓ discounted_price | ✓ | ✓ | ✓ | ✓ |
+| Specials | ✓ | ✓ | ✓ price | ✓ | ✓ | ✓ | ✓ |
+| Banners | ✓ | ✓ | ✓ subtitle/cta | ✓ | ✓ | ✓ | ✓ |
+| Featured | ✓ (pick existing product) | (product-driven) | — | — | ✓ | ✓ sort_order | ✓ |
+| Section Visibility | — | — | — | — | ✓ per section | — | — |
 
-- GRANT SELECT to `anon, authenticated`; full CRUD to admin via RLS + `has_role('admin')`.
-- Add table to `supabase_realtime` publication.
-- Seed the 11 toppings from your list.
-- Customer app subscribes via existing `useRealtimeInvalidate` on `pizza_toppings` so admin edits (price / image / availability / order / new items) appear instantly.
-- Out-of-stock toppings render disabled with "Currently unavailable" pill; can't be selected.
+For each row: assert sentinel text visible on `/` after create/edit; assert removed after delete/disable; assert reorder swaps DOM order of two sentinel-tagged siblings; assert an `<img>` with the new image URL exists after image change.
 
-### Phase 3 — Admin dashboard
-New route `admin.toppings.tsx` (main-admin only) with a table + drawer editor:
-- Add / edit / delete
-- Price, image upload (to existing storage bucket), enable/disable
-- Drag-to-reorder (display_order)
-- Manual "Out of stock" toggle
-Deferred unless you want it now: per-delivery-zone availability (needs a join table).
+## Reorder verification
 
-### Phase 4 — Images
-Generate 11 restaurant-quality topping images (transparent PNGs, consistent top-down angle, matching lighting) via imagegen premium, upload as lovable-assets, seed URLs into `pizza_toppings.image_url`. Admin can replace later.
+For Popular/Desserts/Hot Deals/Specials/Banners: create two sentinel rows (`RT-…-A`, `RT-…-B`) with positions 100 and 101, verify customer DOM order A→B, swap positions in admin, verify DOM order flips to B→A within timeout, then delete both.
+
+## Visibility verification
+
+For each section key (`popular`, `hot_deals`, `specials`, `banners`, `desserts`, `featured`): toggle visibility off in admin, assert the section's heading/container disappears from `/` within timeout, toggle back on, assert it returns.
+
+## Wiring
+
+- Add `test:regression:home-content-realtime-e2e` script in `package.json`.
+- Include it in the aggregated `test:regression` script (after existing e2e).
+- Add the same env-required note as the existing e2e in `tests/regression/README.md` (BASE_URL, ADMIN_EMAIL, ADMIN_PASSWORD, SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, SUPABASE_SERVICE_ROLE_KEY for pre-flight product pick used by Featured).
+- Add to `.github/workflows/regression-suite.yml` alongside the existing propagation e2e (same secrets).
+
+## Non-goals
+
+- No UI/design changes.
+- No new server functions or schema changes — the previous migration (REPLICA IDENTITY FULL on `home_*`) already delivers realtime; this test locks the behavior in.
+- No load/perf assertions — sentinel-visibility timing uses a generous `PROPAGATION_TIMEOUT_MS` (default 15s) matching the existing e2e.
 
 ## Technical details
 
-- **Where the modal lives**: extend existing `src/components/cart/add-to-cart-button.tsx` — keep its portal, animations, and styling; add a second panel/step. No changes to `MenuCard` / `ProductGrid` / product page layout.
-- **Cart schema migration**: `CartItem` gains optional `extras` + `extrasTotal`. Storage key stays `sweet-lovely-cart-v1`; old carts load with `extras = []` (backward-compatible).
-- **Order persistence**: `order_items` already stores per-line data — add `extras jsonb` column (nullable) via migration so extras survive into orders, checkout success, order history, and admin. Kitchen/admin views read `extras` and render below the item title.
-- **No design changes**: reuses the existing red `#ff003c`, rounded-3xl cards, spring animations, and portal pattern already in `AddToCartButton`. Nothing on `/`, `/menu/full-menu`, or product cards changes visually until a user clicks Add.
-
-## Questions before I start
-
-1. **Scope this turn** — build all four phases in one pass, or Phase 1+2+4 now (customer + data + images + realtime) and admin CRUD next turn? Phase 3 is the biggest chunk on its own.
-2. **Delivery-zone availability** — you listed it in requirements. Include now (needs a `topping_zone_availability` join table + zone-aware customer query) or defer?
-3. **Inventory link** — hard link toppings to a stock count that decrements on order, or just an admin-controlled `is_available` toggle for now? Full stock decrement means extending `process_order_stock_deduction` too.
-4. **Topping images** — OK to generate all 11 with imagegen premium (transparent PNGs), or will you upload your own reference photos?
+- Selectors: reuse admin tab buttons by visible text (`Popular Items`, `Desserts`, etc.); rows located by `tr:has-text(sentinel)`; edit fields located by label text via `getByLabel` where the admin form provides labels, falling back to input `name`/placeholder for legacy fields.
+- Customer-side sentinel matching: `page.getByText(SENTINEL, { exact: false }).first().waitFor({ state: 'visible' })` and `.waitFor({ state: 'detached' })` for delete/disable.
+- Image assertion: `page.locator(\`img[src*="${imageToken}"]\`).first().waitFor()` where `imageToken` is a unique query-string appended to a stock CDN URL.
+- Script exits non-zero on any failed check; per-section failures aggregated so one broken section doesn't mask others.
