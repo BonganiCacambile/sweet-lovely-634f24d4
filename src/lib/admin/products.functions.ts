@@ -27,7 +27,7 @@ const productPayload = z.object({
   low_stock_threshold: z.number().int().min(0).optional().default(5),
   sort_order: z.number().int().optional().default(0),
   ingredients: z.array(z.string().trim().min(1).max(80)).max(50).optional().default([]),
-  allergens: z.array(z.string().trim().min(1).max(60)).max(30).optional().default([]),
+  allergens: z.string().max(500).nullable().optional(),
   calories: z.number().int().min(0).max(10000).nullable().optional(),
   fat_g: z.number().min(0).max(10000).nullable().optional(),
   carbs_g: z.number().min(0).max(10000).nullable().optional(),
