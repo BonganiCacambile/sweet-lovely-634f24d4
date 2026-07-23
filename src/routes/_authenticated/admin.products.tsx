@@ -172,6 +172,48 @@ function ProductForm({ initial, categories, onClose }: { initial: ProductRow | n
     fat_g: ((initial as unknown as { fat_g?: number | null } | null)?.fat_g ?? "") as number | "",
     carbs_g: ((initial as unknown as { carbs_g?: number | null } | null)?.carbs_g ?? "") as number | "",
     protein_g: ((initial as unknown as { protein_g?: number | null } | null)?.protein_g ?? "") as number | "",
+    size_selection_enabled: ((initial as unknown as { size_selection_enabled?: boolean } | null)?.size_selection_enabled) ?? false,
+  });
+
+  type SizeRow = {
+    id?: string;
+    name: string;
+    description: string;
+    portion: string;
+    price_zar: number;
+    is_available: boolean;
+  };
+  const [sizes, setSizes] = useState<SizeRow[]>([]);
+  const listSizesFn = useServerFn(listProductSizes);
+  const saveSizesFn = useServerFn(saveProductSizes);
+
+  useEffect(() => {
+    if (!initial) return;
+    void listSizesFn({ data: { product_slug: initial.slug } }).then((rows) => {
+      setSizes(
+        rows.map((r) => ({
+          id: r.id,
+          name: r.name,
+          description: r.description ?? "",
+          portion: r.portion ?? "",
+          price_zar: Number(r.price_zar),
+          is_available: r.is_available,
+        })),
+      );
+    }).catch((e: Error) => toast.error(e.message));
+  }, [initial, listSizesFn]);
+
+  const updateSize = (i: number, patch: Partial<SizeRow>) => {
+    setSizes((cur) => cur.map((s, idx) => (idx === i ? { ...s, ...patch } : s)));
+  };
+  const addSize = () => setSizes((cur) => [...cur, { name: "", description: "", portion: "", price_zar: 0, is_available: true }]);
+  const removeSize = (i: number) => setSizes((cur) => cur.filter((_, idx) => idx !== i));
+  const moveSize = (i: number, dir: -1 | 1) => setSizes((cur) => {
+    const j = i + dir;
+    if (j < 0 || j >= cur.length) return cur;
+    const next = [...cur];
+    [next[i], next[j]] = [next[j], next[i]];
+    return next;
   });
 
   const save = useMutation({
@@ -196,13 +238,34 @@ function ProductForm({ initial, categories, onClose }: { initial: ProductRow | n
         fat_g: num(form.fat_g),
         carbs_g: num(form.carbs_g),
         protein_g: num(form.protein_g),
+        size_selection_enabled: form.size_selection_enabled,
       };
+      const slug = initial?.slug ?? form.slug;
       if (initial) {
         const { slug, ...patch } = payload;
         void slug;
-        return updateFn({ data: { original_slug: initial.slug, patch } });
+        await updateFn({ data: { original_slug: initial.slug, patch } });
+      } else {
+        await createFn({ data: payload });
       }
-      return createFn({ data: payload });
+      if (form.size_selection_enabled) {
+        const cleaned = sizes
+          .filter((s) => s.name.trim().length > 0)
+          .map((s, i) => ({
+            id: s.id,
+            name: s.name.trim(),
+            description: s.description.trim() || null,
+            portion: s.portion.trim() || null,
+            price_zar: Number(s.price_zar) || 0,
+            sort_order: i,
+            is_available: s.is_available,
+          }));
+        await saveSizesFn({ data: { product_slug: slug, sizes: cleaned } });
+      } else if (initial) {
+        // toggle off — clear existing sizes so customers don't see the picker
+        await saveSizesFn({ data: { product_slug: slug, sizes: [] } });
+      }
+      return { ok: true };
     },
     onSuccess: () => { toast.success(initial ? "Product updated" : "Product created"); qc.invalidateQueries({ queryKey: ["admin","products"] }); onClose(); },
     onError: (e: Error) => toast.error(e.message),
