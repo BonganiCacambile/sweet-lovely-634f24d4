@@ -29,9 +29,9 @@ export function SiteFooter() {
               <p><a href="mailto:delivery@sweetandlovely.pizza" className="hover:underline">delivery@sweetandlovely.pizza</a></p>
             </div>
             <div className="mt-5 text-sm text-white/90">
-              <p><span className="font-semibold text-white">Monday – Friday:</span> 9 AM – 10 PM</p>
-              <p><span className="font-semibold text-white">Saturday:</span> 10 AM – 11 PM</p>
-              <p><span className="font-semibold text-white">Sunday:</span> 10 AM – 8 PM</p>
+              <p><span className="font-semibold text-white">Monday – Friday:</span> 10 AM – 10 PM</p>
+              <p><span className="font-semibold text-white">Saturday:</span> 10 AM – 10 PM</p>
+              <p><span className="font-semibold text-white">Sunday:</span> 10 AM – 10 PM</p>
             </div>
           </div>
 
