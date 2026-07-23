@@ -40,6 +40,7 @@ export function MenuCard({ item }: { item: MenuItem }) {
           <AddToCartButton
             item={item}
             isPizza={item.category === "pizza"}
+            sizes={item.sizes}
             className="h-11 px-7 text-sm"
           />
           <div className="flex items-baseline gap-2">
