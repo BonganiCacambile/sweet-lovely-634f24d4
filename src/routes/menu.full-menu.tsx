@@ -40,6 +40,11 @@ function FullMenuPage() {
   });
   useRealtimeInvalidate(["products", "categories"], [["public-menu"]]);
 
+  // Preload category icon images so switching tabs never shows a stale bitmap.
+  const preloadCategoryIcons = (data?.categories ?? [])
+    .map((c) => c.image)
+    .filter((src): src is string => Boolean(src));
+
   // Merge live DB rows with rich static metadata (ingredients/allergens/nutrition)
   const liveItems: MenuItem[] = (data?.products ?? []).map((p) => {
     const fallback = MENU_ITEMS.find((m) => m.id === p.slug);
@@ -85,6 +90,15 @@ function FullMenuPage() {
   return (
     <div className="min-h-screen bg-white text-neutral-900">
       <SiteHeader />
+
+      {/* Warm the browser cache for every category icon up front */}
+      {preloadCategoryIcons.length > 0 && (
+        <div aria-hidden className="pointer-events-none absolute h-0 w-0 overflow-hidden opacity-0">
+          {preloadCategoryIcons.map((src) => (
+            <img key={src} src={src} alt="" width={24} height={24} decoding="async" fetchPriority="high" />
+          ))}
+        </div>
+      )}
 
       {/* Hero */}
       <section className="relative mx-auto max-w-7xl px-4 pt-12 md:px-8 md:pt-20">
