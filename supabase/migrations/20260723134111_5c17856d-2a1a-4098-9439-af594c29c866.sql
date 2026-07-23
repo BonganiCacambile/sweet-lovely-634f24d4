@@ -1,0 +1,1 @@
+UPDATE public.categories SET image = 'https://raw.githubusercontent.com/BonganiCacambile/sweet-lovely-634f24d4/main/Pork%20Ribs.png' WHERE slug = 'sides';
