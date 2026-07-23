@@ -4,6 +4,7 @@ import * as React from "react";
 import { createPortal } from "react-dom";
 import { useCart, parsePrice, formatPrice, type CartItem, type CartExtra } from "@/lib/cart-context";
 import { usePizzaToppings, type PizzaTopping } from "@/hooks/use-pizza-toppings";
+import type { ProductSize } from "@/components/product-grid";
 
 export const PIZZA_SIZE_DEFAULTS = {
   medium: 80,
@@ -30,10 +31,12 @@ interface Props {
   label?: string;
   /** If true, opens a Medium/Large size picker (R80 / R150) before adding. */
   isPizza?: boolean;
+  /** Dynamic sizes (e.g. BBQ). When provided (non-empty), opens a size picker without toppings. */
+  sizes?: ProductSize[];
 }
 
 /** Compact "Add" pill — opens a size picker for pizzas, otherwise adds directly. */
-export function AddToCartButton({ item, className = "", label = "Add", isPizza = false }: Props) {
+export function AddToCartButton({ item, className = "", label = "Add", isPizza = false, sizes }: Props) {
   const { addItem } = useCart();
   const [added, setAdded] = React.useState(false);
   const [open, setOpen] = React.useState(false);
@@ -42,6 +45,19 @@ export function AddToCartButton({ item, className = "", label = "Add", isPizza =
   const [selectedExtras, setSelectedExtras] = React.useState<Set<string>>(new Set());
   const toppingsQuery = usePizzaToppings();
   const toppings = toppingsQuery.data ?? [];
+
+  const hasSizes = !isPizza && Array.isArray(sizes) && sizes.length > 0;
+  const sortedSizes = React.useMemo(
+    () => (hasSizes ? [...(sizes as ProductSize[])] : []),
+    [hasSizes, sizes],
+  );
+  const [selectedSizeId, setSelectedSizeId] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    if (hasSizes && !selectedSizeId) {
+      setSelectedSizeId(sortedSizes[0]?.id ?? null);
+    }
+  }, [hasSizes, sortedSizes, selectedSizeId]);
 
   const sizePrices: Record<SizeId, number> = {
     medium: item.priceMedium ?? PIZZA_SIZE_DEFAULTS.medium,
@@ -134,8 +150,27 @@ export function AddToCartButton({ item, className = "", label = "Add", isPizza =
   };
 
   const onClick = () => {
-    if (isPizza) setOpen((v) => !v);
+    if (isPizza || hasSizes) setOpen((v) => !v);
     else handleAddDirect();
+  };
+
+  const pickedSize = sortedSizes.find((s) => s.id === selectedSizeId) ?? sortedSizes[0];
+  const sizedTotal = pickedSize ? Number(pickedSize.price_zar) : 0;
+  const commitSized = () => {
+    if (!pickedSize) return;
+    addItem(
+      {
+        id: `${item.id}--sz-${pickedSize.id}`,
+        title: item.title,
+        price: sizedTotal,
+        basePrice: sizedTotal,
+        image: item.image,
+        variation: pickedSize.name,
+      } satisfies Omit<CartItem, "quantity">,
+      1,
+    );
+    setOpen(false);
+    flashAdded();
   };
 
   return (
@@ -144,8 +179,8 @@ export function AddToCartButton({ item, className = "", label = "Add", isPizza =
         type="button"
         onClick={onClick}
         whileTap={{ scale: 0.95 }}
-        aria-haspopup={isPizza ? "menu" : undefined}
-        aria-expanded={isPizza ? open : undefined}
+        aria-haspopup={isPizza || hasSizes ? "menu" : undefined}
+        aria-expanded={isPizza || hasSizes ? open : undefined}
         className={`inline-flex items-center gap-1.5 rounded-full bg-[#ff003c] px-4 py-2 text-xs font-semibold text-white shadow-[0_8px_20px_-10px_rgba(255,0,60,0.7)] transition-all hover:-translate-y-0.5 hover:bg-[#e6003a] ${className}`}
       >
         {added ? <Check className="h-3.5 w-3.5" /> : <Plus className="h-3.5 w-3.5" />}
