@@ -10,7 +10,11 @@ export function MenuCard({ item }: { item: MenuItem }) {
         <img
           src={item.image}
           alt={item.title}
+          width={280}
+          height={280}
           loading="lazy"
+          decoding="async"
+          sizes="(min-width: 768px) 260px, min(280px, 90vw)"
           className="h-full w-full object-contain transition-transform duration-700 ease-out group-hover:rotate-6 group-hover:scale-110"
         />
       </div>
