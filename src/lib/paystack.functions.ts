@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { PIZZA_SIZE_FALLBACK, splitPizzaId } from "./cart-id";
+import { PIZZA_SIZE_FALLBACK, splitVariantId } from "./cart-id";
 
 /** Returns the Paystack public key for client-side inline checkout. */
 export const getPaystackConfig = createServerFn({ method: "GET" }).handler(async () => {
@@ -101,7 +101,7 @@ export const checkCartStock = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const totals = new Map<string, number>();
     for (const it of data.items) {
-      const { slug } = splitPizzaId(it.id);
+      const { slug } = splitVariantId(it.id);
       totals.set(slug, (totals.get(slug) ?? 0) + it.quantity);
     }
     const payload = Array.from(totals.entries()).map(([slug, quantity]) => ({
@@ -180,7 +180,7 @@ export const verifyAndCreateOrder = createServerFn({ method: "POST" })
     }
 
     // 2) Recompute prices server-side from products table — never trust client.
-    const parsedItems = data.items.map((it) => ({ ...it, ...splitPizzaId(it.id) }));
+    const parsedItems = data.items.map((it) => ({ ...it, ...splitVariantId(it.id) }));
     const slugs = Array.from(new Set(parsedItems.map((p) => p.slug)));
     const { data: products, error: prodErr } = await supabaseAdmin
       .from("products")
@@ -191,6 +191,25 @@ export const verifyAndCreateOrder = createServerFn({ method: "POST" })
       return { success: false as const, error: "Could not validate product prices" };
     }
     const productMap = new Map((products ?? []).map((p) => [p.slug, p]));
+
+    // Look up authoritative BBQ / dynamic size prices from product_sizes.
+    const sizeIds = Array.from(
+      new Set(parsedItems.map((p) => p.sizeId).filter((v): v is string => !!v)),
+    );
+    const sizeMap = new Map<string, { name: string; price_zar: number; product_slug: string }>();
+    if (sizeIds.length > 0) {
+      const { data: sizes, error: sizeErr } = await supabaseAdmin
+        .from("product_sizes")
+        .select("id, name, price_zar, product_slug")
+        .in("id", sizeIds);
+      if (sizeErr) {
+        console.error("product_sizes lookup error:", sizeErr);
+        return { success: false as const, error: "Could not validate size prices" };
+      }
+      for (const s of sizes ?? []) {
+        sizeMap.set(s.id, { name: s.name, price_zar: Number(s.price_zar), product_slug: s.product_slug });
+      }
+    }
 
     type PricedItem = {
       cartId: string;
@@ -214,7 +233,19 @@ export const verifyAndCreateOrder = createServerFn({ method: "POST" })
        //  is still verified against the computed total below, so this can
        //  only ever undercharge us — never overcharge the customer.
       let basePrice: number;
-      if (it.size) {
+      if (it.sizeId) {
+        const sz = sizeMap.get(it.sizeId);
+        if (sz) {
+          basePrice = sz.price_zar;
+        } else {
+          // Missing/deleted size — snapshot the client price rather than losing the order.
+          basePrice = Math.max(0, Number(it.price) || 0);
+          console.warn("Order item size no longer exists — using snapshot price", {
+            slug: it.slug,
+            sizeId: it.sizeId,
+          });
+        }
+      } else if (it.size) {
         const fallback = PIZZA_SIZE_FALLBACK[it.size];
         if (typeof fallback !== "number") {
           return { success: false as const, error: `Invalid size: ${it.size}` };

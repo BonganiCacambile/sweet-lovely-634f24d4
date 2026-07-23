@@ -32,6 +32,7 @@ const productPayload = z.object({
   fat_g: z.number().min(0).max(10000).nullable().optional(),
   carbs_g: z.number().min(0).max(10000).nullable().optional(),
   protein_g: z.number().min(0).max(10000).nullable().optional(),
+  size_selection_enabled: z.boolean().optional().default(false),
 });
 
 export const listProducts = createServerFn({ method: "POST" })
@@ -41,7 +42,7 @@ export const listProducts = createServerFn({ method: "POST" })
     await requireAdmin(context.supabase, context.userId);
     let q = context.supabase
       .from("products")
-      .select("slug, title, description, price_zar, price_medium_zar, price_large_zar, category_slug, image, is_active, stock, low_stock_threshold, sort_order, updated_at, ingredients, allergens, calories, fat_g, carbs_g, protein_g", { count: "exact" });
+      .select("slug, title, description, price_zar, price_medium_zar, price_large_zar, category_slug, image, is_active, stock, low_stock_threshold, sort_order, updated_at, ingredients, allergens, calories, fat_g, carbs_g, protein_g, size_selection_enabled", { count: "exact" });
     if (data.category) q = q.eq("category_slug", data.category);
     if (data.active === "true") q = q.eq("is_active", true);
     if (data.active === "false") q = q.eq("is_active", false);

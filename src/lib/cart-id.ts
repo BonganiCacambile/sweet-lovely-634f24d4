@@ -22,3 +22,25 @@ export function splitPizzaId(id: string): { slug: string; size: string | null } 
   }
   return { slug: base, size: null };
 }
+
+/**
+ * Parse a cart id that may encode a pizza size, a BBQ (product_sizes) size id,
+ * or a plain product slug.
+ *
+ * Formats:
+ *   `${slug}`                             — plain product
+ *   `${slug}-medium|large[-x-<hash>]`     — pizza variant (backward-compat)
+ *   `${slug}--sz-${sizeId}`               — dynamic size (product_sizes row)
+ */
+export function splitVariantId(id: string): {
+  slug: string;
+  size: string | null;
+  sizeId: string | null;
+} {
+  const szIdx = id.indexOf("--sz-");
+  if (szIdx >= 0) {
+    return { slug: id.slice(0, szIdx), size: null, sizeId: id.slice(szIdx + 5) };
+  }
+  const { slug, size } = splitPizzaId(id);
+  return { slug, size, sizeId: null };
+}

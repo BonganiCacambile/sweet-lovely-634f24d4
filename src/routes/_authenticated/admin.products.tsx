@@ -1,10 +1,10 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { requireMainAdminGuard } from "@/lib/admin/route-guards";
 import { MainAdminGuard } from "@/components/admin/main-admin-guard";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Package, Search, Plus, X, Pencil, Trash2 } from "lucide-react";
+import { Package, Search, Plus, X, Pencil, Trash2, ArrowUp, ArrowDown } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/admin/page-header";
 import { StatusBadge } from "@/components/admin/status-badge";
@@ -15,6 +15,7 @@ import { useRealtimeTable } from "@/hooks/use-realtime-table";
 import { formatZar } from "@/lib/admin/format";
 import { listProducts, createProduct, updateProduct, deleteProduct, productSalesSummary } from "@/lib/admin/products.functions";
 import { listCategories } from "@/lib/admin/categories.functions";
+import { listProductSizes, saveProductSizes } from "@/lib/admin/product-sizes.functions";
 
 export const Route = createFileRoute("/_authenticated/admin/products")({
   beforeLoad: requireMainAdminGuard,
@@ -171,6 +172,48 @@ function ProductForm({ initial, categories, onClose }: { initial: ProductRow | n
     fat_g: ((initial as unknown as { fat_g?: number | null } | null)?.fat_g ?? "") as number | "",
     carbs_g: ((initial as unknown as { carbs_g?: number | null } | null)?.carbs_g ?? "") as number | "",
     protein_g: ((initial as unknown as { protein_g?: number | null } | null)?.protein_g ?? "") as number | "",
+    size_selection_enabled: ((initial as unknown as { size_selection_enabled?: boolean } | null)?.size_selection_enabled) ?? false,
+  });
+
+  type SizeRow = {
+    id?: string;
+    name: string;
+    description: string;
+    portion: string;
+    price_zar: number;
+    is_available: boolean;
+  };
+  const [sizes, setSizes] = useState<SizeRow[]>([]);
+  const listSizesFn = useServerFn(listProductSizes);
+  const saveSizesFn = useServerFn(saveProductSizes);
+
+  useEffect(() => {
+    if (!initial) return;
+    void listSizesFn({ data: { product_slug: initial.slug } }).then((rows) => {
+      setSizes(
+        rows.map((r) => ({
+          id: r.id,
+          name: r.name,
+          description: r.description ?? "",
+          portion: r.portion ?? "",
+          price_zar: Number(r.price_zar),
+          is_available: r.is_available,
+        })),
+      );
+    }).catch((e: Error) => toast.error(e.message));
+  }, [initial, listSizesFn]);
+
+  const updateSize = (i: number, patch: Partial<SizeRow>) => {
+    setSizes((cur) => cur.map((s, idx) => (idx === i ? { ...s, ...patch } : s)));
+  };
+  const addSize = () => setSizes((cur) => [...cur, { name: "", description: "", portion: "", price_zar: 0, is_available: true }]);
+  const removeSize = (i: number) => setSizes((cur) => cur.filter((_, idx) => idx !== i));
+  const moveSize = (i: number, dir: -1 | 1) => setSizes((cur) => {
+    const j = i + dir;
+    if (j < 0 || j >= cur.length) return cur;
+    const next = [...cur];
+    [next[i], next[j]] = [next[j], next[i]];
+    return next;
   });
 
   const save = useMutation({
@@ -195,13 +238,34 @@ function ProductForm({ initial, categories, onClose }: { initial: ProductRow | n
         fat_g: num(form.fat_g),
         carbs_g: num(form.carbs_g),
         protein_g: num(form.protein_g),
+        size_selection_enabled: form.size_selection_enabled,
       };
+      const slug = initial?.slug ?? form.slug;
       if (initial) {
         const { slug, ...patch } = payload;
         void slug;
-        return updateFn({ data: { original_slug: initial.slug, patch } });
+        await updateFn({ data: { original_slug: initial.slug, patch } });
+      } else {
+        await createFn({ data: payload });
       }
-      return createFn({ data: payload });
+      if (form.size_selection_enabled) {
+        const cleaned = sizes
+          .filter((s) => s.name.trim().length > 0)
+          .map((s, i) => ({
+            id: s.id,
+            name: s.name.trim(),
+            description: s.description.trim() || null,
+            portion: s.portion.trim() || null,
+            price_zar: Number(s.price_zar) || 0,
+            sort_order: i,
+            is_available: s.is_available,
+          }));
+        await saveSizesFn({ data: { product_slug: slug, sizes: cleaned } });
+      } else if (initial) {
+        // toggle off — clear existing sizes so customers don't see the picker
+        await saveSizesFn({ data: { product_slug: slug, sizes: [] } });
+      }
+      return { ok: true };
     },
     onSuccess: () => { toast.success(initial ? "Product updated" : "Product created"); qc.invalidateQueries({ queryKey: ["admin","products"] }); onClose(); },
     onError: (e: Error) => toast.error(e.message),
@@ -274,6 +338,63 @@ function ProductForm({ initial, categories, onClose }: { initial: ProductRow | n
             <p className="text-xs text-neutral-500">Comma-separated (e.g. "Dairy, Gluten, Nuts").</p>
             <input value={form.allergens} onChange={(e) => setForm({ ...form, allergens: e.target.value })} placeholder="Dairy, Gluten" className="input" />
           </fieldset>
+
+          {form.category_slug !== "pizza" && (
+            <fieldset className="space-y-3 rounded-2xl border border-neutral-200 bg-neutral-50/60 p-3">
+              <legend className="px-1 text-xs font-semibold uppercase tracking-wider text-neutral-600">Product sizes</legend>
+              <label className="flex items-center gap-2 text-xs">
+                <input
+                  type="checkbox"
+                  checked={form.size_selection_enabled}
+                  onChange={(e) => setForm({ ...form, size_selection_enabled: e.target.checked })}
+                />
+                Enable size selection (Quarter/Half/Full, 300g/500g, Regular/Family, etc.)
+              </label>
+              {form.size_selection_enabled && (
+                <div className="space-y-2">
+                  {sizes.length === 0 && (
+                    <p className="text-xs text-neutral-500">No sizes yet — add one below.</p>
+                  )}
+                  {sizes.map((s, i) => (
+                    <div key={s.id ?? `new-${i}`} className="rounded-xl border border-neutral-200 bg-white p-3">
+                      <div className="grid grid-cols-12 gap-2">
+                        <div className="col-span-5">
+                          <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-neutral-500">Name</label>
+                          <input value={s.name} onChange={(e) => updateSize(i, { name: e.target.value })} placeholder="e.g. Quarter Chicken" className="input" />
+                        </div>
+                        <div className="col-span-4">
+                          <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-neutral-500">Portion / weight</label>
+                          <input value={s.portion} onChange={(e) => updateSize(i, { portion: e.target.value })} placeholder="300g (optional)" className="input" />
+                        </div>
+                        <div className="col-span-3">
+                          <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-neutral-500">Price (R)</label>
+                          <input type="number" step="0.01" min={0} value={s.price_zar} onChange={(e) => updateSize(i, { price_zar: Number(e.target.value) })} className="input" />
+                        </div>
+                        <div className="col-span-12">
+                          <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-neutral-500">Description (optional)</label>
+                          <input value={s.description} onChange={(e) => updateSize(i, { description: e.target.value })} placeholder="Short description shown under the size" className="input" />
+                        </div>
+                      </div>
+                      <div className="mt-2 flex items-center justify-between">
+                        <label className="flex items-center gap-1.5 text-[11px] text-neutral-600">
+                          <input type="checkbox" checked={s.is_available} onChange={(e) => updateSize(i, { is_available: e.target.checked })} />
+                          Available
+                        </label>
+                        <div className="flex items-center gap-1">
+                          <button type="button" onClick={() => moveSize(i, -1)} className="rounded-full border border-neutral-200 bg-white p-1.5 hover:bg-neutral-50" aria-label="Move up"><ArrowUp className="h-3 w-3" /></button>
+                          <button type="button" onClick={() => moveSize(i, 1)} className="rounded-full border border-neutral-200 bg-white p-1.5 hover:bg-neutral-50" aria-label="Move down"><ArrowDown className="h-3 w-3" /></button>
+                          <button type="button" onClick={() => removeSize(i)} className="rounded-full border border-rose-200 bg-rose-50 p-1.5 text-rose-700 hover:bg-rose-100" aria-label="Delete size"><Trash2 className="h-3 w-3" /></button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  <button type="button" onClick={addSize} className="inline-flex items-center gap-1.5 rounded-full border border-dashed border-neutral-300 bg-white px-3 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50">
+                    <Plus className="h-3.5 w-3.5" /> Add size
+                  </button>
+                </div>
+              )}
+            </fieldset>
+          )}
 
           <div className="flex items-center justify-between gap-2 pt-2">
             {initial ? (

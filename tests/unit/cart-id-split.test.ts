@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { splitPizzaId } from "../../src/lib/cart-id";
+import { splitPizzaId, splitVariantId } from "../../src/lib/cart-id";
 
 // Regression: pizzas with selected toppings produce cart ids of the form
 //   `${slug}-${size}-x-<extras-hash>`
@@ -40,6 +40,31 @@ describe("splitPizzaId", () => {
     expect(splitPizzaId("chocolate-brownie")).toEqual({
       slug: "chocolate-brownie",
       size: null,
+    });
+  });
+});
+
+describe("splitVariantId (BBQ / dynamic sizes)", () => {
+  test("plain slug → slug only", () => {
+    expect(splitVariantId("chocolate-brownie")).toEqual({
+      slug: "chocolate-brownie",
+      size: null,
+      sizeId: null,
+    });
+  });
+  test("pizza suffix still parses", () => {
+    expect(splitVariantId("buffalo-bliss-large")).toEqual({
+      slug: "buffalo-bliss",
+      size: "large",
+      sizeId: null,
+    });
+  });
+  test("BBQ --sz-<uuid> → slug + sizeId", () => {
+    const uuid = "3f9c9a5e-1234-4abc-9def-abc123abc123";
+    expect(splitVariantId(`full-chicken--sz-${uuid}`)).toEqual({
+      slug: "full-chicken",
+      size: null,
+      sizeId: uuid,
     });
   });
 });

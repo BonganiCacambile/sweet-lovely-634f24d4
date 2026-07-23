@@ -39,6 +39,8 @@ function FullMenuPage() {
     staleTime: 30_000,
   });
   useRealtimeInvalidate(["products", "categories"], [["public-menu"]]);
+  // product_sizes is broadcast for BBQ-style dynamic sizes
+  useRealtimeInvalidate(["product_sizes"], [["public-menu"]]);
 
   // Preload category icon images so switching tabs never shows a stale bitmap.
   const preloadCategoryIcons = (data?.categories ?? [])
@@ -58,6 +60,18 @@ function FullMenuPage() {
     if (px.carbs_g != null) nutritionParts.push(`Carbs: ${px.carbs_g}g`);
     if (px.protein_g != null) nutritionParts.push(`Protein: ${px.protein_g}g`);
     const nutritionText = nutritionParts.length > 0 ? nutritionParts.join(" · ") : (px.nutrition ?? fallback?.nutrition);
+    const sizeEnabled = (p as { size_selection_enabled?: boolean }).size_selection_enabled === true;
+    const productSizes = sizeEnabled
+      ? (data?.sizes ?? [])
+          .filter((s) => s.product_slug === p.slug)
+          .map((s) => ({
+            id: s.id,
+            name: s.name,
+            description: s.description,
+            portion: s.portion,
+            price_zar: Number(s.price_zar),
+          }))
+      : undefined;
     return {
       id: p.slug,
       title: p.title,
@@ -70,6 +84,7 @@ function FullMenuPage() {
       portion: fallback?.portion,
       priceMedium: p.price_medium_zar != null ? Number(p.price_medium_zar) : undefined,
       priceLarge: p.price_large_zar != null ? Number(p.price_large_zar) : undefined,
+      sizes: productSizes && productSizes.length > 0 ? productSizes : undefined,
     } satisfies MenuItem;
   });
   const items: MenuItem[] = liveItems.length > 0 ? liveItems : MENU_ITEMS;
