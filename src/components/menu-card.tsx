@@ -1,20 +1,16 @@
 import type { MenuItem } from "@/data/menu";
 import { Reveal } from "@/components/reveal";
 import { AddToCartButton } from "@/components/cart/add-to-cart-button";
+import { ProductImage } from "@/components/product-image";
 
 /** Horizontal menu item card matching the Pepper Framer "Others - Menu - Desktop" variant. */
 export function MenuCard({ item }: { item: MenuItem }) {
   return (
     <Reveal as="article" className="group flex flex-col items-start gap-8 border-b border-neutral-200 py-10 transition-transform duration-300 hover:-translate-y-1 md:flex-row md:items-center md:gap-12">
       <div className="hover-zoom-img relative aspect-square w-full max-w-[280px] shrink-0 overflow-hidden md:w-[260px]">
-        <img
+        <ProductImage
           src={item.image}
           alt={item.title}
-          width={280}
-          height={280}
-          loading="lazy"
-          decoding="async"
-          sizes="(min-width: 768px) 260px, min(280px, 90vw)"
           className="h-full w-full object-contain transition-transform duration-700 ease-out group-hover:rotate-6 group-hover:scale-110"
         />
       </div>
