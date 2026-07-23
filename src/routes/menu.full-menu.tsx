@@ -181,9 +181,15 @@ function TabButton({ label, image, selected, onClick }: TabButtonProps) {
     >
       {image && (
         <img
+          key={image}
           src={image}
           alt=""
           aria-hidden
+          width={24}
+          height={24}
+          loading="eager"
+          decoding="async"
+          fetchPriority="high"
           className="h-5 w-5 shrink-0 object-contain transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110 md:h-6 md:w-6"
         />
       )}
