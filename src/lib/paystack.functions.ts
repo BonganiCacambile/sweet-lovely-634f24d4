@@ -101,7 +101,7 @@ export const checkCartStock = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const totals = new Map<string, number>();
     for (const it of data.items) {
-      const { slug } = splitPizzaId(it.id);
+      const { slug } = splitVariantId(it.id);
       totals.set(slug, (totals.get(slug) ?? 0) + it.quantity);
     }
     const payload = Array.from(totals.entries()).map(([slug, quantity]) => ({
