@@ -15,7 +15,7 @@ import { memo } from "react";
 
 const WIDTHS = [200, 320, 480, 640, 800] as const;
 
-type Fmt = "avif" | "webp" | "png";
+type Fmt = "webp" | "png";
 
 function stripProtocol(url: string) {
   return url.replace(/^https?:\/\//, "");
@@ -36,7 +36,7 @@ function weservSized(url: string, width: number, fmt: Fmt) {
   // images.weserv.nl expects the source URL without protocol.
   const src = encodeURIComponent(stripProtocol(url));
   const out = fmt === "png" ? "" : `&output=${fmt}`;
-  return `https://images.weserv.nl/?url=${src}&w=${width}&fit=inside&we${out}`;
+  return `https://images.weserv.nl/?url=${src}&w=${width}&fit=inside${out}`;
 }
 
 function buildSrcSet(url: string, fmt: Fmt): string {
@@ -72,13 +72,11 @@ function ProductImageImpl({
     return <img alt={alt} width={width} height={height} className={className} />;
   }
 
-  const avif = buildSrcSet(src, "avif");
   const webp = buildSrcSet(src, "webp");
   const fallback = buildSrcSet(src, "png");
 
   return (
     <picture>
-      <source type="image/avif" srcSet={avif} sizes={sizes} />
       <source type="image/webp" srcSet={webp} sizes={sizes} />
       <img
         src={src}
