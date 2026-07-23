@@ -132,8 +132,12 @@ function Index() {
 
   const popularFromAdmin: Product[] = (content?.popular ?? []).map((p) => {
     const linked = (p as unknown as { product?: { price_medium_zar: number | null; price_large_zar: number | null } | null }).product;
+    const sizes = (p as unknown as { sizes?: Product["sizes"] }).sizes ?? [];
+    // Use the product slug as the cart id root when linked, so `${slug}--sz-${sizeId}`
+    // parses correctly server-side for stock + authoritative pricing.
+    const slug = (p as unknown as { product_slug?: string | null }).product_slug ?? null;
     return {
-      id: p.id,
+      id: slug ?? p.id,
       title: p.title,
       price: p.price ?? "",
       image: p.image_url ?? undefined,
@@ -141,6 +145,7 @@ function Index() {
       nutrition: "from",
       priceMedium: linked?.price_medium_zar != null ? Number(linked.price_medium_zar) : undefined,
       priceLarge: linked?.price_large_zar != null ? Number(linked.price_large_zar) : undefined,
+      sizes: sizes && sizes.length > 0 ? sizes : undefined,
     };
   });
   const popular: Product[] = popularFromAdmin.length > 0 ? popularFromAdmin : FEATURED_PRODUCTS;

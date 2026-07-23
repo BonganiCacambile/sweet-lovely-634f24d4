@@ -80,7 +80,7 @@ export function ProductGrid({ products, imageOnly = false, isPizza = false }: Pr
               <div className="pointer-events-auto">
                 <AddToCartButton
                   item={p}
-                  isPizza={isPizza}
+                  isPizza={isPizza && !(p.sizes && p.sizes.length > 0)}
                   sizes={p.sizes}
                   label={isPizza ? "Add to cart" : "Add to cart"}
                   className="h-10 min-w-[150px] justify-center px-6 text-sm sm:h-11 sm:min-w-[160px] sm:px-7"
