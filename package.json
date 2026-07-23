@@ -27,7 +27,8 @@
     "test:regression:zone-leak": "node tests/regression/realtime-delivery-zones-leak.mjs",
     "test:regression:admin-edit-e2e": "node tests/regression/admin-edit-propagation.e2e.mjs",
     "test:regression:home-content-realtime-e2e": "node tests/regression/home-content-realtime.e2e.mjs",
-    "test:regression": "bun run test:regression:realtime && bun run test:regression:checkout && bun run test:regression:paystack-webhook && bun run test:regression:mcp-auth && bun run test:regression:zone-leak && bun run test:regression:realtime-menu-invalidation && bun run test:regression:home-realtime-anon-inactive && bun run test:regression:home-content-realtime-e2e",
+    "test:regression:product-sizes-mixed-upsert": "node tests/regression/product-sizes-mixed-upsert.mjs",
+    "test:regression": "bun run test:regression:realtime && bun run test:regression:checkout && bun run test:regression:paystack-webhook && bun run test:regression:mcp-auth && bun run test:regression:zone-leak && bun run test:regression:realtime-menu-invalidation && bun run test:regression:home-realtime-anon-inactive && bun run test:regression:home-content-realtime-e2e && bun run test:regression:product-sizes-mixed-upsert",
     "test:regression:realtime-menu-invalidation": "node tests/regression/realtime-menu-invalidation.mjs",
     "test:regression:home-realtime-anon-inactive": "node tests/regression/home-realtime-anon-inactive.mjs"
   },
