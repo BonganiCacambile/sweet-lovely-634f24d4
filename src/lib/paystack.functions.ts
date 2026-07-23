@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { PIZZA_SIZE_FALLBACK, splitPizzaId, splitVariantId } from "./cart-id";
+import { PIZZA_SIZE_FALLBACK, splitVariantId } from "./cart-id";
 
 /** Returns the Paystack public key for client-side inline checkout. */
 export const getPaystackConfig = createServerFn({ method: "GET" }).handler(async () => {
