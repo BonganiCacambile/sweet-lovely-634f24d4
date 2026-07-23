@@ -51,18 +51,46 @@ export const getHomeContent = createServerFn({ method: "GET" }).handler(async ()
   const productSlugs = Array.from(
     new Set(visiblePopular.map((item) => item.product_slug).filter((slug): slug is string => Boolean(slug))),
   );
-  const productPrices = new Map<string, { price_medium_zar: number | null; price_large_zar: number | null }>();
+  const productPrices = new Map<
+    string,
+    { price_medium_zar: number | null; price_large_zar: number | null; size_selection_enabled: boolean }
+  >();
+  const productSizes = new Map<
+    string,
+    Array<{ id: string; name: string; description: string | null; portion: string | null; price_zar: number }>
+  >();
   if (productSlugs.length > 0) {
-    const { data: products } = await sb
-      .from("products")
-      .select("slug, price_medium_zar, price_large_zar")
-      .in("slug", productSlugs)
-      .eq("is_active", true);
+    const [{ data: products }, { data: sizes }] = await Promise.all([
+      sb
+        .from("products")
+        .select("slug, price_medium_zar, price_large_zar, size_selection_enabled")
+        .in("slug", productSlugs)
+        .eq("is_active", true),
+      sb
+        .from("product_sizes")
+        .select("id, product_slug, name, description, portion, price_zar, sort_order")
+        .in("product_slug", productSlugs)
+        .eq("is_available", true)
+        .order("sort_order", { ascending: true }),
+    ]);
     for (const product of products ?? []) {
       productPrices.set(product.slug, {
         price_medium_zar: product.price_medium_zar == null ? null : Number(product.price_medium_zar),
         price_large_zar: product.price_large_zar == null ? null : Number(product.price_large_zar),
+        size_selection_enabled: Boolean(product.size_selection_enabled),
       });
+    }
+    for (const s of sizes ?? []) {
+      if (!s.product_slug) continue;
+      const list = productSizes.get(s.product_slug) ?? [];
+      list.push({
+        id: s.id,
+        name: s.name,
+        description: s.description,
+        portion: s.portion,
+        price_zar: Number(s.price_zar),
+      });
+      productSizes.set(s.product_slug, list);
     }
   }
 
@@ -71,10 +99,14 @@ export const getHomeContent = createServerFn({ method: "GET" }).handler(async ()
     if (v.zone_id == null) visMap[v.section] = v.is_visible;
   }
   return {
-    popular: visiblePopular.map((item) => ({
-      ...item,
-      product: item.product_slug ? (productPrices.get(item.product_slug) ?? null) : null,
-    })),
+    popular: visiblePopular.map((item) => {
+      const priced = item.product_slug ? (productPrices.get(item.product_slug) ?? null) : null;
+      const sizes =
+        item.product_slug && priced?.size_selection_enabled
+          ? (productSizes.get(item.product_slug) ?? [])
+          : [];
+      return { ...item, product: priced, sizes };
+    }),
     hotDeals: activeNow(deals.data),
     specials: activeNow(specials.data),
     banners: activeNow(banners.data),
