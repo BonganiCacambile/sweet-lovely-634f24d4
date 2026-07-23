@@ -387,6 +387,123 @@ export function AddToCartButton({ item, className = "", label = "Add", isPizza =
                 </motion.div>
               </motion.div>
             )}
+            {open && hasSizes && !isPizza && (
+              <motion.div
+                key="sized-picker-overlay"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.18 }}
+                className="fixed inset-0 z-[100] flex items-end justify-center bg-black/50 backdrop-blur-sm sm:items-center sm:p-4"
+                onClick={() => setOpen(false)}
+                role="dialog"
+                aria-modal="true"
+                aria-label={`Choose ${item.title} size`}
+              >
+                <motion.div
+                  initial={{ y: 40, opacity: 0, scale: 0.98 }}
+                  animate={{ y: 0, opacity: 1, scale: 1 }}
+                  exit={{ y: 40, opacity: 0, scale: 0.98 }}
+                  transition={{ type: "spring", damping: 26, stiffness: 280 }}
+                  onClick={(e) => e.stopPropagation()}
+                  className="relative flex max-h-[92vh] w-full max-w-lg flex-col overflow-hidden rounded-t-3xl bg-white shadow-[0_-20px_60px_-20px_rgba(0,0,0,0.35)] sm:rounded-3xl sm:shadow-[0_30px_80px_-20px_rgba(0,0,0,0.4)]"
+                >
+                  <div className="flex justify-center pt-2 sm:hidden">
+                    <span className="h-1.5 w-10 rounded-full bg-neutral-200" />
+                  </div>
+                  <div className="relative px-6 pb-4 pt-5 sm:pt-6">
+                    <button
+                      type="button"
+                      onClick={() => setOpen(false)}
+                      aria-label="Close"
+                      className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-full bg-neutral-100 text-neutral-500 transition-colors hover:bg-neutral-200 hover:text-neutral-900"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                    <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#ff003c]">
+                      <Sparkles className="h-3.5 w-3.5" />
+                      Step 1 · Choose your size
+                    </div>
+                    <h3 className="mt-1.5 line-clamp-2 pr-10 text-lg font-bold text-neutral-900 sm:text-xl">
+                      {item.title}
+                    </h3>
+                  </div>
+                  <div className="flex-1 overflow-y-auto px-6 pb-2">
+                    <div className={`grid gap-3 ${sortedSizes.length >= 3 ? "grid-cols-2 sm:grid-cols-3" : "grid-cols-2"}`}>
+                      {sortedSizes.map((s) => {
+                        const isActive = pickedSize?.id === s.id;
+                        return (
+                          <button
+                            key={s.id}
+                            type="button"
+                            onClick={() => setSelectedSizeId(s.id)}
+                            className={`group relative flex flex-col items-center rounded-2xl border-2 px-3 py-4 text-center transition-all ${
+                              isActive
+                                ? "border-[#ff003c] bg-[#fff5f7] shadow-[0_10px_24px_-12px_rgba(255,0,60,0.45)]"
+                                : "border-neutral-200 bg-white hover:-translate-y-0.5 hover:border-neutral-300 hover:shadow-sm"
+                            }`}
+                          >
+                            {isActive && (
+                              <motion.span
+                                initial={{ scale: 0 }}
+                                animate={{ scale: 1 }}
+                                transition={{ type: "spring", damping: 15, stiffness: 300 }}
+                                className="absolute right-2 top-2 flex h-5 w-5 items-center justify-center rounded-full bg-[#ff003c] text-white shadow"
+                              >
+                                <Check className="h-3 w-3" strokeWidth={3} />
+                              </motion.span>
+                            )}
+                            <div className="flex h-24 items-end justify-center">
+                              {item.image ? (
+                                <img
+                                  src={item.image}
+                                  alt={`${item.title} — ${s.name}`}
+                                  loading="lazy"
+                                  className={`h-20 w-20 rounded-full object-cover shadow-inner transition-transform ${
+                                    isActive ? "scale-105" : "opacity-80 group-hover:opacity-100"
+                                  }`}
+                                />
+                              ) : (
+                                <div
+                                  className={`h-20 w-20 rounded-full bg-gradient-to-br from-[#ffb199] to-[#ff003c] shadow-inner transition-transform ${
+                                    isActive ? "scale-105" : "opacity-80 group-hover:opacity-100"
+                                  }`}
+                                />
+                              )}
+                            </div>
+                            <span className="mt-2 text-sm font-bold text-neutral-900">{s.name}</span>
+                            {(s.portion || s.description) && (
+                              <span className="text-[11px] text-neutral-500">
+                                {[s.portion, s.description].filter(Boolean).join(" · ")}
+                              </span>
+                            )}
+                            <span className="mt-1 text-sm font-extrabold text-[#ff003c]">
+                              {formatPrice(Number(s.price_zar))}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  <div className="mt-5 flex items-center justify-between gap-3 border-t border-neutral-100 bg-neutral-50/60 px-6 py-4">
+                    <div className="flex flex-col">
+                      <span className="text-[11px] uppercase tracking-wider text-neutral-500">Total</span>
+                      <span className="text-lg font-extrabold text-neutral-900">{formatPrice(sizedTotal)}</span>
+                    </div>
+                    <motion.button
+                      type="button"
+                      whileTap={{ scale: 0.97 }}
+                      onClick={commitSized}
+                      disabled={!pickedSize}
+                      className="inline-flex flex-1 items-center justify-center gap-2 rounded-full bg-[#ff003c] px-5 py-3 text-sm font-bold text-white shadow-[0_12px_24px_-12px_rgba(255,0,60,0.7)] transition-all hover:-translate-y-0.5 hover:bg-[#e6003a] disabled:opacity-60"
+                    >
+                      <Plus className="h-4 w-4" />
+                      Add to cart · {formatPrice(sizedTotal)}
+                    </motion.button>
+                  </div>
+                </motion.div>
+              </motion.div>
+            )}
           </AnimatePresence>,
           document.body,
         )}
