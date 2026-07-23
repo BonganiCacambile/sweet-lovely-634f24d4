@@ -1,56 +1,75 @@
 ## Goal
+Bring the Pizza-style size selection modal to the BBQ category — same design, animations, and layout — but **without** the "Add toppings" step. Admins can add/edit/reorder unlimited sizes per BBQ product from Admin → Products, and every change propagates to customers in real-time.
 
-Add a single Playwright E2E test that exercises every Admin → Home Content section (Popular Items, Desserts, Hot Deals, Specials, Featured, Banners, Section Visibility) and asserts each mutation surfaces on the customer home page in real time — no reload — covering insert, update (title / description / image / price), enable/disable, reorder, and delete.
+## 1. Database (Lovable Cloud)
 
-## New file
+New table + product flag, both realtime-enabled:
 
-`tests/regression/home-content-realtime.e2e.mjs` — Playwright script following the existing conventions in `tests/regression/admin-edit-propagation.e2e.mjs`:
+```text
+public.product_sizes
+├─ id uuid pk
+├─ product_slug text fk → products.slug ON DELETE CASCADE
+├─ name text            (Small, Half Chicken, 300g, Family…)
+├─ description text     (optional — "Perfect for one")
+├─ portion text         (optional — "300g", "1/4 chicken")
+├─ price_zar numeric
+├─ sort_order int
+├─ is_available bool default true
+├─ created_at / updated_at
+```
 
-- Two browser contexts: `admin` (signed in) and `customer` (anonymous).
-- Customer opens `/` first so its Realtime subscription is live before any write.
-- Track `framenavigated` on the customer page to prove no reload occurred.
-- Each assertion waits for a unique `RT-<timestamp>-<section>` sentinel string to appear/disappear via `expect(locator).toBeVisible/toHaveCount` with a bounded timeout.
-- Uses the existing admin UI at `/admin/home-content` (tabs: popular, desserts, hot_deals, specials, featured, banners, visibility) — no direct DB writes for mutations, so the full server-fn + realtime path is covered.
-- Cleanup: every created row is deleted in a `finally` block; toggled visibility restored; edited featured item reverted.
+Plus `products.size_selection_enabled bool default false` so admins can toggle the size picker per product.
 
-## Section coverage matrix
+- RLS: public `SELECT` for available sizes (`is_available = true` on active products); admin-only `INSERT/UPDATE/DELETE` via `private.has_role`.
+- Grants: `SELECT` to anon/authenticated; full CRUD to authenticated (gated by RLS); ALL to service_role.
+- Realtime: add `product_sizes` and `products` to `supabase_realtime` publication (products is already covered).
 
-| Section | Create | Edit title | Edit price/desc | Edit image | Toggle active | Reorder (position) | Delete |
-|---|---|---|---|---|---|---|---|
-| Popular Items | ✓ | ✓ | ✓ price | ✓ image_url | ✓ | ✓ | ✓ |
-| Desserts | ✓ | ✓ | ✓ desc | ✓ | ✓ | ✓ | ✓ |
-| Hot Deals | ✓ | ✓ | ✓ discounted_price | ✓ | ✓ | ✓ | ✓ |
-| Specials | ✓ | ✓ | ✓ price | ✓ | ✓ | ✓ | ✓ |
-| Banners | ✓ | ✓ | ✓ subtitle/cta | ✓ | ✓ | ✓ | ✓ |
-| Featured | ✓ (pick existing product) | (product-driven) | — | — | ✓ | ✓ sort_order | ✓ |
-| Section Visibility | — | — | — | — | ✓ per section | — | — |
+## 2. Cart identity
 
-For each row: assert sentinel text visible on `/` after create/edit; assert removed after delete/disable; assert reorder swaps DOM order of two sentinel-tagged siblings; assert an `<img>` with the new image URL exists after image change.
+Extend `src/lib/cart-id.ts` to a general `splitVariantId(id)` returning `{ slug, size: "medium"|"large"|null, sizeId: uuid|null }`:
 
-## Reorder verification
+- Pizza cart id stays `${slug}-medium|large[-x-<hash>]` (unchanged).
+- BBQ cart id becomes `${slug}--sz-${sizeId}` — clean separator, no collision with pizza suffixes.
+- Server (`paystack.functions.ts`, `checkCartStock`) uses the base slug for stock aggregation and looks up the authoritative price from `product_sizes` when `sizeId` is present.
 
-For Popular/Desserts/Hot Deals/Specials/Banners: create two sentinel rows (`RT-…-A`, `RT-…-B`) with positions 100 and 101, verify customer DOM order A→B, swap positions in admin, verify DOM order flips to B→A within timeout, then delete both.
+## 3. Customer modal (reuse existing component)
 
-## Visibility verification
+`src/components/cart/add-to-cart-button.tsx`:
 
-For each section key (`popular`, `hot_deals`, `specials`, `banners`, `desserts`, `featured`): toggle visibility off in admin, assert the section's heading/container disappears from `/` within timeout, toggle back on, assert it returns.
+- Accept new prop `sizes?: ProductSize[]`. When present, render the same modal shell but:
+  - Header: "Step 1 · Choose your size" (no step 2).
+  - Grid of size cards (2-col mobile, 3-col ≥sm when >2 sizes) using the identical card treatment as pizza (border-2, red highlight, check badge, hover lift, price in brand red).
+  - Each card shows: name, description (if any), portion (if any), price.
+  - Live total in the footer updates on selection.
+  - CTA changes to `Add to cart · R<total>` and closes the modal — no toppings step at all.
+- Pizza flow is untouched (still `isPizza`).
 
-## Wiring
+## 4. Menu wiring
 
-- Add `test:regression:home-content-realtime-e2e` script in `package.json`.
-- Include it in the aggregated `test:regression` script (after existing e2e).
-- Add the same env-required note as the existing e2e in `tests/regression/README.md` (BASE_URL, ADMIN_EMAIL, ADMIN_PASSWORD, SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, SUPABASE_SERVICE_ROLE_KEY for pre-flight product pick used by Featured).
-- Add to `.github/workflows/regression-suite.yml` alongside the existing propagation e2e (same secrets).
+- `src/lib/public-menu.functions.ts` also selects `product_sizes` (available only) and `size_selection_enabled`, returning them alongside products.
+- `src/routes/menu.full-menu.tsx` and `src/routes/index.tsx` merge sizes onto items and pass them to `ProductGrid`.
+- `src/components/product-grid.tsx` + `src/components/menu-card.tsx` forward `sizes` and open the modal when `sizes.length > 0` (BBQ) or `isPizza` (pizza).
+- `useRealtimeInvalidate(["products","product_sizes","categories"], [["public-menu"]])` keeps the store live.
 
-## Non-goals
+## 5. Admin → Products
 
-- No UI/design changes.
-- No new server functions or schema changes — the previous migration (REPLICA IDENTITY FULL on `home_*`) already delivers realtime; this test locks the behavior in.
-- No load/perf assertions — sentinel-visibility timing uses a generous `PROPAGATION_TIMEOUT_MS` (default 15s) matching the existing e2e.
+Extend the existing product drawer (`src/routes/_authenticated/admin.products.tsx`):
 
-## Technical details
+- Toggle: **Enable size selection**.
+- When enabled, a "Product sizes" section with:
+  - Sortable rows (drag handle or up/down buttons), each editing name, description, portion, price, availability toggle.
+  - "Add size" button (unlimited rows).
+  - Delete row.
+- New admin server fns in `src/lib/admin/product-sizes.functions.ts`: `listSizes`, `upsertSizes` (bulk replace on save), `deleteSize`. All admin-gated via `requireAdmin`.
+- Product save flow persists sizes atomically after the product update.
 
-- Selectors: reuse admin tab buttons by visible text (`Popular Items`, `Desserts`, etc.); rows located by `tr:has-text(sentinel)`; edit fields located by label text via `getByLabel` where the admin form provides labels, falling back to input `name`/placeholder for legacy fields.
-- Customer-side sentinel matching: `page.getByText(SENTINEL, { exact: false }).first().waitFor({ state: 'visible' })` and `.waitFor({ state: 'detached' })` for delete/disable.
-- Image assertion: `page.locator(\`img[src*="${imageToken}"]\`).first().waitFor()` where `imageToken` is a unique query-string appended to a stock CDN URL.
-- Script exits non-zero on any failed check; per-section failures aggregated so one broken section doesn't mask others.
+## 6. Regression coverage
+
+- Unit: extend `tests/unit/cart-id-split.test.ts` with BBQ `--sz-<uuid>` cases.
+- Realtime: add `product_sizes` to the existing `realtime-menu-invalidation.mjs` assertions.
+
+## Technical notes
+
+- Reuses `useRealtimeInvalidate` and the existing pizza modal component — no duplicate UI code.
+- Server price resolution stays authoritative: client-supplied prices are ignored in `verifyAndCreateOrder`; BBQ size prices come from `product_sizes`.
+- Backward compatible: pizza cart ids, pizza modal, existing `price_medium_zar`/`price_large_zar` fields and stock aggregation are unchanged.

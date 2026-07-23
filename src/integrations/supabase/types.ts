@@ -1160,6 +1160,53 @@ export type Database = {
         }
         Relationships: []
       }
+      product_sizes: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_available: boolean
+          name: string
+          portion: string | null
+          price_zar: number
+          product_slug: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_available?: boolean
+          name: string
+          portion?: string | null
+          price_zar?: number
+          product_slug: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_available?: boolean
+          name?: string
+          portion?: string | null
+          price_zar?: number
+          product_slug?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_sizes_product_slug_fkey"
+            columns: ["product_slug"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["slug"]
+          },
+        ]
+      }
       products: {
         Row: {
           allergens: string | null
@@ -1179,6 +1226,7 @@ export type Database = {
           price_medium_zar: number | null
           price_zar: number
           protein_g: number | null
+          size_selection_enabled: boolean
           slug: string
           sort_order: number
           stock: number
@@ -1203,6 +1251,7 @@ export type Database = {
           price_medium_zar?: number | null
           price_zar?: number
           protein_g?: number | null
+          size_selection_enabled?: boolean
           slug: string
           sort_order?: number
           stock?: number
@@ -1227,6 +1276,7 @@ export type Database = {
           price_medium_zar?: number | null
           price_zar?: number
           protein_g?: number | null
+          size_selection_enabled?: boolean
           slug?: string
           sort_order?: number
           stock?: number
