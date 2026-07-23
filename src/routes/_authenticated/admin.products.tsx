@@ -1,10 +1,10 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { requireMainAdminGuard } from "@/lib/admin/route-guards";
 import { MainAdminGuard } from "@/components/admin/main-admin-guard";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Package, Search, Plus, X, Pencil, Trash2 } from "lucide-react";
+import { Package, Search, Plus, X, Pencil, Trash2, ArrowUp, ArrowDown } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/admin/page-header";
 import { StatusBadge } from "@/components/admin/status-badge";
@@ -15,6 +15,7 @@ import { useRealtimeTable } from "@/hooks/use-realtime-table";
 import { formatZar } from "@/lib/admin/format";
 import { listProducts, createProduct, updateProduct, deleteProduct, productSalesSummary } from "@/lib/admin/products.functions";
 import { listCategories } from "@/lib/admin/categories.functions";
+import { listProductSizes, saveProductSizes } from "@/lib/admin/product-sizes.functions";
 
 export const Route = createFileRoute("/_authenticated/admin/products")({
   beforeLoad: requireMainAdminGuard,
