@@ -339,6 +339,63 @@ function ProductForm({ initial, categories, onClose }: { initial: ProductRow | n
             <input value={form.allergens} onChange={(e) => setForm({ ...form, allergens: e.target.value })} placeholder="Dairy, Gluten" className="input" />
           </fieldset>
 
+          {form.category_slug !== "pizza" && (
+            <fieldset className="space-y-3 rounded-2xl border border-neutral-200 bg-neutral-50/60 p-3">
+              <legend className="px-1 text-xs font-semibold uppercase tracking-wider text-neutral-600">Product sizes</legend>
+              <label className="flex items-center gap-2 text-xs">
+                <input
+                  type="checkbox"
+                  checked={form.size_selection_enabled}
+                  onChange={(e) => setForm({ ...form, size_selection_enabled: e.target.checked })}
+                />
+                Enable size selection (Quarter/Half/Full, 300g/500g, Regular/Family, etc.)
+              </label>
+              {form.size_selection_enabled && (
+                <div className="space-y-2">
+                  {sizes.length === 0 && (
+                    <p className="text-xs text-neutral-500">No sizes yet — add one below.</p>
+                  )}
+                  {sizes.map((s, i) => (
+                    <div key={s.id ?? `new-${i}`} className="rounded-xl border border-neutral-200 bg-white p-3">
+                      <div className="grid grid-cols-12 gap-2">
+                        <div className="col-span-5">
+                          <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-neutral-500">Name</label>
+                          <input value={s.name} onChange={(e) => updateSize(i, { name: e.target.value })} placeholder="e.g. Quarter Chicken" className="input" />
+                        </div>
+                        <div className="col-span-4">
+                          <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-neutral-500">Portion / weight</label>
+                          <input value={s.portion} onChange={(e) => updateSize(i, { portion: e.target.value })} placeholder="300g (optional)" className="input" />
+                        </div>
+                        <div className="col-span-3">
+                          <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-neutral-500">Price (R)</label>
+                          <input type="number" step="0.01" min={0} value={s.price_zar} onChange={(e) => updateSize(i, { price_zar: Number(e.target.value) })} className="input" />
+                        </div>
+                        <div className="col-span-12">
+                          <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-neutral-500">Description (optional)</label>
+                          <input value={s.description} onChange={(e) => updateSize(i, { description: e.target.value })} placeholder="Short description shown under the size" className="input" />
+                        </div>
+                      </div>
+                      <div className="mt-2 flex items-center justify-between">
+                        <label className="flex items-center gap-1.5 text-[11px] text-neutral-600">
+                          <input type="checkbox" checked={s.is_available} onChange={(e) => updateSize(i, { is_available: e.target.checked })} />
+                          Available
+                        </label>
+                        <div className="flex items-center gap-1">
+                          <button type="button" onClick={() => moveSize(i, -1)} className="rounded-full border border-neutral-200 bg-white p-1.5 hover:bg-neutral-50" aria-label="Move up"><ArrowUp className="h-3 w-3" /></button>
+                          <button type="button" onClick={() => moveSize(i, 1)} className="rounded-full border border-neutral-200 bg-white p-1.5 hover:bg-neutral-50" aria-label="Move down"><ArrowDown className="h-3 w-3" /></button>
+                          <button type="button" onClick={() => removeSize(i)} className="rounded-full border border-rose-200 bg-rose-50 p-1.5 text-rose-700 hover:bg-rose-100" aria-label="Delete size"><Trash2 className="h-3 w-3" /></button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  <button type="button" onClick={addSize} className="inline-flex items-center gap-1.5 rounded-full border border-dashed border-neutral-300 bg-white px-3 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50">
+                    <Plus className="h-3.5 w-3.5" /> Add size
+                  </button>
+                </div>
+              )}
+            </fieldset>
+          )}
+
           <div className="flex items-center justify-between gap-2 pt-2">
             {initial ? (
               <button type="button" onClick={() => { if (confirm("Delete this product?")) remove.mutate(); }} disabled={remove.isPending} className="inline-flex items-center gap-1.5 rounded-full border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-medium text-rose-700 hover:bg-rose-100">
