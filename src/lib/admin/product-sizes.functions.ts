@@ -54,20 +54,47 @@ export const saveProductSizes = createServerFn({ method: "POST" })
     }
 
     if (data.sizes.length > 0) {
-      const payload = data.sizes.map((s, i) => ({
-        ...(s.id ? { id: s.id } : {}),
-        product_slug: data.product_slug,
-        name: s.name,
-        description: s.description ?? null,
-        portion: s.portion ?? null,
-        price_zar: s.price_zar,
-        sort_order: s.sort_order ?? i,
-        is_available: s.is_available ?? true,
-      }));
-      const { error: upErr } = await context.supabase
-        .from("product_sizes")
-        .upsert(payload, { onConflict: "id" });
-      if (upErr) throw new Error(upErr.message);
+      // Split into inserts (no id) and updates (with id). Mixing them in a
+      // single upsert makes supabase-js include `id: null` for new rows,
+      // which violates the NOT NULL constraint.
+      const toInsert = data.sizes
+        .map((s, i) => ({ s, i }))
+        .filter(({ s }) => !s.id)
+        .map(({ s, i }) => ({
+          product_slug: data.product_slug,
+          name: s.name,
+          description: s.description ?? null,
+          portion: s.portion ?? null,
+          price_zar: s.price_zar,
+          sort_order: s.sort_order ?? i,
+          is_available: s.is_available ?? true,
+        }));
+      const toUpdate = data.sizes
+        .map((s, i) => ({ s, i }))
+        .filter(({ s }) => !!s.id)
+        .map(({ s, i }) => ({
+          id: s.id!,
+          product_slug: data.product_slug,
+          name: s.name,
+          description: s.description ?? null,
+          portion: s.portion ?? null,
+          price_zar: s.price_zar,
+          sort_order: s.sort_order ?? i,
+          is_available: s.is_available ?? true,
+        }));
+
+      if (toInsert.length > 0) {
+        const { error: insErr } = await context.supabase
+          .from("product_sizes")
+          .insert(toInsert);
+        if (insErr) throw new Error(insErr.message);
+      }
+      if (toUpdate.length > 0) {
+        const { error: upErr } = await context.supabase
+          .from("product_sizes")
+          .upsert(toUpdate, { onConflict: "id" });
+        if (upErr) throw new Error(upErr.message);
+      }
     }
 
     await logAudit(context, "product.sizes.save", "product", data.product_slug, {
