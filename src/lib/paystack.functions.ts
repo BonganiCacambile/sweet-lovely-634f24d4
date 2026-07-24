@@ -277,7 +277,11 @@ export const verifyAndCreateOrder = createServerFn({ method: "POST" })
       priced.push({
         cartId: it.id,
         slug: product ? it.slug : null,
-        title: product?.title ?? it.title,
+        title: (() => {
+          const base = product?.title ?? it.title;
+          const sizeName = it.sizeId ? sizeMap.get(it.sizeId)?.name : null;
+          return sizeName ? `${base} — ${sizeName}` : base;
+        })(),
         quantity: it.quantity,
         unitPrice,
         lineTotal,
