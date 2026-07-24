@@ -260,10 +260,10 @@ async function run() {
     ({ orderId } = await checkPersistence());
   } finally {
     if (orderId) {
-      await admin.from("order_items").delete().eq("order_id", orderId).catch(() => {});
-      await admin.from("orders").delete().eq("id", orderId).catch(() => {});
+      try { await admin.from("order_items").delete().eq("order_id", orderId); } catch {}
+      try { await admin.from("orders").delete().eq("id", orderId); } catch {}
     }
-    await admin.from("products").delete().eq("slug", PRODUCT_SLUG).catch(() => {});
+    try { await admin.from("products").delete().eq("slug", PRODUCT_SLUG); } catch {}
   }
 
   if (failures > 0) {
