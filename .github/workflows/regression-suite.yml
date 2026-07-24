@@ -49,6 +49,9 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
+      - name: Validate configuration (fail fast on missing secrets)
+        run: node scripts/validate-config.mjs --scope=ci
+
       - name: Install Playwright browsers
         run: bunx playwright install --with-deps chromium
 
