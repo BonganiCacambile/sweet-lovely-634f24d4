@@ -133,7 +133,7 @@ async function checkPersistence() {
   const { error: pErr } = await admin.from("products").insert({
     slug: PRODUCT_SLUG,
     title: `Rib Platter ${SUFFIX}`,
-    category_slug: "bbq",
+    category_slug: "sides",
     price_zar: 100,
     stock: 100,
     is_active: true,
