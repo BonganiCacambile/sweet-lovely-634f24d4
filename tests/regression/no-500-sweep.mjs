@@ -13,7 +13,7 @@
  * Redirects (3xx) and auth-gated responses (401/403) are treated as PASS —
  * this test targets unhandled server errors, not authorization behaviour.
  */
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import crypto from "node:crypto";
@@ -24,6 +24,31 @@ mkdirSync(ARTIFACTS, { recursive: true });
 const LOG_PATH = join(ARTIFACTS, "no-500-sweep.log");
 
 const APP_URL = (process.env.APP_URL ?? "http://localhost:8080").replace(/\/$/, "");
+
+/**
+ * Env vars whose values must NEVER appear in any captured response body
+ * or the on-disk sweep log. These are secrets — any occurrence is a leak.
+ */
+const SECRET_ENV_NAMES = [
+  "SUPABASE_SERVICE_ROLE_KEY",
+  "PAYSTACK_SECRET_KEY",
+  "PREVIEW_SUPABASE_SERVICE_ROLE_KEY",
+  "PROD_SUPABASE_SERVICE_ROLE_KEY",
+  "SSR_ALERT_WEBHOOK_URL",
+  "LOVABLE_API_KEY",
+];
+const MIN_SECRET_LEN = 12; // ignore short/blank values to avoid false positives
+const SECRET_VALUES = SECRET_ENV_NAMES
+  .map((name) => ({ name, value: process.env[name] ?? "" }))
+  .filter((s) => s.value.length >= MIN_SECRET_LEN);
+
+function scanForLeaks(haystack) {
+  const hits = [];
+  for (const { name, value } of SECRET_VALUES) {
+    if (haystack.includes(value)) hits.push(name);
+  }
+  return hits;
+}
 
 /** Pages that should render (or redirect) without a 5xx. */
 const PAGES = [
@@ -71,10 +96,12 @@ async function hit({ method, path, headers = {}, body }) {
     err = e instanceof Error ? e.message : String(e);
   }
   const durationMs = Date.now() - startedAt;
-  const pass = !err && status < 500;
-  results.push({ method, url, status, durationMs, pass, snippet, err });
+  const leaks = err ? [] : scanForLeaks(snippet);
+  const pass = !err && status < 500 && leaks.length === 0;
+  results.push({ method, url, status, durationMs, pass, snippet, err, leaks });
   const icon = pass ? "✅" : "❌";
-  console.log(`  ${icon} ${method.padEnd(4)} ${status || "ERR"} ${durationMs}ms ${path}`);
+  const leakTag = leaks.length ? ` LEAK:${leaks.join(",")}` : "";
+  console.log(`  ${icon} ${method.padEnd(4)} ${status || "ERR"} ${durationMs}ms ${path}${leakTag}`);
   return { status, snippet, err };
 }
 
@@ -159,6 +186,7 @@ function writeLog() {
           durationMs: r.durationMs,
           pass: r.pass,
           err: r.err,
+          leaks: r.leaks,
           snippet: r.snippet,
         },
         null,
@@ -178,19 +206,38 @@ async function main() {
 
   writeLog();
 
+  // Belt-and-braces: scan the log file we just wrote for secret values, in
+  // case a snippet was truncated across the 400-char boundary above.
+  const logContent = readFileSync(LOG_PATH, "utf8");
+  const logLeaks = scanForLeaks(logContent);
+
   const failures = results.filter((r) => !r.pass);
   if (failures.length) {
     console.error(`\n[no-500-sweep] ❌ FAIL — ${failures.length} response(s) returned 5xx/network error:`);
     for (const f of failures) {
+      const leakNote = f.leaks?.length ? ` LEAKED:${f.leaks.join(",")}` : "";
       console.error(
-        `  - ${f.method} ${f.url} -> ${f.status || "ERR"} ${f.err ? `(${f.err})` : ""}\n      snippet: ${f.snippet}`,
+        `  - ${f.method} ${f.url} -> ${f.status || "ERR"} ${f.err ? `(${f.err})` : ""}${leakNote}\n      snippet: ${f.snippet}`,
       );
     }
     console.error(`\n[no-500-sweep] Full log: ${LOG_PATH}`);
     process.exit(1);
   }
 
-  console.log(`\n[no-500-sweep] ✅ PASS — ${results.length} requests, no HTTP 5xx.`);
+  if (logLeaks.length) {
+    console.error(
+      `\n[no-500-sweep] ❌ FAIL — secret env value(s) found in captured log: ${logLeaks.join(", ")}`,
+    );
+    console.error(`[no-500-sweep] Full log: ${LOG_PATH}`);
+    process.exit(1);
+  }
+
+  const scannedNote = SECRET_VALUES.length
+    ? `${SECRET_VALUES.length} secret(s) scanned: ${SECRET_VALUES.map((s) => s.name).join(", ")}`
+    : "no secret env values present in this environment to scan against";
+  console.log(
+    `\n[no-500-sweep] ✅ PASS — ${results.length} requests, no HTTP 5xx, no secret leaks (${scannedNote}).`,
+  );
   console.log(`[no-500-sweep] Log: ${LOG_PATH}`);
 }
 
