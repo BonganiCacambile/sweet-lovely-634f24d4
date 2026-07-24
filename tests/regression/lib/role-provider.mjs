@@ -63,21 +63,55 @@ export function preflightRoleProvider(admin) {
   return preflightPromise;
 }
 
+/**
+ * Return a PostgREST query builder for the configured role table.
+ *
+ * For the default `public` schema we intentionally OMIT `.schema('public')`
+ * so the request does not send an `Accept-Profile: public` header. That
+ * header forces PostgREST to resolve the schema through its schema cache,
+ * which can transiently miss immediately after a migration reload and
+ * surface as: `Could not find the table 'public.user_roles' in the schema
+ * cache`. Every application query targets user_roles without `.schema()`
+ * and never hits this failure mode, so the regression suite matches.
+ */
+function roleTable(admin) {
+  const { schema, table } = ROLE_PROVIDER;
+  return schema === "public" ? admin.from(table) : admin.schema(schema).from(table);
+}
+
 async function runPreflight(admin) {
   if (ROLE_PROVIDER.kind !== "user_roles_table") {
     throw configError(`Unsupported ROLE_PROVIDER.kind "${ROLE_PROVIDER.kind}"`);
   }
   const { schema, table, roleColumn, userColumn } = ROLE_PROVIDER;
   // A zero-row select validates the table + required columns exist and are
-  // readable with the service role, without leaking any row data.
-  const { error } = await admin
-    .schema(schema)
-    .from(table)
-    .select(`${userColumn}, ${roleColumn}`)
-    .limit(0);
-  if (error) {
+  // readable with the service role, without leaking any row data. Retry a
+  // few times to ride out transient PostgREST schema-cache misses that can
+  // occur immediately after a migration reload.
+  let lastError = null;
+  for (let attempt = 1; attempt <= 5; attempt++) {
+    const { error } = await roleTable(admin)
+      .select(`${userColumn}, ${roleColumn}`)
+      .limit(0);
+    if (!error) {
+      lastError = null;
+      break;
+    }
+    lastError = error;
+    const msg = String(error.message ?? "");
+    const transient =
+      msg.includes("schema cache") ||
+      msg.includes("Could not find the table") ||
+      error.code === "PGRST002";
+    if (!transient) break;
+    console.warn(
+      `[role-provider] preflight attempt ${attempt}/5 hit transient schema-cache error: ${msg} — retrying`,
+    );
+    await new Promise((r) => setTimeout(r, 500 * attempt));
+  }
+  if (lastError) {
     throw configError(
-      `Cannot read ${schema}.${table} (${userColumn}, ${roleColumn}): ${error.message}`,
+      `Cannot read ${schema}.${table} (${userColumn}, ${roleColumn}): ${lastError.message}`,
     );
   }
   console.log(
@@ -116,10 +150,7 @@ export async function assignRole(admin, { userId, role, zoneId = null }) {
     row[ROLE_PROVIDER.zoneColumn] = zoneId;
   }
 
-  const { error } = await admin
-    .schema(ROLE_PROVIDER.schema)
-    .from(ROLE_PROVIDER.table)
-    .insert(row);
+  const { error } = await roleTable(admin).insert(row);
   if (error) {
     throw new Error(
       `Failed to assign role "${dbRole}" via ${ROLE_PROVIDER.schema}.${ROLE_PROVIDER.table}: ${error.message}`,
@@ -129,9 +160,7 @@ export async function assignRole(admin, { userId, role, zoneId = null }) {
 }
 
 async function verifyRole(admin, userId, dbRole) {
-  const { data, error } = await admin
-    .schema(ROLE_PROVIDER.schema)
-    .from(ROLE_PROVIDER.table)
+  const { data, error } = await roleTable(admin)
     .select(`${ROLE_PROVIDER.roleColumn}, ${ROLE_PROVIDER.zoneColumn}`)
     .eq(ROLE_PROVIDER.userColumn, userId);
   if (error) {
@@ -151,9 +180,7 @@ async function verifyRole(admin, userId, dbRole) {
 /** Remove all role rows for a user. Safe to call even if none exist. */
 export async function clearRoles(admin, userId) {
   await preflightRoleProvider(admin);
-  const { error } = await admin
-    .schema(ROLE_PROVIDER.schema)
-    .from(ROLE_PROVIDER.table)
+  const { error } = await roleTable(admin)
     .delete()
     .eq(ROLE_PROVIDER.userColumn, userId);
   if (error) {
