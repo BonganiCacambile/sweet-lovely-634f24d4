@@ -14,6 +14,7 @@ import { mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import crypto from "node:crypto";
+import { preflightRoleProvider, assignRole } from "./lib/role-provider.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = dirname(dirname(HERE));
@@ -162,13 +163,16 @@ async function cleanup(adminId, customerId) {
 
 async function main() {
   console.log("[realtime-suite] Creating temporary test accounts…");
+  // Fail fast with a descriptive message if the app's role storage isn't
+  // where the suite expects it, instead of a raw Postgres error mid-run.
+  await preflightRoleProvider(admin);
+
   const adminId = await createUser(ADMIN_EMAIL, ADMIN_PASSWORD);
-  const { error: roleErr } = await admin
-    .from("user_roles")
-    .insert({ user_id: adminId, role: "admin" });
-  if (roleErr) throw new Error(`Failed to assign admin role: ${roleErr.message}`);
+  await assignRole(admin, { userId: adminId, role: "mainAdmin" });
 
   const customerId = await createUser(CUSTOMER_EMAIL, CUSTOMER_PASSWORD);
+  // handle_new_user() inserts the customer 'user' row; verify it landed.
+  await assignRole(admin, { userId: customerId, role: "customer" });
 
   // Verify sign-in works before launching the browsers.
   const adminSignIn = await userClient.auth.signInWithPassword({
