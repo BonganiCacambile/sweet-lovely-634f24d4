@@ -15,6 +15,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import crypto from "node:crypto";
 import { preflightRoleProvider, assignRole } from "./lib/role-provider.mjs";
+import { assertRbacPermissions } from "./lib/rbac-assertions.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = dirname(dirname(HERE));
@@ -87,6 +88,8 @@ const ADMIN_EMAIL = `regression-admin-${TAG}@example.com`;
 const ADMIN_PASSWORD = `Regress1!${crypto.randomBytes(4).toString("hex")}`;
 const CUSTOMER_EMAIL = `regression-customer-${TAG}@example.com`;
 const CUSTOMER_PASSWORD = `Regress1!${crypto.randomBytes(4).toString("hex")}`;
+const EMPLOYEE_EMAIL = `regression-employee-${TAG}@example.com`;
+const EMPLOYEE_PASSWORD = `Regress1!${crypto.randomBytes(4).toString("hex")}`;
 
 async function createUser(email, password) {
   console.log(`[realtime-suite] POST ${ADMIN_USERS_ENDPOINT} (createUser ${email})`);
@@ -118,7 +121,7 @@ async function runScript(name, extraEnv) {
   });
 }
 
-async function cleanup(adminId, customerId) {
+async function cleanup(adminId, customerId, employeeId) {
   console.log("[realtime-suite] Cleaning up test accounts…");
 
   // Delete any leftover test orders by user_id or REGR- order_number.
@@ -151,7 +154,7 @@ async function cleanup(adminId, customerId) {
     .like("metadata->>run", "REGR-PERF-%");
 
   // Finally delete the auth users (cascades to profiles and user_roles).
-  for (const id of [adminId, customerId]) {
+  for (const id of [adminId, customerId, employeeId]) {
     if (!id) continue;
     await admin.auth.admin.deleteUser(id).catch((e) => {
       console.error(`[realtime-suite] delete user ${id} error:`, e.message);
@@ -173,6 +176,44 @@ async function main() {
   const customerId = await createUser(CUSTOMER_EMAIL, CUSTOMER_PASSWORD);
   // handle_new_user() inserts the customer 'user' row; verify it landed.
   await assignRole(admin, { userId: customerId, role: "customer" });
+
+  // Employee admin gets scoped to the first active delivery zone so we
+  // can assert cross-zone denial in the RBAC checks below.
+  const { data: zoneRows, error: zoneErr } = await admin
+    .from("delivery_zones")
+    .select("id")
+    .eq("is_active", true)
+    .order("created_at", { ascending: true })
+    .limit(1);
+  if (zoneErr || !zoneRows?.length) {
+    throw new Error(`No active delivery zone available for employee admin: ${zoneErr?.message ?? "empty"}`);
+  }
+  const employeeZoneId = zoneRows[0].id;
+  const employeeId = await createUser(EMPLOYEE_EMAIL, EMPLOYEE_PASSWORD);
+  // handle_new_user() inserts the default 'user' row — remove it before
+  // adding the zone_admin row so this account is unambiguously an
+  // employee admin.
+  await admin.from("user_roles").delete().eq("user_id", employeeId).eq("role", "user");
+  await assignRole(admin, { userId: employeeId, role: "employeeAdmin", zoneId: employeeZoneId });
+
+  // Post-role-assign RBAC checks — fail fast before running the browser suites.
+  try {
+    await assertRbacPermissions({
+      url: SUPABASE_BASE_URL,
+      publishableKey: SUPABASE_PUBLISHABLE_KEY,
+      mainAdmin: { email: ADMIN_EMAIL, password: ADMIN_PASSWORD, userId: adminId },
+      employeeAdmin: {
+        email: EMPLOYEE_EMAIL,
+        password: EMPLOYEE_PASSWORD,
+        userId: employeeId,
+        zoneId: employeeZoneId,
+      },
+      customer: { email: CUSTOMER_EMAIL, password: CUSTOMER_PASSWORD, userId: customerId },
+    });
+  } catch (e) {
+    await cleanup(adminId, customerId, employeeId);
+    throw e;
+  }
 
   // Verify sign-in works before launching the browsers.
   const adminSignIn = await userClient.auth.signInWithPassword({
@@ -215,7 +256,7 @@ async function main() {
     if (code !== 0) failures.push(script);
   }
 
-  await cleanup(adminId, customerId);
+  await cleanup(adminId, customerId, employeeId);
 
   if (failures.length) {
     console.error(`\n[realtime-suite] ❌ FAIL — ${failures.join(", ")}`);
