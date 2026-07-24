@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, test } from "vitest";
 import { validateConfig, renderReport } from "../../scripts/validate-config.mjs";
 
 // Minimal set of valid values for the "server" scope. Fake but well-formed.
