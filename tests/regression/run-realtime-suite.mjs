@@ -40,10 +40,44 @@ need("SUPABASE_URL", SUPABASE_URL);
 need("SUPABASE_SERVICE_ROLE_KEY", SUPABASE_SERVICE_ROLE_KEY);
 need("SUPABASE_PUBLISHABLE_KEY", SUPABASE_PUBLISHABLE_KEY);
 
-const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+// Normalize the Supabase base URL via the URL API so we cannot ship a value
+// with a trailing slash, an accidental path segment, or a missing scheme —
+// any of which surface as "Invalid path specified in request URL" from the
+// GoTrue admin endpoint.
+function normalizeSupabaseUrl(name, raw) {
+  let parsed;
+  try {
+    parsed = new URL(raw);
+  } catch {
+    console.error(`[realtime-suite] ${name} is not a valid absolute URL: ${raw}`);
+    process.exit(2);
+  }
+  if (parsed.protocol !== "https:" && parsed.protocol !== "http:") {
+    console.error(`[realtime-suite] ${name} must use http(s): ${raw}`);
+    process.exit(2);
+  }
+  if (parsed.pathname && parsed.pathname !== "/" && parsed.pathname !== "") {
+    console.error(`[realtime-suite] ${name} must not include a path (got "${parsed.pathname}")`);
+    process.exit(2);
+  }
+  if (parsed.search || parsed.hash) {
+    console.error(`[realtime-suite] ${name} must not include query/hash`);
+    process.exit(2);
+  }
+  return `${parsed.protocol}//${parsed.host}`;
+}
+
+const SUPABASE_BASE_URL = normalizeSupabaseUrl("SUPABASE_URL", SUPABASE_URL);
+const ADMIN_USERS_ENDPOINT = new URL("/auth/v1/admin/users", SUPABASE_BASE_URL).toString();
+
+console.log(
+  `[realtime-suite] Supabase base: ${SUPABASE_BASE_URL} · admin endpoint: ${ADMIN_USERS_ENDPOINT} · service role key present: ${Boolean(SUPABASE_SERVICE_ROLE_KEY)}`,
+);
+
+const admin = createClient(SUPABASE_BASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
   auth: { persistSession: false, autoRefreshToken: false },
 });
-const userClient = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+const userClient = createClient(SUPABASE_BASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: { persistSession: false, autoRefreshToken: false },
 });
 
@@ -54,13 +88,16 @@ const CUSTOMER_EMAIL = `regression-customer-${TAG}@example.com`;
 const CUSTOMER_PASSWORD = `Regress1!${crypto.randomBytes(4).toString("hex")}`;
 
 async function createUser(email, password) {
+  console.log(`[realtime-suite] POST ${ADMIN_USERS_ENDPOINT} (createUser ${email})`);
   const { data, error } = await admin.auth.admin.createUser({
     email,
     password,
     email_confirm: true,
   });
   if (error || !data.user) {
-    throw new Error(`Failed to create ${email}: ${error?.message ?? "unknown"}`);
+    throw new Error(
+      `Failed to create ${email} via ${ADMIN_USERS_ENDPOINT}: ${error?.message ?? "unknown"}`,
+    );
   }
   return data.user.id;
 }
