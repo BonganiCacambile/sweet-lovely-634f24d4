@@ -26,7 +26,28 @@ import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import crypto from "node:crypto";
-import { splitVariantId } from "../../src/lib/cart-id.ts";
+
+// Inlined from src/lib/cart-id.ts to keep this test runnable under plain node
+// (no TS loader). Must stay in sync with splitVariantId there.
+const PIZZA_SUFFIXES = ["medium", "large"];
+function splitPizzaId(id) {
+  const xIdx = id.indexOf("-x-");
+  const base = xIdx >= 0 ? id.slice(0, xIdx) : id;
+  for (const suffix of PIZZA_SUFFIXES) {
+    if (base.endsWith(`-${suffix}`)) {
+      return { slug: base.slice(0, -(suffix.length + 1)), size: suffix };
+    }
+  }
+  return { slug: base, size: null };
+}
+function splitVariantId(id) {
+  const szIdx = id.indexOf("--sz-");
+  if (szIdx >= 0) {
+    return { slug: id.slice(0, szIdx), size: null, sizeId: id.slice(szIdx + 5) };
+  }
+  const { slug, size } = splitPizzaId(id);
+  return { slug, size, sizeId: null };
+}
 
 const { SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY } = process.env;
 function need(name, val) {
