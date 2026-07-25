@@ -50,8 +50,6 @@ async function normalizeCatastrophicSsrResponse(
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
-      // Fail fast (once per cold-start) if required config is missing or malformed.
-      assertServerConfig("server");
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
       return await normalizeCatastrophicSsrResponse(response, request);
