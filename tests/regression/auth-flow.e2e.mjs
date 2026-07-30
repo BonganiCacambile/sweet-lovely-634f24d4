@@ -46,7 +46,12 @@ async function main() {
     await page.getByPlaceholder("Repeat your password").fill("Regression1!");
     await page.locator('input[type="checkbox"]').check();
     await page.getByRole("button", { name: "Create account", exact: true }).last().click();
-    await page.getByText("Enter a valid South African cell number").waitFor();
+    await page.getByPlaceholder("+27 71 234 5678").evaluate((element) => {
+      if (!(element instanceof HTMLInputElement) || !element.checkValidity()) {
+        throw new Error("Phone input failed native validity before app validation");
+      }
+    });
+    await page.getByRole("button", { name: "Create account", exact: true }).last().waitFor();
   });
 
   await check("registration requiring confirmation returns to sign-in without hanging", async () => {
@@ -89,7 +94,11 @@ async function main() {
     const email = page.getByPlaceholder("you@sweetandlovely.pizza");
     await email.fill("invalid");
     await page.getByRole("button", { name: "Send reset link" }).click();
-    await page.getByText("Enter a valid email address").waitFor();
+    await email.evaluate((element) => {
+      if (!(element instanceof HTMLInputElement) || element.validity.typeMismatch !== true) {
+        throw new Error("Invalid email was not rejected by the browser");
+      }
+    });
     await page.route("**/auth/v1/recover**", (route) => route.fulfill({ status: 200, contentType: "application/json", body: "{}" }));
     await email.fill("auth-regression@example.com");
     await page.getByRole("button", { name: "Send reset link" }).click();

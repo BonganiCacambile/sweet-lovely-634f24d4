@@ -96,6 +96,7 @@ export function RegisterForm() {
       if (!data.session) {
         toast.success("Account created. Check your email to verify.");
         logAuthEvent("redirect", "succeeded", { destination: "sign_in" });
+        window.dispatchEvent(new CustomEvent("auth:show-signin"));
         navigate({ to: "/auth", replace: true });
         return;
       }

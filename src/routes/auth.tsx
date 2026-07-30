@@ -1,6 +1,6 @@
 import { createFileRoute, Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import { motion, AnimatePresence } from "framer-motion";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ArrowLeft } from "lucide-react";
 import { AuthLayout } from "@/components/auth/auth-layout";
 import { LoginForm } from "@/components/auth/login-form";
@@ -26,6 +26,12 @@ export const Route = createFileRoute("/auth")({
 function AuthPage() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [tab, setTab] = useState<Tab>("signin");
+
+  useEffect(() => {
+    const showSignIn = () => setTab("signin");
+    window.addEventListener("auth:show-signin", showSignIn);
+    return () => window.removeEventListener("auth:show-signin", showSignIn);
+  }, []);
 
   if (pathname !== "/auth") return <Outlet />;
 
