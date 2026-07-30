@@ -31,7 +31,7 @@ async function main() {
   await page.getByText("Welcome back. Let's get you in.").waitFor();
 
   await check("signed-out users are redirected from ordering pages", async () => {
-    await page.goto(`${BASE_URL}/checkout`, { waitUntil: "domcontentloaded" });
+    await page.goto(`${BASE_URL}/account/orders`, { waitUntil: "domcontentloaded" });
     await page.getByText("Welcome back. Let's get you in.").waitFor({ timeout: MAX_LOADING_MS });
     if (!page.url().endsWith("/auth")) throw new Error(`Expected /auth, received ${page.url()}`);
   });
