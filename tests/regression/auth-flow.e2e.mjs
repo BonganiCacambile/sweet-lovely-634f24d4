@@ -61,7 +61,7 @@ async function main() {
     await page.getByPlaceholder("••••••••").fill("WrongPassword1!");
     const signIn = page.getByRole("button", { name: "Sign in", exact: true }).last();
     await signIn.click();
-    if (await loginEmail.inputValue() !== "not-an-email") throw new Error("Invalid login unexpectedly navigated");
+    if (!page.url().endsWith("/auth")) throw new Error(`Invalid login navigated to ${page.url()}`);
     if (await signIn.isDisabled()) throw new Error("Login remained stuck in its loading state");
     await page.getByRole("button", { name: "Sign in", exact: true }).last().waitFor();
   });
