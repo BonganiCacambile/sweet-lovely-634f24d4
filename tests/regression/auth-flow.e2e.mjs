@@ -59,7 +59,11 @@ async function main() {
     await page.getByPlaceholder("you@sweetandlovely.pizza").fill("not-an-email");
     await page.getByPlaceholder("••••••••").fill("WrongPassword1!");
     await page.getByRole("button", { name: "Sign in", exact: true }).last().click();
-    await page.getByText("Enter a valid email address").waitFor();
+    await page.getByPlaceholder("you@sweetandlovely.pizza").evaluate((element) => {
+      if (!(element instanceof HTMLInputElement) || element.validity.typeMismatch !== true) {
+        throw new Error("Invalid login email was not rejected by the browser");
+      }
+    });
     await page.getByRole("button", { name: "Sign in", exact: true }).last().waitFor();
   });
 
