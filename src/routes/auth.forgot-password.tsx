@@ -6,6 +6,8 @@ import { toast } from "sonner";
 import { AuthLayout } from "@/components/auth/auth-layout";
 import { Field, fieldCls } from "@/components/auth/login-form";
 import { supabase } from "@/integrations/supabase/client";
+import { authErrorMessage, isValidEmail } from "@/lib/auth-validation";
+import { logAuthEvent } from "@/lib/auth-events";
 
 export const Route = createFileRoute("/auth/forgot-password")({
   head: () => ({
@@ -27,18 +29,31 @@ function ForgotPasswordPage() {
 
   const sendLink = async (e?: React.FormEvent) => {
     e?.preventDefault();
-    setLoading(true);
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: window.location.origin + "/auth/reset-password",
-    });
-    setLoading(false);
-    if (error) {
-      toast.error("Couldn't send reset link", { description: error.message });
+    if (!isValidEmail(email)) {
+      toast.error("Enter a valid email address");
       return;
     }
-    setSent(true);
-    setStep(1);
-    toast.success("Reset link sent");
+    setLoading(true);
+    logAuthEvent("password_reset_request", "started");
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
+        redirectTo: window.location.origin + "/auth/reset-password",
+      });
+      if (error) {
+        logAuthEvent("password_reset_request", "failed", { status: error.status ?? null });
+        toast.error("Couldn't send reset link", { description: authErrorMessage(error, "Please wait a moment and try again.") });
+        return;
+      }
+      logAuthEvent("password_reset_request", "succeeded");
+      setSent(true);
+      setStep(1);
+      toast.success("If an account exists for that email, a reset link has been sent.");
+    } catch {
+      logAuthEvent("password_reset_request", "failed", { reason: "unexpected" });
+      toast.error("Couldn't send reset link", { description: "Please try again." });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

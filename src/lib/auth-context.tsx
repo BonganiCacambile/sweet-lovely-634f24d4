@@ -1,6 +1,8 @@
 import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
+import { logAuthEvent } from "@/lib/auth-events";
 
 type Profile = {
   id: string;
@@ -30,6 +32,7 @@ type AuthCtx = {
 const Ctx = createContext<AuthCtx | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const queryClient = useQueryClient();
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -64,13 +67,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
+    let active = true;
+    const initializationTimeout = window.setTimeout(() => {
+      if (!active) return;
+      setLoading(false);
+      setAuthTransition("idle");
+      logAuthEvent("session_initialization", "timed_out");
+    }, 8000);
     const { data: sub } = supabase.auth.onAuthStateChange((event, s) => {
+      if (!active) return;
+      logAuthEvent("authentication_listener", "succeeded", { event });
       setSession(s);
       setUser(s?.user ?? null);
       if (s?.user) {
+        const userId = s.user.id;
         setTimeout(() => {
-          loadExtras(s.user!.id).finally(() => {
-            if (event === "SIGNED_IN") setAuthTransition("idle");
+          void loadExtras(userId).catch(() => {
+            logAuthEvent("profile_creation", "failed", { reason: "profile_or_role_unavailable" });
+          }).finally(() => {
+            if (!active) return;
+            setLoading(false);
+            if (event === "SIGNED_IN" || event === "USER_UPDATED") setAuthTransition("idle");
           });
         }, 0);
       } else {
@@ -84,12 +101,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     });
     supabase.auth.getSession().then(({ data }) => {
+      if (!active) return;
       setSession(data.session);
       setUser(data.session?.user ?? null);
-      if (data.session?.user) loadExtras(data.session.user.id).finally(() => setLoading(false));
-      else setLoading(false);
+      if (data.session?.user) {
+        void loadExtras(data.session.user.id).catch(() => {
+          logAuthEvent("session_initialization", "failed", { reason: "profile_or_role_unavailable" });
+        }).finally(() => {
+          if (!active) return;
+          window.clearTimeout(initializationTimeout);
+          setLoading(false);
+          setAuthTransition("idle");
+          logAuthEvent("session_initialization", "succeeded", { authenticated: true });
+        });
+      } else {
+        window.clearTimeout(initializationTimeout);
+        setLoading(false);
+        setAuthTransition("idle");
+        logAuthEvent("session_initialization", "succeeded", { authenticated: false });
+      }
+    }).catch(() => {
+      if (!active) return;
+      window.clearTimeout(initializationTimeout);
+      setLoading(false);
+      setAuthTransition("idle");
+      logAuthEvent("session_initialization", "failed", { reason: "session_request_failed" });
     });
-    return () => sub.subscription.unsubscribe();
+    return () => {
+      active = false;
+      window.clearTimeout(initializationTimeout);
+      sub.subscription.unsubscribe();
+    };
   }, []);
 
   const refreshProfile = async () => {
@@ -98,9 +140,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = useCallback(async () => {
     setAuthTransition("signing-out");
-    await supabase.auth.signOut();
+    logAuthEvent("logout", "started");
+    await queryClient.cancelQueries();
+    queryClient.clear();
+    const { error } = await supabase.auth.signOut();
+    logAuthEvent("logout", error ? "failed" : "succeeded");
     setAuthTransition("idle");
-  }, []);
+  }, [queryClient]);
 
   return (
     <Ctx.Provider value={{ user, session, profile, isAdmin, isMainAdmin, isZoneAdmin, assignedZoneId, assignedZoneName, loading, authTransition, setAuthTransition, signOut, refreshProfile }}>
