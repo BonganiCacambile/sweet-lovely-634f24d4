@@ -1,3 +1,7 @@
+CREATE UNIQUE INDEX IF NOT EXISTS profiles_phone_unique
+ON public.profiles (phone)
+WHERE phone IS NOT NULL AND btrim(phone) <> '';
+
 -- ============================================================================
 -- Sweet 'n Lovely Pizza — Database Migration
 -- 06_indexes.sql  —  Non-constraint indexes (public + private schemas)

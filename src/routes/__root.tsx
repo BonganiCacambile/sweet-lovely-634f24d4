@@ -215,12 +215,15 @@ function AuthGate({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (loading) return;
     if (!user && !isPublicPath) {
+      import("@/lib/auth-events").then(({ logAuthEvent }) => {
+        logAuthEvent("redirect", "succeeded", { destination: "sign_in", reason: "authentication_required" });
+      });
       navigate({ to: "/auth", replace: true });
     }
   }, [user, loading, isPublicPath, navigate]);
 
   if (authTransition === "signing-out") return <LoadingScreen />;
-  if (authTransition === "signing-in" && !user) return <LoadingScreen />;
+  if (authTransition === "signing-in" && !user && !isPublicPath) return <LoadingScreen />;
   if (loading) return <LoadingScreen />;
   if (!user && !isPublicPath) return <LoadingScreen />;
   return <>{children}</>;

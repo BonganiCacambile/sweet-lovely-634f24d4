@@ -7,6 +7,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { Field, fieldCls } from "./login-form";
 import { GoogleButton } from "./social-buttons";
+import { authErrorMessage, isValidEmail, normalizeSouthAfricanPhone } from "@/lib/auth-validation";
+import { logAuthEvent } from "@/lib/auth-events";
 
 function strength(p: string) {
   let s = 0;
@@ -42,6 +44,22 @@ export function RegisterForm() {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const normalizedPhone = normalizeSouthAfricanPhone(phone);
+    if (!fullName.trim()) {
+      toast.error("Please enter your full name");
+      return;
+    }
+    if (!normalizedPhone) {
+      toast.error(phone.trim() ? "Enter a valid South African cell number" : "Cell number is required", {
+        description: "Use a mobile number such as 071 234 5678 or +27 71 234 5678.",
+      });
+      logAuthEvent("phone_verification", "failed", { reason: phone.trim() ? "invalid_format" : "missing" });
+      return;
+    }
+    if (!isValidEmail(email)) {
+      toast.error("Enter a valid email address");
+      return;
+    }
     if (password !== confirm) {
       toast.error("Passwords don't match");
       return;
@@ -50,23 +68,47 @@ export function RegisterForm() {
       toast.error("Please accept the terms");
       return;
     }
-    setLoading(true);
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: window.location.origin + "/",
-        data: { full_name: fullName, phone },
-      },
-    });
-    setLoading(false);
-    if (error) {
-      toast.error("Couldn't create account", { description: error.message });
+    if (score < 4) {
+      toast.error("Password does not meet all requirements");
       return;
     }
-    toast.success("Account created. Check your email to verify.");
-    setAuthTransition("signing-in");
-    navigate({ to: "/" });
+    setLoading(true);
+    logAuthEvent("registration", "started");
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email: email.trim().toLowerCase(),
+        password,
+        options: {
+          emailRedirectTo: window.location.origin + "/auth",
+          data: { full_name: fullName.trim(), phone: normalizedPhone },
+        },
+      });
+      if (error) {
+        logAuthEvent("registration", "failed", { status: error.status ?? null });
+        toast.error("Couldn't create account", {
+          description: authErrorMessage(error, "Please check your details and try again."),
+        });
+        return;
+      }
+      logAuthEvent("phone_verification", "succeeded", { mode: "format_only" });
+      logAuthEvent("profile_creation", "succeeded", { source: "database_trigger" });
+      logAuthEvent("registration", "succeeded", { confirmationRequired: !data.session });
+      if (!data.session) {
+        toast.success("Account created. Check your email to verify.");
+        logAuthEvent("redirect", "succeeded", { destination: "sign_in" });
+        navigate({ to: "/auth", replace: true });
+        return;
+      }
+      toast.success("Account created");
+      setAuthTransition("signing-in");
+      logAuthEvent("redirect", "succeeded", { destination: "home" });
+      navigate({ to: "/", replace: true });
+    } catch {
+      logAuthEvent("registration", "failed", { reason: "unexpected" });
+      toast.error("Couldn't create account", { description: "Please try again. Your account details were not lost." });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -103,11 +145,13 @@ export function RegisterForm() {
         <Field label="Phone">
           <input
             type="tel"
+            required
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
             className={fieldCls}
             placeholder="+27 71 234 5678"
             autoComplete="tel"
+            inputMode="tel"
           />
         </Field>
       </div>

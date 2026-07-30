@@ -6,6 +6,8 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { GoogleButton } from "./social-buttons";
+import { authErrorMessage, isValidEmail } from "@/lib/auth-validation";
+import { logAuthEvent } from "@/lib/auth-events";
 
 export function LoginForm() {
   const navigate = useNavigate();
@@ -18,16 +20,29 @@ export function LoginForm() {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    setLoading(false);
-    if (error) {
-      toast.error("Couldn't sign you in", { description: error.message });
+    if (!isValidEmail(email)) {
+      toast.error("Enter a valid email address");
       return;
     }
-    toast.success("Welcome back");
-    setAuthTransition("signing-in");
-    navigate({ to: "/" });
+    setLoading(true);
+    logAuthEvent("login", "started");
+    try {
+      const { error } = await supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password });
+      if (error) {
+        logAuthEvent("login", "failed", { status: error.status ?? null });
+        toast.error("Couldn't sign you in", { description: authErrorMessage(error, "Please check your details and try again.") });
+        return;
+      }
+      logAuthEvent("login", "succeeded");
+      toast.success("Welcome back");
+      setAuthTransition("signing-in");
+      navigate({ to: "/", replace: true });
+    } catch {
+      logAuthEvent("login", "failed", { reason: "unexpected" });
+      toast.error("Couldn't sign you in", { description: "Please try again." });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

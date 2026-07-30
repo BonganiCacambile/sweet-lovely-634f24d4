@@ -6,6 +6,8 @@ import { AuthLayout } from "@/components/auth/auth-layout";
 import { Field, fieldCls } from "@/components/auth/login-form";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
+import { authErrorMessage } from "@/lib/auth-validation";
+import { logAuthEvent } from "@/lib/auth-events";
 
 export const Route = createFileRoute("/auth/reset-password")({
   head: () => ({
@@ -24,12 +26,45 @@ function ResetPassword() {
   const [confirm, setConfirm] = useState("");
   const [loading, setLoading] = useState(false);
   const [ready, setReady] = useState(false);
+  const [checking, setChecking] = useState(true);
 
   useEffect(() => {
-    // Supabase auto-detects the recovery hash and signs the user in temporarily
-    supabase.auth.getSession().then(({ data }) => {
-      setReady(Boolean(data.session));
+    let active = true;
+    const timer = window.setTimeout(() => {
+      if (!active) return;
+      setChecking(false);
+      logAuthEvent("session_initialization", "timed_out", { flow: "password_recovery" });
+    }, 8000);
+    const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!active) return;
+      logAuthEvent("authentication_listener", "succeeded", { event });
+      if (event === "PASSWORD_RECOVERY" || session) {
+        setReady(true);
+        setChecking(false);
+        window.clearTimeout(timer);
+      }
     });
+    void supabase.auth.getSession().then(({ data, error }) => {
+      if (!active) return;
+      if (error) {
+        logAuthEvent("session_initialization", "failed", { flow: "password_recovery" });
+        return;
+      }
+      if (data.session) {
+        setReady(true);
+        setChecking(false);
+        window.clearTimeout(timer);
+        logAuthEvent("session_initialization", "succeeded", { flow: "password_recovery" });
+      }
+    }).catch(() => {
+      if (!active) return;
+      logAuthEvent("session_initialization", "failed", { flow: "password_recovery" });
+    });
+    return () => {
+      active = false;
+      window.clearTimeout(timer);
+      listener.subscription.unsubscribe();
+    };
   }, []);
 
   const submit = async (e: React.FormEvent) => {
@@ -37,12 +72,21 @@ function ResetPassword() {
     if (pwd.length < 8) return toast.error("Password must be at least 8 characters");
     if (pwd !== confirm) return toast.error("Passwords don't match");
     setLoading(true);
-    const { error } = await supabase.auth.updateUser({ password: pwd });
-    setLoading(false);
-    if (error) return toast.error("Couldn't update password", { description: error.message });
-    toast.success("Password updated");
-    setAuthTransition("signing-in");
-    navigate({ to: "/" });
+    logAuthEvent("password_reset_confirmation", "started");
+    try {
+      const { error } = await supabase.auth.updateUser({ password: pwd });
+      if (error) {
+        logAuthEvent("password_reset_confirmation", "failed", { status: error.status ?? null });
+        return toast.error("Couldn't update password", { description: authErrorMessage(error, "Request a new reset link and try again.") });
+      }
+      await supabase.auth.signOut();
+      logAuthEvent("password_reset_confirmation", "succeeded");
+      toast.success("Password updated. Sign in with your new password.");
+      setAuthTransition("idle");
+      navigate({ to: "/auth", replace: true });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -51,7 +95,11 @@ function ResetPassword() {
       title="Choose a new password"
       subtitle="Use at least 8 characters with a mix of letters, numbers, and symbols."
     >
-      {!ready ? (
+      {checking ? (
+        <div className="flex items-center justify-center py-8 text-sm text-neutral-600">
+          <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Verifying your reset link…
+        </div>
+      ) : !ready ? (
         <div className="rounded-2xl border border-amber-200 bg-amber-50/60 p-4 text-sm text-amber-900">
           This page must be opened from the reset link we emailed you. If the link expired, request a new
           one from the forgot-password page.

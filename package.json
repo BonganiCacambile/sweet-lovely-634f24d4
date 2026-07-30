@@ -19,6 +19,7 @@
     "prebuild": "node scripts/validate-config.mjs --scope=build",
     "pretest:regression": "node scripts/validate-config.mjs --scope=regression",
     "test:unit": "bun test tests/unit",
+    "test:auth": "bun test tests/unit/auth-validation.test.ts && node tests/regression/auth-flow.e2e.mjs",
     "test:regression:orders": "node tests/regression/realtime-orders.mjs",
     "test:regression:notifications": "node tests/regression/realtime-customer-notifications.mjs",
     "test:regression:presence-perf": "node tests/regression/admin-presence-perf.mjs",
@@ -44,6 +45,8 @@
     "test:regression:home-realtime-anon-inactive": "node tests/regression/home-realtime-anon-inactive.mjs"
     ,
     "test:regression:no-500-sweep": "node tests/regression/no-500-sweep.mjs"
+    ,
+    "test:regression:auth": "node tests/regression/auth-flow.e2e.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
