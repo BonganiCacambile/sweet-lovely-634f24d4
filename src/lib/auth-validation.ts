@@ -12,6 +12,10 @@ export function isValidEmail(value: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
 }
 
+export function registrationDestination(hasSession: boolean): "home" | "sign_in" {
+  return hasSession ? "home" : "sign_in";
+}
+
 export function authErrorMessage(error: { message?: string; status?: number } | null, fallback: string) {
   const message = error?.message?.toLowerCase() ?? "";
   if (message.includes("already registered") || message.includes("already exists")) {

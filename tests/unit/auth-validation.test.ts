@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { authErrorMessage, isValidEmail, normalizeSouthAfricanPhone } from "../../src/lib/auth-validation";
+import { authErrorMessage, isValidEmail, normalizeSouthAfricanPhone, registrationDestination } from "../../src/lib/auth-validation";
 
 describe("authentication validation", () => {
   test("normalizes supported South African mobile formats", () => {
@@ -28,5 +28,10 @@ describe("authentication validation", () => {
       "That cell number is already linked to an account.",
     );
     expect(authErrorMessage({ status: 429 }, "Fallback")).toContain("Too many attempts");
+  });
+
+  test("routes confirmation-required registrations to sign-in", () => {
+    expect(registrationDestination(false)).toBe("sign_in");
+    expect(registrationDestination(true)).toBe("home");
   });
 });

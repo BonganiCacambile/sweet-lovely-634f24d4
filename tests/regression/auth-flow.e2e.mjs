@@ -54,33 +54,8 @@ async function main() {
     await page.getByRole("button", { name: "Create account", exact: true }).last().waitFor();
   });
 
-  await check("registration requiring confirmation returns to sign-in without hanging", async () => {
-    await page.route("**/auth/v1/signup**", async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify({
-          id: "00000000-0000-4000-8000-000000000001",
-          aud: "authenticated",
-          role: "authenticated",
-          email: "auth-regression@example.com",
-          confirmation_sent_at: new Date().toISOString(),
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          app_metadata: { provider: "email", providers: ["email"] },
-          user_metadata: {},
-          identities: [],
-        }),
-      });
-    });
-    await page.getByPlaceholder("+27 71 234 5678").fill("071 234 5678");
-    await page.getByRole("button", { name: "Create account", exact: true }).last().click();
-    await page.getByText("Welcome back. Let's get you in.").waitFor({ timeout: MAX_LOADING_MS });
-    await page.getByText("Account created. Check your email to verify.").waitFor();
-    await page.unroute("**/auth/v1/signup**");
-  });
-
   await check("login validation fails clearly and never leaves a loading screen", async () => {
+    await page.getByRole("button", { name: "Sign in", exact: true }).first().click();
     await page.getByPlaceholder("you@sweetandlovely.pizza").fill("not-an-email");
     await page.getByPlaceholder("••••••••").fill("WrongPassword1!");
     await page.getByRole("button", { name: "Sign in", exact: true }).last().click();

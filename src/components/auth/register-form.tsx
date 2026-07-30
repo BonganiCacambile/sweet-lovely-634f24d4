@@ -7,7 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { Field, fieldCls } from "./login-form";
 import { GoogleButton } from "./social-buttons";
-import { authErrorMessage, isValidEmail, normalizeSouthAfricanPhone } from "@/lib/auth-validation";
+import { authErrorMessage, isValidEmail, normalizeSouthAfricanPhone, registrationDestination } from "@/lib/auth-validation";
 import { logAuthEvent } from "@/lib/auth-events";
 
 function strength(p: string) {
@@ -93,7 +93,7 @@ export function RegisterForm() {
       logAuthEvent("phone_verification", "succeeded", { mode: "format_only" });
       logAuthEvent("profile_creation", "succeeded", { source: "database_trigger" });
       logAuthEvent("registration", "succeeded", { confirmationRequired: !data.session });
-      if (!data.session) {
+      if (registrationDestination(Boolean(data.session)) === "sign_in") {
         toast.success("Account created. Check your email to verify.");
         logAuthEvent("redirect", "succeeded", { destination: "sign_in" });
         window.dispatchEvent(new CustomEvent("auth:show-signin"));
