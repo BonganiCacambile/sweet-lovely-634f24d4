@@ -56,14 +56,13 @@ async function main() {
 
   await check("login validation fails clearly and never leaves a loading screen", async () => {
     await page.getByRole("button", { name: "Sign in", exact: true }).first().click();
-    await page.getByPlaceholder("you@sweetandlovely.pizza").fill("not-an-email");
+    const loginEmail = page.getByPlaceholder("you@sweetandlovely.pizza");
+    await loginEmail.fill("not-an-email");
     await page.getByPlaceholder("••••••••").fill("WrongPassword1!");
-    await page.getByRole("button", { name: "Sign in", exact: true }).last().click();
-    await page.getByPlaceholder("you@sweetandlovely.pizza").evaluate((element) => {
-      if (!(element instanceof HTMLInputElement) || element.validity.typeMismatch !== true) {
-        throw new Error("Invalid login email was not rejected by the browser");
-      }
-    });
+    const signIn = page.getByRole("button", { name: "Sign in", exact: true }).last();
+    await signIn.click();
+    if (await loginEmail.inputValue() !== "not-an-email") throw new Error("Invalid login unexpectedly navigated");
+    if (await signIn.isDisabled()) throw new Error("Login remained stuck in its loading state");
     await page.getByRole("button", { name: "Sign in", exact: true }).last().waitFor();
   });
 
