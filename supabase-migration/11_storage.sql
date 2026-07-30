@@ -10,7 +10,10 @@ VALUES ('avatars', 'avatars', false)
 ON CONFLICT (id) DO UPDATE SET public = EXCLUDED.public;
 
 -- 2) Ensure RLS is on (normally already enabled by Supabase) ----
-ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY;
+-- NOTE: RLS is already enabled on storage.objects by Supabase, and your SQL
+-- role is not the owner of that table, so running
+--   ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY;
+-- fails with `42501: must be owner of table objects`. It is omitted on purpose.
 
 -- 3) Policies --------------------------------------------------
 -- Drop both legacy naming variants so re-runs never hit 42710.
