@@ -60,17 +60,16 @@ async function main() {
         status: 200,
         contentType: "application/json",
         body: JSON.stringify({
-          user: {
-            id: "00000000-0000-4000-8000-000000000001",
-            aud: "authenticated",
-            role: "authenticated",
-            email: "auth-regression@example.com",
-            created_at: new Date().toISOString(),
-            app_metadata: { provider: "email", providers: ["email"] },
-            user_metadata: {},
-            identities: [],
-          },
-          session: null,
+          id: "00000000-0000-4000-8000-000000000001",
+          aud: "authenticated",
+          role: "authenticated",
+          email: "auth-regression@example.com",
+          confirmation_sent_at: new Date().toISOString(),
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          app_metadata: { provider: "email", providers: ["email"] },
+          user_metadata: {},
+          identities: [],
         }),
       });
     });
