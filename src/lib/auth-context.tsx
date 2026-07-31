@@ -138,6 +138,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (user) await loadExtras(user.id);
   };
 
+  // Safety net: never let a sign-in/out transition hold the loading screen open.
+  useEffect(() => {
+    if (authTransition === "idle") return;
+    const t = window.setTimeout(() => {
+      setAuthTransition("idle");
+      logAuthEvent("redirect", "timed_out", { transition: authTransition });
+    }, 6000);
+    return () => window.clearTimeout(t);
+  }, [authTransition]);
+
   const signOut = useCallback(async () => {
     setAuthTransition("signing-out");
     logAuthEvent("logout", "started");
