@@ -73,6 +73,9 @@ jobs:
       - name: Run regression suite
         run: bun run test:regression
 
+      - name: Run RLS security matrix
+        run: bun run test:regression:rls-matrix
+
       - name: Stop dev server
         if: always()
         run: |

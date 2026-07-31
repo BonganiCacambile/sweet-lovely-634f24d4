@@ -13,25 +13,38 @@
  */
 import { createClient } from "@supabase/supabase-js";
 import { assignRole, clearRoles } from "./lib/role-provider.mjs";
+import { requireEnv } from "./lib/load-env.mjs";
 
-const { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, SUPABASE_SERVICE_ROLE_KEY } = process.env;
-
-for (const [name, val] of Object.entries({
-  SUPABASE_URL,
-  SUPABASE_PUBLISHABLE_KEY,
-  SUPABASE_SERVICE_ROLE_KEY,
-})) {
-  if (!val) {
-    console.error(`Missing required env var: ${name}`);
-    process.exit(2);
-  }
-}
+// Validated BEFORE any test runs: a missing/malformed service-role key aborts
+// immediately with actionable instructions instead of silently skipping the
+// authenticated half of the matrix.
+const { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, SUPABASE_SERVICE_ROLE_KEY } = requireEnv(
+  ["SUPABASE_URL", "SUPABASE_PUBLISHABLE_KEY", "SUPABASE_SERVICE_ROLE_KEY"],
+  { suite: "rls-matrix" },
+);
 
 const TAG = `${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
 const PASSWORD = `RlsMatrix!${TAG}`;
 
 let failures = 0;
 let checks = 0;
+/** Categorised failures for the final security report. */
+const report = {
+  missingPermissions: [],
+  unexpectedAccess: [],
+  crossZoneLeaks: [],
+  escalations: [],
+  other: [],
+  cleanup: { status: "not run", residual: [] },
+};
+const DENY_WORDS = /blocked|hidden|not readable|denied|only |filtered/i;
+function categorise(msg) {
+  const deny = DENY_WORDS.test(msg);
+  if (/escalation|role granted/i.test(msg)) return report.escalations;
+  if (deny && /zone/i.test(msg)) return report.crossZoneLeaks;
+  if (deny) return report.unexpectedAccess;
+  return report.missingPermissions;
+}
 const section = (s) => console.log(`\n> ${s}`);
 function pass(msg) {
   checks++;
@@ -40,6 +53,7 @@ function pass(msg) {
 function fail(msg, extra) {
   checks++;
   failures++;
+  categorise(msg).push(extra ? `${msg} (${extra})` : msg);
   console.error("  FAIL", msg, extra ? `-- ${extra}` : "");
 }
 function expect(cond, msg, extra) {
@@ -479,6 +493,91 @@ async function cleanup() {
   }
   if (fixtures.zones.length) await admin.from("delivery_zones").delete().in("id", fixtures.zones);
   console.log("  OK   fixtures removed");
+  await verifyCleanup();
+}
+
+/** Re-reads the database with the service role to prove nothing survived. */
+async function verifyCleanup() {
+  const residual = [];
+  const check = async (label, query) => {
+    const { data, error } = await query;
+    if (error) residual.push(`${label}: verification failed (${error.message})`);
+    else if ((data ?? []).length) residual.push(`${label}: ${data.length} row(s) left`);
+  };
+
+  if (fixtures.orders.length) {
+    await check("orders", admin.from("orders").select("id").in("id", fixtures.orders));
+    await check("order_items", admin.from("order_items").select("id").in("order_id", fixtures.orders));
+    await check(
+      "inventory_movements",
+      admin.from("inventory_movements").select("id").in("order_id", fixtures.orders),
+    );
+  }
+  if (fixtures.products.length) {
+    await check("products", admin.from("products").select("slug").in("slug", fixtures.products));
+    await check(
+      "product_sizes",
+      admin.from("product_sizes").select("id").in("product_slug", fixtures.products),
+    );
+  }
+  if (fixtures.toppings.length)
+    await check("pizza_toppings", admin.from("pizza_toppings").select("id").in("id", fixtures.toppings));
+  if (fixtures.banners.length)
+    await check("home_banners", admin.from("home_banners").select("id").in("id", fixtures.banners));
+  if (fixtures.zones.length)
+    await check("delivery_zones", admin.from("delivery_zones").select("id").in("id", fixtures.zones));
+
+  for (const id of fixtures.users) {
+    await check("user_roles", admin.from("user_roles").select("user_id").eq("user_id", id));
+    const { data, error } = await admin.auth.admin.getUserById(id);
+    if (!error && data?.user) residual.push(`auth user ${id} still exists`);
+  }
+  // Belt-and-braces: no stray rows tagged with this run anywhere.
+  const { data: strayOrders } = await admin
+    .from("orders")
+    .select("id")
+    .like("order_number", `RLS-${TAG}%`);
+  if ((strayOrders ?? []).length) residual.push(`orders tagged ${TAG}: ${strayOrders.length} left`);
+
+  report.cleanup.residual = residual;
+  report.cleanup.status = residual.length ? "INCOMPLETE" : "COMPLETE";
+  if (residual.length) {
+    failures++;
+    console.error("  FAIL cleanup verification:", residual.join("; "));
+  } else {
+    console.log("  OK   cleanup verified — no regression data left in the database");
+  }
+}
+
+function printReport() {
+  const list = (arr) => (arr.length ? arr.map((m) => `      - ${m}`).join("\n") : "      none");
+  console.log(
+    [
+      "",
+      "==================================================",
+      "RLS Security Regression Report",
+      "==================================================",
+      `Run tag:            ${TAG}`,
+      `Assertions executed: ${checks}`,
+      `Passed:              ${checks - failures}`,
+      `Failed:              ${failures}`,
+      "",
+      "  Missing permissions (expected access denied):",
+      list(report.missingPermissions),
+      "  Unexpected access (data visible that should not be):",
+      list(report.unexpectedAccess),
+      "  Cross-zone leaks:",
+      list(report.crossZoneLeaks),
+      "  Privilege escalation:",
+      list(report.escalations),
+      "",
+      `Cleanup status:      ${report.cleanup.status}`,
+      ...(report.cleanup.residual.length ? [list(report.cleanup.residual)] : []),
+      "",
+      `Overall security result: ${failures === 0 ? "PASS — production RLS model verified" : "FAIL — review findings above"}`,
+      "==================================================",
+    ].join("\n"),
+  );
 }
 
 async function main() {
@@ -522,6 +621,6 @@ main()
     await cleanup().catch(() => {});
   })
   .finally(() => {
-    console.log(`\n[rls-matrix] ${checks - failures}/${checks} checks passed`);
+    printReport();
     process.exit(failures ? 1 : 0);
   });
