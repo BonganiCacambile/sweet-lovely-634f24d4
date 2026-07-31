@@ -42,10 +42,8 @@
     "test:regression:order-item-size-snapshot-qty": "node tests/regression/order-item-size-title-snapshot-qty.mjs",
     "test:regression": "bun run test:regression:no-500-sweep && bun run test:regression:realtime && bun run test:regression:checkout && bun run test:regression:paystack-webhook && bun run test:regression:mcp-auth && bun run test:regression:zone-leak && bun run test:regression:realtime-menu-invalidation && bun run test:regression:home-realtime-anon-inactive && bun run test:regression:home-content-realtime-e2e && bun run test:regression:product-sizes-mixed-upsert && bun run test:regression:product-sizes-bulk-mixed-upsert && bun run test:regression:product-sizes-concurrent-mixed-upsert && bun run test:regression:order-item-size-snapshot && bun run test:regression:order-item-size-snapshot-qty",
     "test:regression:realtime-menu-invalidation": "node tests/regression/realtime-menu-invalidation.mjs",
-    "test:regression:home-realtime-anon-inactive": "node tests/regression/home-realtime-anon-inactive.mjs"
-    ,
-    "test:regression:no-500-sweep": "node tests/regression/no-500-sweep.mjs"
-    ,
+    "test:regression:home-realtime-anon-inactive": "node tests/regression/home-realtime-anon-inactive.mjs",
+    "test:regression:no-500-sweep": "node tests/regression/no-500-sweep.mjs",
     "test:regression:auth": "node tests/regression/auth-flow.e2e.mjs"
   },
   "dependencies": {
@@ -79,7 +77,7 @@
     "@radix-ui/react-toggle": "^1.1.10",
     "@radix-ui/react-toggle-group": "^1.1.11",
     "@radix-ui/react-tooltip": "^1.2.8",
-    "@supabase/supabase-js": "^2.107.0",
+    "@supabase/supabase-js": "^2.111.0",
     "@tailwindcss/vite": "^4.2.1",
     "@tanstack/react-query": "^5.83.0",
     "@tanstack/react-router": "^1.170.17",
