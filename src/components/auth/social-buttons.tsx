@@ -1,4 +1,4 @@
-import { lovable } from "@/integrations/lovable";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useState } from "react";
 
@@ -6,16 +6,17 @@ export function GoogleButton({ label = "Continue with Google", redirectTo = "/" 
   const [loading, setLoading] = useState(false);
   const onClick = async () => {
     setLoading(true);
-    const res = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin + redirectTo,
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: window.location.origin + redirectTo,
+        queryParams: { prompt: "select_account" },
+      },
     });
-    if (res.error) {
-      toast.error("Google sign-in failed", { description: res.error.message });
+    if (error) {
+      toast.error("Google sign-in failed", { description: error.message });
       setLoading(false);
-      return;
     }
-    if (res.redirected) return;
-    window.location.href = redirectTo;
   };
   return (
     <button
