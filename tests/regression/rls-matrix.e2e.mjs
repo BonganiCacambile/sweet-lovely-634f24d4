@@ -493,6 +493,91 @@ async function cleanup() {
   }
   if (fixtures.zones.length) await admin.from("delivery_zones").delete().in("id", fixtures.zones);
   console.log("  OK   fixtures removed");
+  await verifyCleanup();
+}
+
+/** Re-reads the database with the service role to prove nothing survived. */
+async function verifyCleanup() {
+  const residual = [];
+  const check = async (label, query) => {
+    const { data, error } = await query;
+    if (error) residual.push(`${label}: verification failed (${error.message})`);
+    else if ((data ?? []).length) residual.push(`${label}: ${data.length} row(s) left`);
+  };
+
+  if (fixtures.orders.length) {
+    await check("orders", admin.from("orders").select("id").in("id", fixtures.orders));
+    await check("order_items", admin.from("order_items").select("id").in("order_id", fixtures.orders));
+    await check(
+      "inventory_movements",
+      admin.from("inventory_movements").select("id").in("order_id", fixtures.orders),
+    );
+  }
+  if (fixtures.products.length) {
+    await check("products", admin.from("products").select("slug").in("slug", fixtures.products));
+    await check(
+      "product_sizes",
+      admin.from("product_sizes").select("id").in("product_slug", fixtures.products),
+    );
+  }
+  if (fixtures.toppings.length)
+    await check("pizza_toppings", admin.from("pizza_toppings").select("id").in("id", fixtures.toppings));
+  if (fixtures.banners.length)
+    await check("home_banners", admin.from("home_banners").select("id").in("id", fixtures.banners));
+  if (fixtures.zones.length)
+    await check("delivery_zones", admin.from("delivery_zones").select("id").in("id", fixtures.zones));
+
+  for (const id of fixtures.users) {
+    await check("user_roles", admin.from("user_roles").select("user_id").eq("user_id", id));
+    const { data, error } = await admin.auth.admin.getUserById(id);
+    if (!error && data?.user) residual.push(`auth user ${id} still exists`);
+  }
+  // Belt-and-braces: no stray rows tagged with this run anywhere.
+  const { data: strayOrders } = await admin
+    .from("orders")
+    .select("id")
+    .like("order_number", `RLS-${TAG}%`);
+  if ((strayOrders ?? []).length) residual.push(`orders tagged ${TAG}: ${strayOrders.length} left`);
+
+  report.cleanup.residual = residual;
+  report.cleanup.status = residual.length ? "INCOMPLETE" : "COMPLETE";
+  if (residual.length) {
+    failures++;
+    console.error("  FAIL cleanup verification:", residual.join("; "));
+  } else {
+    console.log("  OK   cleanup verified — no regression data left in the database");
+  }
+}
+
+function printReport() {
+  const list = (arr) => (arr.length ? arr.map((m) => `      - ${m}`).join("\n") : "      none");
+  console.log(
+    [
+      "",
+      "==================================================",
+      "RLS Security Regression Report",
+      "==================================================",
+      `Run tag:            ${TAG}`,
+      `Assertions executed: ${checks}`,
+      `Passed:              ${checks - failures}`,
+      `Failed:              ${failures}`,
+      "",
+      "  Missing permissions (expected access denied):",
+      list(report.missingPermissions),
+      "  Unexpected access (data visible that should not be):",
+      list(report.unexpectedAccess),
+      "  Cross-zone leaks:",
+      list(report.crossZoneLeaks),
+      "  Privilege escalation:",
+      list(report.escalations),
+      "",
+      `Cleanup status:      ${report.cleanup.status}`,
+      ...(report.cleanup.residual.length ? [list(report.cleanup.residual)] : []),
+      "",
+      `Overall security result: ${failures === 0 ? "PASS — production RLS model verified" : "FAIL — review findings above"}`,
+      "==================================================",
+    ].join("\n"),
+  );
 }
 
 async function main() {
@@ -536,6 +621,6 @@ main()
     await cleanup().catch(() => {});
   })
   .finally(() => {
-    console.log(`\n[rls-matrix] ${checks - failures}/${checks} checks passed`);
+    printReport();
     process.exit(failures ? 1 : 0);
   });
