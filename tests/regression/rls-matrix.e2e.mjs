@@ -13,25 +13,38 @@
  */
 import { createClient } from "@supabase/supabase-js";
 import { assignRole, clearRoles } from "./lib/role-provider.mjs";
+import { requireEnv } from "./lib/load-env.mjs";
 
-const { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, SUPABASE_SERVICE_ROLE_KEY } = process.env;
-
-for (const [name, val] of Object.entries({
-  SUPABASE_URL,
-  SUPABASE_PUBLISHABLE_KEY,
-  SUPABASE_SERVICE_ROLE_KEY,
-})) {
-  if (!val) {
-    console.error(`Missing required env var: ${name}`);
-    process.exit(2);
-  }
-}
+// Validated BEFORE any test runs: a missing/malformed service-role key aborts
+// immediately with actionable instructions instead of silently skipping the
+// authenticated half of the matrix.
+const { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, SUPABASE_SERVICE_ROLE_KEY } = requireEnv(
+  ["SUPABASE_URL", "SUPABASE_PUBLISHABLE_KEY", "SUPABASE_SERVICE_ROLE_KEY"],
+  { suite: "rls-matrix" },
+);
 
 const TAG = `${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
 const PASSWORD = `RlsMatrix!${TAG}`;
 
 let failures = 0;
 let checks = 0;
+/** Categorised failures for the final security report. */
+const report = {
+  missingPermissions: [],
+  unexpectedAccess: [],
+  crossZoneLeaks: [],
+  escalations: [],
+  other: [],
+  cleanup: { status: "not run", residual: [] },
+};
+const DENY_WORDS = /blocked|hidden|not readable|denied|only |filtered/i;
+function categorise(msg) {
+  const deny = DENY_WORDS.test(msg);
+  if (/escalation|role granted/i.test(msg)) return report.escalations;
+  if (deny && /zone/i.test(msg)) return report.crossZoneLeaks;
+  if (deny) return report.unexpectedAccess;
+  return report.missingPermissions;
+}
 const section = (s) => console.log(`\n> ${s}`);
 function pass(msg) {
   checks++;
@@ -40,6 +53,7 @@ function pass(msg) {
 function fail(msg, extra) {
   checks++;
   failures++;
+  categorise(msg).push(extra ? `${msg} (${extra})` : msg);
   console.error("  FAIL", msg, extra ? `-- ${extra}` : "");
 }
 function expect(cond, msg, extra) {
