@@ -90,6 +90,16 @@ export function RegisterForm() {
         });
         return;
       }
+      // Supabase returns 200 with an empty identities array when the email is
+      // already registered (enumeration protection). Treat it as a duplicate.
+      if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+        logAuthEvent("registration", "failed", { reason: "duplicate_email" });
+        toast.error("Account already exists", {
+          description: "That email is already registered. Sign in, or reset your password if you've forgotten it.",
+        });
+        window.dispatchEvent(new CustomEvent("auth:show-signin"));
+        return;
+      }
       logAuthEvent("phone_verification", "succeeded", { mode: "format_only" });
       logAuthEvent("profile_creation", "succeeded", { source: "database_trigger" });
       logAuthEvent("registration", "succeeded", { confirmationRequired: !data.session });
