@@ -303,3 +303,29 @@ node tests/regression/extras-pricing-consistency.mjs
 # or
 bun run test:regression:extras-pricing
 ```
+## RLS matrix (admin / zone-admin / customer / anon)
+
+`bun run test:regression:rls-matrix` → `tests/regression/rls-matrix.e2e.mjs`
+
+Provisions three throwaway users (admin, zone_admin bound to a real delivery
+zone, customer) plus fixtures (one order per zone with items, one inactive
+product), then signs each one in with the **publishable key** and asserts the
+allowed/denied reads and writes on every RLS-protected table:
+
+* admin — reads `audit_logs`, `system_settings`, `integrations`, `promotions`,
+  `role_permissions`, `inventory_movements`, `reservations`,
+  `loyalty_accounts`, inactive products, all orders/order items/profiles/roles/
+  zones; writes toppings (insert→update→delete), products, product sizes,
+  orders in any zone, home banners, any delivery zone.
+* zone_admin — sees and updates only its own zone's orders/order items/zone
+  row; blocked from other zones, admin-only tables, product writes,
+  `audit_logs` inserts and self privilege escalation.
+* customer — own order/profile/address only; no admin tables; cannot change
+  order status or grant itself a role.
+* anon — public reads only, every protected table returns nothing, writes fail.
+
+All fixtures and users are deleted at the end (also on failure).
+
+Required env: `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`,
+`SUPABASE_SERVICE_ROLE_KEY` (used only for provisioning/cleanup — never for the
+assertions themselves).
