@@ -329,3 +329,23 @@ All fixtures and users are deleted at the end (also on failure).
 Required env: `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`,
 `SUPABASE_SERVICE_ROLE_KEY` (used only for provisioning/cleanup — never for the
 assertions themselves).
+
+## Environment for the RLS matrix
+
+`tests/regression/lib/load-env.mjs` loads `.env` / `.env.local` (without
+overriding real environment variables) and validates the required config
+**before any test runs**. A missing or malformed `SUPABASE_SERVICE_ROLE_KEY`
+aborts with a `Regression Configuration Error` explaining exactly where to set
+it (local `.env`, GitHub Actions secrets, `PREVIEW_SUPABASE_SERVICE_ROLE_KEY`,
+`PROD_SUPABASE_SERVICE_ROLE_KEY`).
+
+| Variable | Used for |
+| --- | --- |
+| `SUPABASE_URL` | target project |
+| `SUPABASE_PUBLISHABLE_KEY` | **all** authenticated + anon assertions (RLS enforced, exactly like the browser) |
+| `SUPABASE_SERVICE_ROLE_KEY` | privileged setup/teardown only — create temp admin / zone-admin / customer users, assign roles, seed fixtures, delete everything afterwards |
+
+The suite verifies its own cleanup: after teardown it re-reads every fixture
+table and the auth users with the service role and fails if anything survives.
+It ends with a report of assertions run/passed/failed, missing permissions,
+unexpected access, cross-zone leaks, cleanup status and the overall result.
