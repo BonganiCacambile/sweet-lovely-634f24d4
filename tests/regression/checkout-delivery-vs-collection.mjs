@@ -412,6 +412,15 @@ async function runAll() {
   const browser = await chromium.launch({ headless: true });
   const failures = [];
 
+  CUSTOMER = await createEphemeralCustomerSession({
+    supabaseUrl: SUPABASE_URL,
+    serviceRoleKey: SUPABASE_SERVICE_ROLE_KEY,
+    publishableKey: SUPABASE_PUBLISHABLE_KEY,
+    projectId: SUPABASE_PROJECT_ID,
+    emailPrefix: "checkout",
+  });
+  log(`Signed in as ephemeral customer ${CUSTOMER.email}`);
+
   for (const { name, run } of tests) {
     const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
     const page = await context.newPage();
@@ -429,6 +438,8 @@ async function runAll() {
   }
 
   await browser.close();
+  await CUSTOMER.cleanup();
+  log("Cleaned up ephemeral customer.");
 
   if (failures.length) {
     console.error(`\n[checkout] ❌ FAIL — ${failures.length} test(s) failed:`);
