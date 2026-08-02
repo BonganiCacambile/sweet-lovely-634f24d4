@@ -260,12 +260,14 @@ async function testDeliverySummary(page) {
   await continueToNextStep(page);
   await waitForStep(page, "Payment");
 
-  assert.equal(await getSummaryRow(page, "Subtotal"), "R160.00");
-  assert.equal(await getSummaryRow(page, "Delivery"), "R50.00");
-  assert.equal(await getSummaryRow(page, "Tax"), "R8.00");
-  assert.equal(await getSummaryRow(page, "Total"), "R218.00");
+  const subtotal = PRODUCT_PRICE * 2;
+  const tax = subtotal * TAX_RATE;
+  assert.equal(await getSummaryRow(page, "Subtotal"), money(subtotal));
+  assert.equal(await getSummaryRow(page, "Delivery"), money(ZONE_BOTH_CFG.fee));
+  assert.equal(await getSummaryRow(page, "Tax"), money(tax));
+  assert.equal(await getSummaryRow(page, "Total"), money(subtotal + ZONE_BOTH_CFG.fee + tax));
   assert.equal(await getSummaryRow(page, "Order type"), "Delivery");
-  assert.equal(await getSummaryRow(page, "Estimated"), "~35 min");
+  assert.equal(await getSummaryRow(page, "Estimated"), `~${ZONE_BOTH_CFG.eta} min`);
   await screenshot(page, "delivery-summary");
 }
 
@@ -278,12 +280,14 @@ async function testCollectionSummary(page) {
   await continueToNextStep(page);
   await waitForStep(page, "Payment");
 
-  assert.equal(await getSummaryRow(page, "Subtotal"), "R160.00");
+  const subtotal = PRODUCT_PRICE * 2;
+  const tax = subtotal * TAX_RATE;
+  assert.equal(await getSummaryRow(page, "Subtotal"), money(subtotal));
   assert.equal(await getSummaryRow(page, "Delivery"), "R0.00 (Collection)");
-  assert.equal(await getSummaryRow(page, "Tax"), "R8.00");
-  assert.equal(await getSummaryRow(page, "Total"), "R168.00");
+  assert.equal(await getSummaryRow(page, "Tax"), money(tax));
+  assert.equal(await getSummaryRow(page, "Total"), money(subtotal + tax));
   assert.equal(await getSummaryRow(page, "Order type"), "Collection");
-  assert.equal(await getSummaryRow(page, "Ready in"), "~20 min");
+  assert.equal(await getSummaryRow(page, "Ready in"), `~${ZONE_BOTH_CFG.prep} min`);
   await screenshot(page, "collection-summary");
 }
 
