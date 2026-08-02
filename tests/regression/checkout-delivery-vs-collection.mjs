@@ -478,6 +478,11 @@ async function runAll() {
   });
   log(`Signed in as ephemeral customer ${CUSTOMER.email}`);
 
+  await resolveZones();
+  log(
+    `Zones resolved — both: ${ZONE_BOTH} (fee ${ZONE_BOTH_CFG.fee}, min ${ZONE_BOTH_CFG.min}, eta ${ZONE_BOTH_CFG.eta}), delivery-only: ${ZONE_DELIVERY_ONLY}`,
+  );
+
   for (const { name, run } of tests) {
     const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
     const page = await context.newPage();
