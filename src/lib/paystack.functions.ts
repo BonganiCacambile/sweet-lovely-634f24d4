@@ -405,6 +405,21 @@ export const verifyAndCreateOrder = createServerFn({ method: "POST" })
       console.error("Order insert error:", orderErr);
       const code = (orderErr as { code?: string } | null)?.code;
       if (code === "23505") {
+        // Idempotency: the same reference was already persisted (e.g. a retry
+        // after a network timeout, or a duplicate Paystack callback).
+        // Return the existing order instead of failing the customer.
+        const { data: existing } = await supabaseAdmin
+          .from("orders")
+          .select("order_number")
+          .eq("paystack_reference", data.reference)
+          .maybeSingle();
+        if (existing?.order_number) {
+          return {
+            success: true as const,
+            orderNumber: existing.order_number,
+            reference: data.reference,
+          };
+        }
         return {
           success: false as const,
           error: "This payment reference has already been used",
