@@ -17,6 +17,10 @@ import assert from "node:assert/strict";
 import { mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { loadEnvFiles } from "./lib/load-env.mjs";
+import { createEphemeralCustomerSession } from "./lib/browser-session.mjs";
+
+loadEnvFiles();
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ARTIFACTS = join(HERE, "artifacts");
@@ -26,6 +30,8 @@ const {
   APP_URL = "http://localhost:8080",
   SUPABASE_URL,
   SUPABASE_SERVICE_ROLE_KEY,
+  SUPABASE_PUBLISHABLE_KEY,
+  SUPABASE_PROJECT_ID,
   PAYSTACK_SECRET_KEY,
 } = process.env;
 
@@ -39,6 +45,7 @@ function need(name, val) {
 
 need("SUPABASE_URL", SUPABASE_URL);
 need("SUPABASE_SERVICE_ROLE_KEY", SUPABASE_SERVICE_ROLE_KEY);
+need("SUPABASE_PUBLISHABLE_KEY", SUPABASE_PUBLISHABLE_KEY);
 need("PAYSTACK_SECRET_KEY", PAYSTACK_SECRET_KEY);
 
 const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
@@ -48,12 +55,67 @@ const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
 const CART_KEY = "sweet-lovely-cart-v1";
 const ZONE_KEY = "sweet-lovely-zone-v1";
 
+/**
+ * The storefront sits behind a global auth gate (AuthGate in
+ * src/routes/__root.tsx). Without a session the app redirects /checkout to
+ * /auth mid-interaction, which is what previously surfaced as
+ * "element was detached from the DOM" on #firstName. Every browser context
+ * therefore boots with a real signed-in customer session.
+ */
+let CUSTOMER = null;
+
 const PRODUCT_SLUG = "margarita-muse";
 const PRODUCT_TITLE = "Margarita Muse";
 const PRODUCT_PRICE = 80;
 
-const ZONE_BOTH = "lithapark"; // Khayelitsha, delivery + collection, fee 50, min 150
-const ZONE_DELIVERY_ONLY = "hout-bay"; // delivery only
+/**
+ * Zone configuration is admin-editable production data (fee, ETA, minimum,
+ * collection availability), so the suite resolves it from the live database at
+ * startup instead of hardcoding values that drift whenever an admin edits a
+ * zone. Assertions are derived from the same numbers the app reads.
+ */
+let ZONE_BOTH = null; // slug of a zone offering delivery + collection
+let ZONE_DELIVERY_ONLY = null; // slug of a delivery-only zone
+let ZONE_BOTH_CFG = null;
+
+const TAX_RATE = 0.05;
+
+function money(n) {
+  return `R${Number(n).toFixed(2)}`;
+}
+
+async function resolveZones() {
+  const { data, error } = await admin
+    .from("delivery_zones")
+    .select(
+      "slug, name, fee_zar, min_order_zar, eta_minutes, collection_prep_minutes, delivery_enabled, collection_enabled, free_delivery_threshold_zar, is_active",
+    )
+    .eq("is_active", true);
+  if (error) throw new Error(`Could not load delivery zones: ${error.message}`);
+
+  const subtotal = PRODUCT_PRICE * 2;
+  const both = data.find(
+    (z) =>
+      z.delivery_enabled &&
+      z.collection_enabled &&
+      Number(z.min_order_zar) <= subtotal &&
+      Number(z.min_order_zar) > PRODUCT_PRICE && // so the 1-item cart is below minimum
+      !(Number(z.free_delivery_threshold_zar ?? 0) > 0 && subtotal >= Number(z.free_delivery_threshold_zar)),
+  );
+  const deliveryOnly = data.find((z) => z.delivery_enabled && !z.collection_enabled);
+  if (!both) throw new Error("No active zone offers both delivery and collection with a usable minimum.");
+  if (!deliveryOnly) throw new Error("No active delivery-only zone found.");
+
+  ZONE_BOTH = both.slug;
+  ZONE_DELIVERY_ONLY = deliveryOnly.slug;
+  ZONE_BOTH_CFG = {
+    name: both.name,
+    fee: Number(both.fee_zar),
+    min: Number(both.min_order_zar),
+    eta: Number(both.eta_minutes),
+    prep: Number(both.collection_prep_minutes ?? 20),
+  };
+}
 
 const CART_TWO = [cartItem(PRODUCT_SLUG, PRODUCT_TITLE, PRODUCT_PRICE, 2)];
 const CART_ONE = [cartItem(PRODUCT_SLUG, PRODUCT_TITLE, PRODUCT_PRICE, 1)];
@@ -67,18 +129,28 @@ function log(...args) {
 }
 
 async function seedCheckout(page, zoneSlug, items) {
-  // Seed cart + zone on a blank origin first, then load checkout so hydration
-  // reads the saved values instead of redirecting to /cart.
+  // Seed session + cart + zone on a blank origin first, then load checkout so
+  // hydration reads the saved values instead of redirecting to /auth or /cart.
   await page.goto(`${APP_URL}/`, { waitUntil: "domcontentloaded" });
   await page.evaluate(
-    ([cartKey, zoneKey, cart, zone]) => {
+    ([cartKey, zoneKey, cart, zone, authKey, authValue]) => {
+      window.localStorage.setItem(authKey, authValue);
       window.localStorage.setItem(cartKey, JSON.stringify(cart));
       window.localStorage.setItem(zoneKey, zone);
     },
-    [CART_KEY, ZONE_KEY, items, zoneSlug],
+    [
+      CART_KEY,
+      ZONE_KEY,
+      items,
+      zoneSlug,
+      CUSTOMER.storageKey,
+      JSON.stringify(CUSTOMER.session),
+    ],
   );
   await page.goto(`${APP_URL}/checkout`, { waitUntil: "domcontentloaded" });
   await page.waitForSelector("h1:has-text('Checkout')", { timeout: 15_000 });
+  // The form only exists once auth + cart hydration have settled.
+  await page.waitForSelector("#firstName", { state: "visible", timeout: 15_000 });
 }
 
 async function fillCustomerStep(page) {
@@ -188,12 +260,14 @@ async function testDeliverySummary(page) {
   await continueToNextStep(page);
   await waitForStep(page, "Payment");
 
-  assert.equal(await getSummaryRow(page, "Subtotal"), "R160.00");
-  assert.equal(await getSummaryRow(page, "Delivery"), "R50.00");
-  assert.equal(await getSummaryRow(page, "Tax"), "R8.00");
-  assert.equal(await getSummaryRow(page, "Total"), "R218.00");
+  const subtotal = PRODUCT_PRICE * 2;
+  const tax = subtotal * TAX_RATE;
+  assert.equal(await getSummaryRow(page, "Subtotal"), money(subtotal));
+  assert.equal(await getSummaryRow(page, "Delivery"), money(ZONE_BOTH_CFG.fee));
+  assert.equal(await getSummaryRow(page, "Tax"), money(tax));
+  assert.equal(await getSummaryRow(page, "Total"), money(subtotal + ZONE_BOTH_CFG.fee + tax));
   assert.equal(await getSummaryRow(page, "Order type"), "Delivery");
-  assert.equal(await getSummaryRow(page, "Estimated"), "~35 min");
+  assert.equal(await getSummaryRow(page, "Estimated"), `~${ZONE_BOTH_CFG.eta} min`);
   await screenshot(page, "delivery-summary");
 }
 
@@ -206,12 +280,14 @@ async function testCollectionSummary(page) {
   await continueToNextStep(page);
   await waitForStep(page, "Payment");
 
-  assert.equal(await getSummaryRow(page, "Subtotal"), "R160.00");
+  const subtotal = PRODUCT_PRICE * 2;
+  const tax = subtotal * TAX_RATE;
+  assert.equal(await getSummaryRow(page, "Subtotal"), money(subtotal));
   assert.equal(await getSummaryRow(page, "Delivery"), "R0.00 (Collection)");
-  assert.equal(await getSummaryRow(page, "Tax"), "R8.00");
-  assert.equal(await getSummaryRow(page, "Total"), "R168.00");
+  assert.equal(await getSummaryRow(page, "Tax"), money(tax));
+  assert.equal(await getSummaryRow(page, "Total"), money(subtotal + tax));
   assert.equal(await getSummaryRow(page, "Order type"), "Collection");
-  assert.equal(await getSummaryRow(page, "Ready in"), "~20 min");
+  assert.equal(await getSummaryRow(page, "Ready in"), `~${ZONE_BOTH_CFG.prep} min`);
   await screenshot(page, "collection-summary");
 }
 
@@ -221,21 +297,26 @@ async function testDeliveryCollectionToggle(page) {
   await continueToNextStep(page);
   await waitForStep(page, "How would you like your order?");
 
+  const subtotal = PRODUCT_PRICE * 2;
+  const tax = subtotal * TAX_RATE;
+  const deliveryTotal = money(subtotal + ZONE_BOTH_CFG.fee + tax);
+  const collectionTotal = money(subtotal + tax);
+
   // Delivery is default.
-  assert.equal(await getSummaryRow(page, "Delivery"), "R50.00");
-  assert.equal(await getSummaryRow(page, "Total"), "R218.00");
+  assert.equal(await getSummaryRow(page, "Delivery"), money(ZONE_BOTH_CFG.fee));
+  assert.equal(await getSummaryRow(page, "Total"), deliveryTotal);
   await page.waitForSelector("#address", { state: "visible", timeout: 5_000 });
 
   await selectFulfillment(page, "Collection");
   await page.waitForSelector('div:has-text("Collection details")', { timeout: 5_000 });
   assert.equal(await getSummaryRow(page, "Delivery"), "R0.00 (Collection)");
-  assert.equal(await getSummaryRow(page, "Total"), "R168.00");
+  assert.equal(await getSummaryRow(page, "Total"), collectionTotal);
   await page.waitForSelector("#address", { state: "hidden", timeout: 5_000 });
 
   await selectFulfillment(page, "Delivery");
   await page.waitForSelector("#address", { state: "visible", timeout: 5_000 });
-  assert.equal(await getSummaryRow(page, "Delivery"), "R50.00");
-  assert.equal(await getSummaryRow(page, "Total"), "R218.00");
+  assert.equal(await getSummaryRow(page, "Delivery"), money(ZONE_BOTH_CFG.fee));
+  assert.equal(await getSummaryRow(page, "Total"), deliveryTotal);
 
   await screenshot(page, "toggle");
 }
@@ -286,7 +367,8 @@ async function testDeliveryAddressValidation(page) {
 
 async function testMinimumOrderWarning(page) {
   await seedCheckout(page, ZONE_BOTH, CART_ONE);
-  await page.waitForSelector('p:has-text("Add R70.00 more")', { timeout: 5_000 });
+  const shortfall = money(ZONE_BOTH_CFG.min - PRODUCT_PRICE);
+  await page.waitForSelector(`p:has-text("Add ${shortfall} more")`, { timeout: 5_000 });
   await fillCustomerStep(page);
   await continueToNextStep(page);
   await waitForStep(page, "How would you like your order?");
@@ -339,7 +421,8 @@ async function testPaymentFailureAndRetry(page) {
 }
 
 async function testPaymentSuccess(page) {
-  const reference = await createPaystackCharge(168 * 100); // collection total for 2 items
+  const collectionTotal = PRODUCT_PRICE * 2 * (1 + TAX_RATE);
+  const reference = await createPaystackCharge(Math.round(collectionTotal * 100));
 
   try {
     await seedCheckout(page, ZONE_BOTH, CART_TWO);
@@ -362,7 +445,7 @@ async function testPaymentSuccess(page) {
       .eq("paystack_reference", reference)
       .maybeSingle();
     assert.ok(order, "Order should exist in Supabase");
-    assert.equal(order.total_zar, 168);
+    assert.equal(Number(order.total_zar), collectionTotal);
     assert.equal(order.fulfillment_method, "collection");
     await screenshot(page, "payment-success");
   } finally {
@@ -386,6 +469,20 @@ async function runAll() {
   const browser = await chromium.launch({ headless: true });
   const failures = [];
 
+  CUSTOMER = await createEphemeralCustomerSession({
+    supabaseUrl: SUPABASE_URL,
+    serviceRoleKey: SUPABASE_SERVICE_ROLE_KEY,
+    publishableKey: SUPABASE_PUBLISHABLE_KEY,
+    projectId: SUPABASE_PROJECT_ID,
+    emailPrefix: "checkout",
+  });
+  log(`Signed in as ephemeral customer ${CUSTOMER.email}`);
+
+  await resolveZones();
+  log(
+    `Zones resolved — both: ${ZONE_BOTH} (fee ${ZONE_BOTH_CFG.fee}, min ${ZONE_BOTH_CFG.min}, eta ${ZONE_BOTH_CFG.eta}), delivery-only: ${ZONE_DELIVERY_ONLY}`,
+  );
+
   for (const { name, run } of tests) {
     const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
     const page = await context.newPage();
@@ -403,6 +500,8 @@ async function runAll() {
   }
 
   await browser.close();
+  await CUSTOMER.cleanup();
+  log("Cleaned up ephemeral customer.");
 
   if (failures.length) {
     console.error(`\n[checkout] ❌ FAIL — ${failures.length} test(s) failed:`);
