@@ -83,18 +83,28 @@ function log(...args) {
 }
 
 async function seedCheckout(page, zoneSlug, items) {
-  // Seed cart + zone on a blank origin first, then load checkout so hydration
-  // reads the saved values instead of redirecting to /cart.
+  // Seed session + cart + zone on a blank origin first, then load checkout so
+  // hydration reads the saved values instead of redirecting to /auth or /cart.
   await page.goto(`${APP_URL}/`, { waitUntil: "domcontentloaded" });
   await page.evaluate(
-    ([cartKey, zoneKey, cart, zone]) => {
+    ([cartKey, zoneKey, cart, zone, authKey, authValue]) => {
+      window.localStorage.setItem(authKey, authValue);
       window.localStorage.setItem(cartKey, JSON.stringify(cart));
       window.localStorage.setItem(zoneKey, zone);
     },
-    [CART_KEY, ZONE_KEY, items, zoneSlug],
+    [
+      CART_KEY,
+      ZONE_KEY,
+      items,
+      zoneSlug,
+      CUSTOMER.storageKey,
+      JSON.stringify(CUSTOMER.session),
+    ],
   );
   await page.goto(`${APP_URL}/checkout`, { waitUntil: "domcontentloaded" });
   await page.waitForSelector("h1:has-text('Checkout')", { timeout: 15_000 });
+  // The form only exists once auth + cart hydration have settled.
+  await page.waitForSelector("#firstName", { state: "visible", timeout: 15_000 });
 }
 
 async function fillCustomerStep(page) {
