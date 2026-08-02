@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { authErrorMessage } from "@/lib/auth-validation";
 import { logAuthEvent } from "@/lib/auth-events";
+import { checkPasswordBreached } from "@/lib/password-safety.functions";
 
 export const Route = createFileRoute("/auth/reset-password")({
   head: () => ({
@@ -74,6 +75,17 @@ function ResetPassword() {
     setLoading(true);
     logAuthEvent("password_reset_confirmation", "started");
     try {
+      try {
+        const { breached } = await checkPasswordBreached({ data: { password: pwd } });
+        if (breached) {
+          logAuthEvent("password_reset_confirmation", "failed", { reason: "breached_password" });
+          return toast.error("Choose a different password", {
+            description: "This password has appeared in a known data breach. Please pick a unique one.",
+          });
+        }
+      } catch {
+        // Breach lookup unavailable — continue with the password update.
+      }
       const { error } = await supabase.auth.updateUser({ password: pwd });
       if (error) {
         logAuthEvent("password_reset_confirmation", "failed", { status: error.status ?? null });

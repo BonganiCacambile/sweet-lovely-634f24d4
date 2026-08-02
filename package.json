@@ -44,8 +44,8 @@
     "test:regression:realtime-menu-invalidation": "node tests/regression/realtime-menu-invalidation.mjs",
     "test:regression:home-realtime-anon-inactive": "node tests/regression/home-realtime-anon-inactive.mjs",
     "test:regression:no-500-sweep": "node tests/regression/no-500-sweep.mjs",
-    "test:regression:auth": "node tests/regression/auth-flow.e2e.mjs"
-    ,"test:regression:rls-matrix": "node tests/regression/rls-matrix.e2e.mjs"
+    "test:regression:auth": "node tests/regression/auth-flow.e2e.mjs",
+    "test:regression:rls-matrix": "node tests/regression/rls-matrix.e2e.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
@@ -113,7 +113,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.32.0",
-    "@lovable.dev/vite-tanstack-config": "2.7.7",
+    "@lovable.dev/vite-tanstack-config": "2.8.5",
     "@types/node": "^22.16.5",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",

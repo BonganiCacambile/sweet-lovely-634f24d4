@@ -9,6 +9,7 @@ import { Field, fieldCls } from "./login-form";
 import { GoogleButton } from "./social-buttons";
 import { authErrorMessage, isValidEmail, normalizeSouthAfricanPhone, registrationDestination } from "@/lib/auth-validation";
 import { logAuthEvent } from "@/lib/auth-events";
+import { checkPasswordBreached } from "@/lib/password-safety.functions";
 
 function strength(p: string) {
   let s = 0;
@@ -75,6 +76,18 @@ export function RegisterForm() {
     setLoading(true);
     logAuthEvent("registration", "started");
     try {
+      try {
+        const { breached } = await checkPasswordBreached({ data: { password } });
+        if (breached) {
+          logAuthEvent("registration", "failed", { reason: "breached_password" });
+          toast.error("Choose a different password", {
+            description: "This password has appeared in a known data breach. Please pick a unique one.",
+          });
+          return;
+        }
+      } catch {
+        // Breach lookup unavailable — continue with sign-up.
+      }
       const { data, error } = await supabase.auth.signUp({
         email: email.trim().toLowerCase(),
         password,
