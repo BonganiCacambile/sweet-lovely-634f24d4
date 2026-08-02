@@ -297,21 +297,26 @@ async function testDeliveryCollectionToggle(page) {
   await continueToNextStep(page);
   await waitForStep(page, "How would you like your order?");
 
+  const subtotal = PRODUCT_PRICE * 2;
+  const tax = subtotal * TAX_RATE;
+  const deliveryTotal = money(subtotal + ZONE_BOTH_CFG.fee + tax);
+  const collectionTotal = money(subtotal + tax);
+
   // Delivery is default.
-  assert.equal(await getSummaryRow(page, "Delivery"), "R50.00");
-  assert.equal(await getSummaryRow(page, "Total"), "R218.00");
+  assert.equal(await getSummaryRow(page, "Delivery"), money(ZONE_BOTH_CFG.fee));
+  assert.equal(await getSummaryRow(page, "Total"), deliveryTotal);
   await page.waitForSelector("#address", { state: "visible", timeout: 5_000 });
 
   await selectFulfillment(page, "Collection");
   await page.waitForSelector('div:has-text("Collection details")', { timeout: 5_000 });
   assert.equal(await getSummaryRow(page, "Delivery"), "R0.00 (Collection)");
-  assert.equal(await getSummaryRow(page, "Total"), "R168.00");
+  assert.equal(await getSummaryRow(page, "Total"), collectionTotal);
   await page.waitForSelector("#address", { state: "hidden", timeout: 5_000 });
 
   await selectFulfillment(page, "Delivery");
   await page.waitForSelector("#address", { state: "visible", timeout: 5_000 });
-  assert.equal(await getSummaryRow(page, "Delivery"), "R50.00");
-  assert.equal(await getSummaryRow(page, "Total"), "R218.00");
+  assert.equal(await getSummaryRow(page, "Delivery"), money(ZONE_BOTH_CFG.fee));
+  assert.equal(await getSummaryRow(page, "Total"), deliveryTotal);
 
   await screenshot(page, "toggle");
 }
@@ -362,7 +367,8 @@ async function testDeliveryAddressValidation(page) {
 
 async function testMinimumOrderWarning(page) {
   await seedCheckout(page, ZONE_BOTH, CART_ONE);
-  await page.waitForSelector('p:has-text("Add R70.00 more")', { timeout: 5_000 });
+  const shortfall = money(ZONE_BOTH_CFG.min - PRODUCT_PRICE);
+  await page.waitForSelector(`p:has-text("Add ${shortfall} more")`, { timeout: 5_000 });
   await fillCustomerStep(page);
   await continueToNextStep(page);
   await waitForStep(page, "How would you like your order?");
@@ -415,7 +421,8 @@ async function testPaymentFailureAndRetry(page) {
 }
 
 async function testPaymentSuccess(page) {
-  const reference = await createPaystackCharge(168 * 100); // collection total for 2 items
+  const collectionTotal = PRODUCT_PRICE * 2 * (1 + TAX_RATE);
+  const reference = await createPaystackCharge(Math.round(collectionTotal * 100));
 
   try {
     await seedCheckout(page, ZONE_BOTH, CART_TWO);
@@ -438,7 +445,7 @@ async function testPaymentSuccess(page) {
       .eq("paystack_reference", reference)
       .maybeSingle();
     assert.ok(order, "Order should exist in Supabase");
-    assert.equal(order.total_zar, 168);
+    assert.equal(Number(order.total_zar), collectionTotal);
     assert.equal(order.fulfillment_method, "collection");
     await screenshot(page, "payment-success");
   } finally {
