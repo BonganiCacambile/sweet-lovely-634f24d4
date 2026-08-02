@@ -68,8 +68,54 @@ const PRODUCT_SLUG = "margarita-muse";
 const PRODUCT_TITLE = "Margarita Muse";
 const PRODUCT_PRICE = 80;
 
-const ZONE_BOTH = "lithapark"; // Khayelitsha, delivery + collection, fee 50, min 150
-const ZONE_DELIVERY_ONLY = "hout-bay"; // delivery only
+/**
+ * Zone configuration is admin-editable production data (fee, ETA, minimum,
+ * collection availability), so the suite resolves it from the live database at
+ * startup instead of hardcoding values that drift whenever an admin edits a
+ * zone. Assertions are derived from the same numbers the app reads.
+ */
+let ZONE_BOTH = null; // slug of a zone offering delivery + collection
+let ZONE_DELIVERY_ONLY = null; // slug of a delivery-only zone
+let ZONE_BOTH_CFG = null;
+
+const TAX_RATE = 0.05;
+
+function money(n) {
+  return `R${Number(n).toFixed(2)}`;
+}
+
+async function resolveZones() {
+  const { data, error } = await admin
+    .from("delivery_zones")
+    .select(
+      "slug, name, fee_zar, min_order_zar, eta_minutes, collection_prep_minutes, delivery_enabled, collection_enabled, free_delivery_threshold_zar, is_active",
+    )
+    .eq("is_active", true);
+  if (error) throw new Error(`Could not load delivery zones: ${error.message}`);
+
+  const subtotal = PRODUCT_PRICE * 2;
+  const both = data.find(
+    (z) =>
+      z.delivery_enabled &&
+      z.collection_enabled &&
+      Number(z.min_order_zar) <= subtotal &&
+      Number(z.min_order_zar) > PRODUCT_PRICE && // so the 1-item cart is below minimum
+      !(Number(z.free_delivery_threshold_zar ?? 0) > 0 && subtotal >= Number(z.free_delivery_threshold_zar)),
+  );
+  const deliveryOnly = data.find((z) => z.delivery_enabled && !z.collection_enabled);
+  if (!both) throw new Error("No active zone offers both delivery and collection with a usable minimum.");
+  if (!deliveryOnly) throw new Error("No active delivery-only zone found.");
+
+  ZONE_BOTH = both.slug;
+  ZONE_DELIVERY_ONLY = deliveryOnly.slug;
+  ZONE_BOTH_CFG = {
+    name: both.name,
+    fee: Number(both.fee_zar),
+    min: Number(both.min_order_zar),
+    eta: Number(both.eta_minutes),
+    prep: Number(both.collection_prep_minutes ?? 20),
+  };
+}
 
 const CART_TWO = [cartItem(PRODUCT_SLUG, PRODUCT_TITLE, PRODUCT_PRICE, 2)];
 const CART_ONE = [cartItem(PRODUCT_SLUG, PRODUCT_TITLE, PRODUCT_PRICE, 1)];
