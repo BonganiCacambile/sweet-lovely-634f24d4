@@ -17,6 +17,10 @@ import assert from "node:assert/strict";
 import { mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { loadEnvFiles } from "./lib/load-env.mjs";
+import { createEphemeralCustomerSession } from "./lib/browser-session.mjs";
+
+loadEnvFiles();
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ARTIFACTS = join(HERE, "artifacts");
@@ -26,6 +30,8 @@ const {
   APP_URL = "http://localhost:8080",
   SUPABASE_URL,
   SUPABASE_SERVICE_ROLE_KEY,
+  SUPABASE_PUBLISHABLE_KEY,
+  SUPABASE_PROJECT_ID,
   PAYSTACK_SECRET_KEY,
 } = process.env;
 
@@ -39,6 +45,7 @@ function need(name, val) {
 
 need("SUPABASE_URL", SUPABASE_URL);
 need("SUPABASE_SERVICE_ROLE_KEY", SUPABASE_SERVICE_ROLE_KEY);
+need("SUPABASE_PUBLISHABLE_KEY", SUPABASE_PUBLISHABLE_KEY);
 need("PAYSTACK_SECRET_KEY", PAYSTACK_SECRET_KEY);
 
 const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
@@ -47,6 +54,15 @@ const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
 
 const CART_KEY = "sweet-lovely-cart-v1";
 const ZONE_KEY = "sweet-lovely-zone-v1";
+
+/**
+ * The storefront sits behind a global auth gate (AuthGate in
+ * src/routes/__root.tsx). Without a session the app redirects /checkout to
+ * /auth mid-interaction, which is what previously surfaced as
+ * "element was detached from the DOM" on #firstName. Every browser context
+ * therefore boots with a real signed-in customer session.
+ */
+let CUSTOMER = null;
 
 const PRODUCT_SLUG = "margarita-muse";
 const PRODUCT_TITLE = "Margarita Muse";
