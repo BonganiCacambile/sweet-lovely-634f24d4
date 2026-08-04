@@ -9,7 +9,8 @@ loadEnvFiles();
  *
  * Env vars (required):
  *   BASE_URL             e.g. http://localhost:8080
- *   ADMIN_EMAIL, ADMIN_PASSWORD
+ *   ADMIN_EMAIL, ADMIN_PASSWORD (optional — an ephemeral admin is provisioned
+ *                                 automatically with the service-role key)
  *   SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY  (used to pick a product)
  *
  * Optional:
@@ -18,11 +19,11 @@ loadEnvFiles();
  */
 import { chromium } from "playwright";
 import { createClient } from "@supabase/supabase-js";
+import { resolveAdminCredentials } from "./lib/admin-session.mjs";
+import { storageKeyFor } from "./lib/browser-session.mjs";
 
 const {
   BASE_URL = "http://localhost:8080",
-  ADMIN_EMAIL,
-  ADMIN_PASSWORD,
   SUPABASE_URL,
   SUPABASE_PUBLISHABLE_KEY,
   PRODUCT_SLUG,
@@ -32,8 +33,6 @@ const {
 function need(name, val) {
   if (!val) { console.error(`Missing required env var: ${name}`); process.exit(2); }
 }
-need("ADMIN_EMAIL", ADMIN_EMAIL);
-need("ADMIN_PASSWORD", ADMIN_PASSWORD);
 need("SUPABASE_URL", SUPABASE_URL);
 need("SUPABASE_PUBLISHABLE_KEY", SUPABASE_PUBLISHABLE_KEY);
 
@@ -62,14 +61,26 @@ async function pickProduct() {
   return data[0];
 }
 
+// Seed a real Supabase session into localStorage rather than driving the
+// sign-in form: the global auth gate can redirect mid-typing and detach the
+// form, and the configured admin password may have been rotated.
 async function signInAdmin(page) {
+  const creds = await resolveAdminCredentials();
+  const { data, error } = await supa.auth.signInWithPassword({
+    email: creds.email,
+    password: creds.password,
+  });
+  if (error || !data?.session) {
+    throw new Error(`admin sign-in failed: ${error?.message ?? "no session"}`);
+  }
+  const storageKey = storageKeyFor(SUPABASE_URL, process.env.SUPABASE_PROJECT_ID);
   await page.goto(`${BASE_URL}/auth`, { waitUntil: "domcontentloaded" });
-  await page.locator('input[type="email"]').first().fill(ADMIN_EMAIL);
-  await page.locator('input[type="password"]').first().fill(ADMIN_PASSWORD);
-  await Promise.all([
-    page.waitForURL((u) => !u.pathname.startsWith("/auth"), { timeout: 15000 }),
-    page.getByRole("button", { name: /^sign in$/i }).click(),
-  ]);
+  await page.evaluate(
+    ([key, session]) => window.localStorage.setItem(key, JSON.stringify(session)),
+    [storageKey, data.session],
+  );
+  await page.goto(`${BASE_URL}/admin/products`, { waitUntil: "domcontentloaded" });
+  await supa.auth.signOut().catch(() => {});
 }
 
 async function editProductTitle(adminPage, slug, newTitle) {

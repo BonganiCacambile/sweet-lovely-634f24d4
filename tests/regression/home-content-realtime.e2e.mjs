@@ -88,8 +88,21 @@ async function signInAdmin(page) {
   await page.goto(`${BASE_URL}/admin/home-content`, { waitUntil: "domcontentloaded" });
 }
 
+const TAB_IDS = {
+  "Popular Items": "popular",
+  Desserts: "desserts",
+  "Hot Deals": "hot_deals",
+  Specials: "specials",
+  Featured: "featured",
+  Banners: "banners",
+  "Section Visibility": "visibility",
+  Analytics: "analytics",
+};
+
 async function openTab(page, label) {
-  await page.getByRole("button", { name: new RegExp(`^${label}$`, "i") }).click();
+  const id = TAB_IDS[label];
+  if (id) await page.locator(`[data-testid="hc-tab-${id}"]`).click();
+  else await page.getByRole("button", { name: new RegExp(`^${label}$`, "i") }).click();
   // Give the tab content a beat to mount and its list query to settle.
   await page.waitForTimeout(400);
 }
@@ -107,27 +120,31 @@ function autoAcceptDialogs(page) {
  * "subtree intercepts pointer events".
  */
 function formScope(page) {
-  return page.locator("div.fixed.inset-0.z-50").last();
+  return page.locator('[data-testid="hc-modal"]').last();
+}
+
+/** Mirrors fieldTestId() in src/routes/_authenticated/admin.home-content.tsx. */
+function fieldTestId(label) {
+  return "hc-field-" + label.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 }
 
 function fieldInput(page, label) {
-  const sel = `label:has(span:text-is("${label}")) >> input, label:has(span:text-is("${label}")) >> textarea, label:has(span:text-is("${label}")) >> select`;
-  const modal = formScope(page);
-  return modal.locator(sel).first();
+  const field = formScope(page).locator(`[data-testid="${fieldTestId(label)}"]`).first();
+  return field.locator("input, textarea, select").first();
 }
 
-async function setActiveCheckbox(modal, active) {
-  const cb = modal.locator('label:has-text("Active") input[type="checkbox"]').first();
+async function setActiveCheckbox(page, active) {
+  const cb = formScope(page).locator('[data-testid="hc-active"]').first();
   const current = await cb.isChecked();
   if (current !== active) await cb.click();
 }
 
 async function clickSave(page) {
-  await formScope(page).getByRole("button", { name: /^save$/i }).click();
+  await formScope(page).locator('[data-testid="hc-save"]').first().click();
   // Wait for either the "Saved" toast or the modal to close.
   await Promise.race([
     page.getByText(/^saved$/i).first().waitFor({ state: "visible", timeout: 8000 }).catch(() => null),
-    page.locator('[role="dialog"], .fixed.inset-0').last().waitFor({ state: "detached", timeout: 8000 }).catch(() => null),
+    page.locator('[data-testid="hc-modal"]').last().waitFor({ state: "detached", timeout: 8000 }).catch(() => null),
     page.waitForTimeout(4000),
   ]);
   await page.waitForTimeout(300);
@@ -170,33 +187,33 @@ async function waitForGone(page, selector, section, label) {
 async function editAdminRow(adminPage, titleText) {
   const row = adminPage.locator("tr, li", { hasText: titleText }).first();
   await row.waitFor({ state: "visible", timeout: 8000 });
-  await row.locator('button[aria-label="Edit"], button:has-text("Edit")').first().click();
+  await row.locator('[data-testid="hc-row-edit"], button[aria-label="Edit"]').first().click();
   await adminPage.locator('h3:has-text("Edit ")').first().waitFor({ state: "visible", timeout: 5000 });
 }
 
 async function deleteAdminRow(adminPage, titleText) {
   const row = adminPage.locator("tr, li", { hasText: titleText }).first();
   if (await row.count() === 0) return;
-  await row.locator('button[aria-label="Delete"], button:has-text("Delete")').first().click();
+  await row.locator('[data-testid="hc-row-delete"], button[aria-label="Delete"]').first().click();
   await adminPage.waitForTimeout(600);
 }
 
 // ---------- section-specific creators (via UI) ----------------------------
 
 async function newPopular(adminPage, { title, description, price, image, position, active = true }) {
-  await adminPage.getByRole("button", { name: /^new$/i }).first().click();
+  await adminPage.locator('[data-testid="hc-new"]').first().click();
   await adminPage.locator('h3:has-text("New Popular Item")').first().waitFor({ state: "visible", timeout: 5000 });
   await fieldInput(adminPage, "Title").fill(title);
   if (description) await fieldInput(adminPage, "Description").fill(description);
   if (price) await fieldInput(adminPage, "Price (display)").fill(price);
   if (image) await fieldInput(adminPage, "Image URL").fill(image);
   if (position != null) await fieldInput(adminPage, "Position").fill(String(position));
-  await setActiveCheckbox(adminPage.locator("body"), active);
+  await setActiveCheckbox(adminPage, active);
   await clickSave(adminPage);
 }
 
 async function newDessert(adminPage, opts) {
-  await adminPage.getByRole("button", { name: /^new$/i }).first().click();
+  await adminPage.locator('[data-testid="hc-new"]').first().click();
   await adminPage.locator('h3:has-text("New Dessert")').first().waitFor({ state: "visible", timeout: 5000 });
   await fillCommonItemForm(adminPage, opts);
   await clickSave(adminPage);
@@ -208,11 +225,11 @@ async function fillCommonItemForm(adminPage, { title, description, price, image,
   if (price) await fieldInput(adminPage, "Price (display)").fill(price);
   if (image) await fieldInput(adminPage, "Image URL").fill(image);
   if (position != null) await fieldInput(adminPage, "Position").fill(String(position));
-  await setActiveCheckbox(adminPage.locator("body"), active);
+  await setActiveCheckbox(adminPage, active);
 }
 
 async function newHotDeal(adminPage, { title, description, original, discounted, image, position, active = true }) {
-  await adminPage.getByRole("button", { name: /new deal/i }).click();
+  await adminPage.locator('[data-testid="hc-new"]').first().click();
   await adminPage.locator('h3:has-text("New Hot Deal")').first().waitFor({ state: "visible", timeout: 5000 });
   await fieldInput(adminPage, "Title").fill(title);
   if (description) await fieldInput(adminPage, "Description").fill(description);
@@ -220,25 +237,25 @@ async function newHotDeal(adminPage, { title, description, original, discounted,
   if (discounted != null) await fieldInput(adminPage, "Discounted price (ZAR)").fill(String(discounted));
   if (image) await fieldInput(adminPage, "Image URL").fill(image);
   if (position != null) await fieldInput(adminPage, "Position").fill(String(position));
-  await setActiveCheckbox(adminPage.locator("body"), active);
+  await setActiveCheckbox(adminPage, active);
   await clickSave(adminPage);
 }
 
 async function newSpecial(adminPage, opts) {
-  await adminPage.getByRole("button", { name: /new special/i }).click();
+  await adminPage.locator('[data-testid="hc-new"]').first().click();
   await adminPage.locator('h3:has-text("New Special")').first().waitFor({ state: "visible", timeout: 5000 });
   await fillCommonItemForm(adminPage, opts);
   await clickSave(adminPage);
 }
 
 async function newBanner(adminPage, { title, subtitle, image, position, active = true }) {
-  await adminPage.getByRole("button", { name: /new banner/i }).click();
+  await adminPage.locator('[data-testid="hc-new"]').first().click();
   await adminPage.locator('h3:has-text("New Banner")').first().waitFor({ state: "visible", timeout: 5000 });
   await fieldInput(adminPage, "Title").fill(title);
   if (subtitle) await fieldInput(adminPage, "Subtitle").fill(subtitle);
   if (image) await fieldInput(adminPage, "Image URL").fill(image);
   if (position != null) await fieldInput(adminPage, "Position").fill(String(position));
-  await setActiveCheckbox(adminPage.locator("body"), active);
+  await setActiveCheckbox(adminPage, active);
   await clickSave(adminPage);
 }
 
@@ -310,13 +327,13 @@ async function runItemSection({ adminPage, customerPage, section, tabLabel, crea
 
     // 6. TOGGLE off — customer stops seeing titleA.
     await editAdminRow(adminPage, `${titleA} EDITED`);
-    await setActiveCheckbox(adminPage.locator("body"), false);
+    await setActiveCheckbox(adminPage, false);
     await clickSave(adminPage);
     await waitForGone(customerPage, `:text("${titleA} EDITED")`, section, "disable (is_active=false)");
 
     // Toggle back on.
     await editAdminRow(adminPage, `${titleA} EDITED`);
-    await setActiveCheckbox(adminPage.locator("body"), true);
+    await setActiveCheckbox(adminPage, true);
     await clickSave(adminPage);
     await waitForVisible(customerPage, `:text("${titleA} EDITED")`, section, "re-enable (is_active=true)");
 
@@ -378,7 +395,7 @@ async function runFeaturedSection({ adminPage, customerPage }) {
     // 1. INSERT via UI
     await adminPage.locator('label:has(span:text-is("Add product")) select').selectOption(chosen.slug);
     await fieldInput(adminPage, "Sort order").fill("999");
-    await adminPage.getByRole("button", { name: /^add$/i }).click();
+    await adminPage.locator('[data-testid="hc-featured-add"]').first().click();
     addedSlug = chosen.slug;
     await waitForVisible(customerPage, `:text("${chosen.title}")`, section, `feature product "${chosen.title}"`);
 
@@ -405,9 +422,7 @@ async function runVisibilitySection({ adminPage, customerPage }) {
   try {
     await openTab(adminPage, "Section Visibility");
     for (const key of keys) {
-      const rowText = new RegExp(key.replace("_", " "), "i");
-      const row = adminPage.locator("li", { hasText: rowText }).first();
-      const btn = row.locator("button").first();
+      const btn = adminPage.locator(`[data-testid="hc-visibility-${key}"]`).first();
       const before = (await btn.innerText()).trim().toLowerCase();
       if (before === "hide") {
         await btn.click();
@@ -430,9 +445,7 @@ async function runVisibilitySection({ adminPage, customerPage }) {
     // Restore visibility for every key we hid.
     try {
       for (const key of toggledOff) {
-        const rowText = new RegExp(key.replace("_", " "), "i");
-        const row = adminPage.locator("li", { hasText: rowText }).first();
-        const btn = row.locator("button").first();
+        const btn = adminPage.locator(`[data-testid="hc-visibility-${key}"]`).first();
         const now = (await btn.innerText().catch(() => "")).trim().toLowerCase();
         if (now === "show") { await btn.click(); await adminPage.waitForTimeout(300); }
       }
