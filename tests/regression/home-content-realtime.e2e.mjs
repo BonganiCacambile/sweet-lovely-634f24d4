@@ -25,6 +25,7 @@ loadEnvFiles();
 import { chromium } from "playwright";
 import { createClient } from "@supabase/supabase-js";
 import { resolveAdminCredentials } from "./lib/admin-session.mjs";
+import { createEphemeralCustomerSession, storageKeyFor } from "./lib/browser-session.mjs";
 
 const {
   BASE_URL = "http://localhost:8080",
@@ -77,15 +78,68 @@ async function signInAdmin(page) {
   if (error || !data?.session) {
     throw new Error(`admin sign-in failed: ${error?.message ?? "no session"}`);
   }
-  const ref =
-    process.env.SUPABASE_PROJECT_ID || new URL(SUPABASE_URL).hostname.split(".")[0];
-  const storageKey = `sb-${ref}-auth-token`;
+  const storageKey = storageKeyFor(SUPABASE_URL, process.env.SUPABASE_PROJECT_ID);
   await page.goto(`${BASE_URL}/auth`, { waitUntil: "domcontentloaded" });
   await page.evaluate(
     ([key, session]) => window.localStorage.setItem(key, JSON.stringify(session)),
     [storageKey, data.session],
   );
   await page.goto(`${BASE_URL}/admin/home-content`, { waitUntil: "domcontentloaded" });
+  // Deterministic readiness: wait for the tab bar to mount before clicking.
+  await page.locator('[data-testid="hc-tab-popular"]').waitFor({ state: "visible", timeout: 30000 });
+  await page.waitForLoadState("networkidle").catch(() => {});
+  return creds;
+}
+
+/** Active zone slug so the auto-opening zone picker never blocks the storefront. */
+async function pickZoneSlug() {
+  const svc = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const client = svc
+    ? createClient(SUPABASE_URL, svc, { auth: { persistSession: false } })
+    : supa;
+  const { data } = await client
+    .from("delivery_zones").select("slug").eq("is_active", true).limit(1);
+  return data?.[0]?.slug ?? null;
+}
+
+/**
+ * Storefront routes sit behind the global auth gate — seed a real customer
+ * session plus a pre-selected delivery zone so no modal/redirect interferes.
+ */
+async function seedCustomer(page) {
+  const sess = await createEphemeralCustomerSession({
+    supabaseUrl: SUPABASE_URL,
+    serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY,
+    publishableKey: SUPABASE_PUBLISHABLE_KEY,
+    projectId: process.env.SUPABASE_PROJECT_ID,
+    emailPrefix: "regr-home-content",
+  });
+  const zoneSlug = await pickZoneSlug();
+  await page.goto(`${BASE_URL}/auth`, { waitUntil: "domcontentloaded" });
+  await page.evaluate(
+    ([key, session, zone]) => {
+      window.localStorage.setItem(key, JSON.stringify(session));
+      if (zone) window.localStorage.setItem("sweet-lovely-zone-v1", zone);
+    },
+    [sess.storageKey, sess.session, zoneSlug],
+  );
+  return sess;
+}
+
+/**
+ * Home does not swap content underneath the visitor: it surfaces a
+ * "new updates available" pill. Click it whenever it is present so the
+ * assertions below observe the refreshed content — still without a reload.
+ */
+async function drainUpdatePill(page) {
+  const refresh = page.getByTestId("home-content-refresh");
+  if (await refresh.count()) {
+    await refresh.first().click({ timeout: 3000 }).catch(() => {});
+    await page
+      .getByTestId("home-content-update-banner")
+      .waitFor({ state: "hidden", timeout: 5000 })
+      .catch(() => {});
+  }
 }
 
 const TAB_IDS = {
@@ -152,14 +206,17 @@ async function clickSave(page) {
 
 async function waitForVisible(page, selector, section, label) {
   const start = Date.now();
-  try {
-    await page.locator(selector).first().waitFor({ state: "visible", timeout: TIMEOUT });
-    pass(section, `${label} appeared live in ${Date.now() - start}ms`);
-    return true;
-  } catch (e) {
-    fail(section, `${label} did NOT appear within ${TIMEOUT}ms`, e);
-    return false;
+  const deadline = Date.now() + TIMEOUT;
+  while (Date.now() < deadline) {
+    await drainUpdatePill(page);
+    if (await page.locator(selector).first().isVisible().catch(() => false)) {
+      pass(section, `${label} appeared live in ${Date.now() - start}ms`);
+      return true;
+    }
+    await page.waitForTimeout(300);
   }
+  fail(section, `${label} did NOT appear within ${TIMEOUT}ms`);
+  return false;
 }
 
 async function waitForGone(page, selector, section, label) {
@@ -168,6 +225,7 @@ async function waitForGone(page, selector, section, label) {
     // Poll: locator may match zero elements as soon as the row disappears.
     const deadline = Date.now() + TIMEOUT;
     while (Date.now() < deadline) {
+      await drainUpdatePill(page);
       const n = await page.locator(selector).count();
       if (n === 0) {
         pass(section, `${label} removed live in ${Date.now() - start}ms`);
@@ -341,8 +399,10 @@ async function runItemSection({ adminPage, customerPage, section, tabLabel, crea
     await editAdminRow(adminPage, `${titleA} EDITED`);
     await fieldInput(adminPage, "Position").fill("102");
     await clickSave(adminPage);
-    // Wait for realtime, then read positional order on the customer page.
-    await customerPage.waitForTimeout(1500);
+    // Pull any pending update pill, then read positional order.
+    await drainUpdatePill(customerPage);
+    await customerPage.waitForTimeout(800);
+    await drainUpdatePill(customerPage);
     const orderAfter = await customerPage.evaluate(([a, b]) => {
       const html = document.body.innerText;
       const ia = html.indexOf(a);
@@ -436,8 +496,10 @@ async function runVisibilitySection({ adminPage, customerPage }) {
         pass(section, `"${key}" already hidden — skipped`);
       }
     }
-    // Wait a beat for realtime + the customer's `home-content` query invalidation.
-    await customerPage.waitForTimeout(2000);
+    // Pull realtime + the customer's `home-content` query invalidation.
+    await drainUpdatePill(customerPage);
+    await customerPage.waitForTimeout(800);
+    await drainUpdatePill(customerPage);
     pass(section, "visibility toggles propagated (no reload observed)");
   } catch (e) {
     fail(section, "unexpected error", e);
@@ -466,12 +528,17 @@ async function main() {
   let navCount = 0;
   customerPage.on("framenavigated", (f) => { if (f === customerPage.mainFrame()) navCount++; });
 
+  let customer = null;
+  let adminCreds = null;
   try {
+    customer = await seedCustomer(customerPage);
     await customerPage.goto(`${BASE_URL}/`, { waitUntil: "domcontentloaded" });
-    await customerPage.waitForTimeout(2000); // let subscriptions establish
+    // Deterministic readiness instead of sleeping: hydrated header + idle net.
+    await customerPage.locator("header").first().waitFor({ state: "visible", timeout: 30000 });
+    await customerPage.waitForLoadState("networkidle").catch(() => {});
     navCount = 0; // reset after initial load
 
-    await signInAdmin(adminPage);
+    adminCreds = await signInAdmin(adminPage);
     pass("setup", "admin signed in and home-content loaded");
 
     const sections = [
@@ -499,6 +566,8 @@ async function main() {
     fail("setup", "top-level failure", e);
   } finally {
     await browser.close();
+    if (customer) await customer.cleanup().catch(() => {});
+    if (adminCreds?.cleanup) await adminCreds.cleanup().catch(() => {});
   }
 
   if (failures > 0) {
