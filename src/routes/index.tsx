@@ -18,7 +18,8 @@ import { OfferGrid } from "@/components/offer-grid";
 import { useActiveZoneCities } from "@/hooks/use-active-zones";
 import { getHomeContent } from "@/lib/home-content.functions";
 import { listActiveZones } from "@/lib/zones.functions";
-import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
+import { useHomeContentUpdates } from "@/hooks/use-home-content-updates";
+import { ContentUpdateBanner } from "@/components/home/content-update-banner";
 import { AddToCartButton } from "@/components/cart/add-to-cart-button";
 import type { Product } from "@/components/product-grid";
 
@@ -109,23 +110,20 @@ function Index() {
     queryFn: () => fetchContent(),
     staleTime: 30_000,
   });
-  useRealtimeInvalidate(
-    [
-      "home_popular_items",
-      "home_hot_deals",
-      "home_specials",
-      "home_banners",
-      "home_desserts",
-      "featured_items",
-      "home_section_visibility",
-      // Admin edits to the underlying products (price, image, description,
-      // stock) must instantly update Fan Favorites and any home card whose
-      // pricing/link joins back to public.products.
-      "products",
-      "categories",
-    ],
-    [["home-content"]],
-  );
+  // Storefront visitors (including anonymous ones) are *notified* of home
+  // content changes and refresh on demand. Anonymous clients never receive
+  // realtime events for rows RLS hides from them (e.g. is_active → false), so
+  // a cheap id-only fingerprint backs up the realtime signal. RLS is untouched.
+  const { updateAvailable, refresh, dismiss } = useHomeContentUpdates();
+  const [refreshing, setRefreshing] = useState(false);
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await refresh();
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   const visibility = content?.visibility ?? {};
   const showSection = (key: string) => visibility[key] !== false;
@@ -166,6 +164,13 @@ function Index() {
   return (
     <div className="min-h-screen bg-white text-neutral-900">
       <SiteHeader />
+
+      <ContentUpdateBanner
+        visible={updateAvailable}
+        onRefresh={() => void handleRefresh()}
+        onDismiss={dismiss}
+        busy={refreshing}
+      />
 
       {banners.length > 0 && showSection("banners") && <HeroBanners banners={banners} />}
 
