@@ -481,7 +481,7 @@ async function runFeaturedSection({ adminPage, customerPage }) {
 
     // 1. INSERT via UI
     await adminPage.locator('label:has(span:text-is("Add product")) select').selectOption(chosen.slug);
-    await fieldInput(adminPage, "Sort order").fill("999");
+    await inlineFieldInput(adminPage, "Sort order").fill("999");
     await adminPage.locator('[data-testid="hc-featured-add"]').first().click();
     addedSlug = chosen.slug;
     await waitForVisible(customerPage, `:text("${chosen.title}")`, section, `feature product "${chosen.title}"`);
