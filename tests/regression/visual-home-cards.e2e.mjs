@@ -104,7 +104,9 @@ async function seedFixtures() {
       image_url: IMAGE,
       original_price: 299,
       discounted_price: 199,
-      position: 0,
+      // Hot-deal cards cycle through a colour palette by index, so pin the
+      // fixture to the first slot for a deterministic background colour.
+      position: -1,
       is_active: true,
     })
     .select("id")
