@@ -100,8 +100,20 @@ function autoAcceptDialogs(page) {
 }
 
 /** Fill an input associated with a wrapping <label><span>LABEL</span>...</label>. */
+/**
+ * Scope field lookups to the open modal. The admin page also renders inline
+ * filter fields with the same labels behind the modal overlay, so an
+ * unscoped locator resolves to a covered element and Playwright reports
+ * "subtree intercepts pointer events".
+ */
+function formScope(page) {
+  return page.locator("div.fixed.inset-0.z-50").last();
+}
+
 function fieldInput(page, label) {
-  return page.locator(`label:has(span:text-is("${label}")) >> input, label:has(span:text-is("${label}")) >> textarea, label:has(span:text-is("${label}")) >> select`).first();
+  const sel = `label:has(span:text-is("${label}")) >> input, label:has(span:text-is("${label}")) >> textarea, label:has(span:text-is("${label}")) >> select`;
+  const modal = formScope(page);
+  return modal.locator(sel).first();
 }
 
 async function setActiveCheckbox(modal, active) {
@@ -111,7 +123,7 @@ async function setActiveCheckbox(modal, active) {
 }
 
 async function clickSave(page) {
-  await page.getByRole("button", { name: /^save$/i }).click();
+  await formScope(page).getByRole("button", { name: /^save$/i }).click();
   // Wait for either the "Saved" toast or the modal to close.
   await Promise.race([
     page.getByText(/^saved$/i).first().waitFor({ state: "visible", timeout: 8000 }).catch(() => null),
