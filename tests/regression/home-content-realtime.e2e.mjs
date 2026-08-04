@@ -505,7 +505,8 @@ async function runFeaturedSection({ adminPage, customerPage }) {
 
     // 1. INSERT via UI
     await adminPage.locator('label:has(span:text-is("Add product")) select').selectOption(chosen.slug);
-    await inlineFieldInput(adminPage, "Sort order").fill("999");
+    // Sort first: the home featured strip renders a capped number of items.
+    await inlineFieldInput(adminPage, "Sort order").fill("0");
     await adminPage.locator('[data-testid="hc-featured-add"]').first().click();
     addedSlug = chosen.slug;
     await waitForVisible(customerPage, `:text("${chosen.title}")`, section, `feature product "${chosen.title}"`);
