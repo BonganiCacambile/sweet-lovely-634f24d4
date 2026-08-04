@@ -21,11 +21,15 @@ const check = (name, cond, extra = "") => {
 console.log("Static: subscription wiring");
 const home = readFileSync("src/routes/index.tsx", "utf8");
 const menu = readFileSync("src/routes/menu.full-menu.tsx", "utf8");
-const homeCall = home.match(/useRealtimeInvalidate\(\s*\[([^\]]+)\][\s\S]*?\[\[([^\]]+)\]\]/);
+// Home now uses the refresh-prompt hook (realtime signal + anon-visible
+// fingerprint) instead of silently invalidating, so RLS-hidden deactivations
+// are still surfaced to anonymous visitors. Assert against that hook.
+const homeHook = readFileSync("src/hooks/use-home-content-updates.ts", "utf8");
 const menuCall = menu.match(/useRealtimeInvalidate\(\s*\[([^\]]+)\][\s\S]*?\[\[([^\]]+)\]\]/);
-check("home subscribes to products",   homeCall && /["']products["']/.test(homeCall[1]));
-check("home subscribes to categories", homeCall && /["']categories["']/.test(homeCall[1]));
-check("home invalidates home-content", homeCall && /home-content/.test(homeCall[2]));
+check("home uses the content-update hook", /useHomeContentUpdates\(/.test(home));
+check("home subscribes to products",   /["']products["']/.test(homeHook));
+check("home subscribes to categories", /["']categories["']/.test(homeHook));
+check("home invalidates home-content", /home-content/.test(homeHook));
 check("menu subscribes to products",   menuCall && /["']products["']/.test(menuCall[1]));
 check("menu subscribes to categories", menuCall && /["']categories["']/.test(menuCall[1]));
 check("menu invalidates public-menu",  menuCall && /public-menu/.test(menuCall[2]));
