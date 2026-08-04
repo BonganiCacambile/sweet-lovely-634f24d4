@@ -436,7 +436,14 @@ async function runItemSection({ adminPage, customerPage, section, tabLabel, crea
     await clickSave(adminPage);
     // Rows leaving RLS scope emit no UPDATE event — detection falls back to the
     // fingerprint poll, so allow a wider window here.
-    await waitForGone(customerPage, `:text("${titleA} EDITED")`, section, "disable (is_active=false)", TIMEOUT * 3);
+    // Worst case this waits for the 60s fingerprint poll cycle.
+    await waitForGone(
+      customerPage,
+      `:text("${titleA} EDITED")`,
+      section,
+      "disable (is_active=false)",
+      Math.max(TIMEOUT * 3, 80000),
+    );
 
     // Toggle back on.
     await editAdminRow(adminPage, `${titleA} EDITED`);
