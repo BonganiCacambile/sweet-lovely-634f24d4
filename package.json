@@ -40,12 +40,14 @@
     "test:regression:product-sizes-concurrent-mixed-upsert": "node tests/regression/product-sizes-concurrent-mixed-upsert.mjs",
     "test:regression:order-item-size-snapshot": "node tests/regression/order-item-size-title-snapshot.mjs",
     "test:regression:order-item-size-snapshot-qty": "node tests/regression/order-item-size-title-snapshot-qty.mjs",
-    "test:regression": "bun run test:regression:no-500-sweep && bun run test:regression:realtime && bun run test:regression:checkout && bun run test:regression:paystack-webhook && bun run test:regression:mcp-auth && bun run test:regression:zone-leak && bun run test:regression:realtime-menu-invalidation && bun run test:regression:home-realtime-anon-inactive && bun run test:regression:home-content-realtime-e2e && bun run test:regression:product-sizes-mixed-upsert && bun run test:regression:product-sizes-bulk-mixed-upsert && bun run test:regression:product-sizes-concurrent-mixed-upsert && bun run test:regression:order-item-size-snapshot && bun run test:regression:order-item-size-snapshot-qty && bun run test:regression:rls-matrix",
+    "test:regression": "bun run test:regression:no-500-sweep && bun run test:regression:realtime && bun run test:regression:checkout && bun run test:regression:paystack-webhook && bun run test:regression:mcp-auth && bun run test:regression:zone-leak && bun run test:regression:realtime-menu-invalidation && bun run test:regression:home-realtime-anon-inactive && bun run test:regression:home-content-realtime-e2e && bun run test:regression:product-sizes-mixed-upsert && bun run test:regression:product-sizes-bulk-mixed-upsert && bun run test:regression:product-sizes-concurrent-mixed-upsert && bun run test:regression:order-item-size-snapshot && bun run test:regression:order-item-size-snapshot-qty && bun run test:regression:rls-matrix && bun run test:regression:visual",
     "test:regression:realtime-menu-invalidation": "node tests/regression/realtime-menu-invalidation.mjs",
     "test:regression:home-realtime-anon-inactive": "node tests/regression/home-realtime-anon-inactive.mjs",
     "test:regression:no-500-sweep": "node tests/regression/no-500-sweep.mjs",
     "test:regression:auth": "node tests/regression/auth-flow.e2e.mjs",
-    "test:regression:rls-matrix": "node tests/regression/rls-matrix.e2e.mjs"
+    "test:regression:rls-matrix": "node tests/regression/rls-matrix.e2e.mjs",
+    "test:regression:visual": "node tests/regression/visual-home-cards.e2e.mjs",
+    "test:regression:visual:update": "UPDATE_SNAPSHOTS=1 node tests/regression/visual-home-cards.e2e.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
@@ -125,7 +127,9 @@
     "eslint-plugin-react-refresh": "^0.4.20",
     "globals": "^15.15.0",
     "nitro": "3.0.260603-beta",
+    "pixelmatch": "^7.2.0",
     "playwright": "1.56.0",
+    "pngjs": "^7.0.0",
     "prettier": "^3.7.3",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.56.1",
