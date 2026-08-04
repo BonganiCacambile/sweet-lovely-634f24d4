@@ -49,6 +49,8 @@ const RUN = `RT-${Date.now().toString(36)}`;
 const IMG_A = "https://framerusercontent.com/images/TselH8OEkb2YNE35eIM1vVAfb6s.png?rt-a=" + RUN;
 const IMG_B = "https://framerusercontent.com/images/TselH8OEkb2YNE35eIM1vVAfb6s.png?rt-b=" + RUN;
 const IMG_C = "https://framerusercontent.com/images/TselH8OEkb2YNE35eIM1vVAfb6s.png?rt-c=" + RUN;
+// Section keys as defined in src/lib/admin/home-content.functions.ts
+const VISIBILITY_KEYS = ["popular", "hot_deals", "specials", "banners", "desserts", "featured"];
 
 const log = (...a) => console.log("[home-content-e2e]", ...a);
 let failures = 0;
@@ -566,6 +568,8 @@ async function main() {
 
     adminCreds = await signInAdmin(adminPage);
     pass("setup", "admin signed in and home-content loaded");
+    await ensureSectionsVisible(adminPage, VISIBILITY_KEYS);
+    pass("setup", "all home sections forced visible");
 
     const sections = [
       { id: "popular",   tab: "Popular Items", fn: (a, c) => runItemSection({ adminPage: a, customerPage: c, section: "popular",   tabLabel: "Popular Items", create: newPopular, editModalTitle: "Edit Popular Item" }) },
@@ -591,6 +595,7 @@ async function main() {
   } catch (e) {
     fail("setup", "top-level failure", e);
   } finally {
+    try { await ensureSectionsVisible(adminPage, VISIBILITY_KEYS); } catch { /* noop */ }
     await browser.close();
     if (customer) await customer.cleanup().catch(() => {});
     if (adminCreds?.cleanup) await adminCreds.cleanup().catch(() => {});
