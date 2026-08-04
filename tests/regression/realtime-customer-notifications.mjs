@@ -1,4 +1,7 @@
 #!/usr/bin/env node
+import { loadEnvFiles } from "./lib/load-env.mjs";
+loadEnvFiles();
+
 /**
  * Regression: when an order is created for a signed-in customer, that
  * customer must — without any page refresh — see:

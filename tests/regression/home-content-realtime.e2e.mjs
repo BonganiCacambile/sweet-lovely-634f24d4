@@ -1,4 +1,7 @@
 #!/usr/bin/env node
+import { loadEnvFiles } from "./lib/load-env.mjs";
+loadEnvFiles();
+
 /**
  * End-to-end Playwright test: every section of Admin → Home Content
  * (Popular Items, Desserts, Hot Deals, Specials, Featured, Banners,

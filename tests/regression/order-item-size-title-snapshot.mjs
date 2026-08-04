@@ -1,4 +1,7 @@
 #!/usr/bin/env node
+import { loadEnvFiles } from "./lib/load-env.mjs";
+loadEnvFiles();
+
 /**
  * Regression: saved order_items must preserve the selected product size in
  * `title_snapshot` so kitchen/fulfilment staff can distinguish sized variants

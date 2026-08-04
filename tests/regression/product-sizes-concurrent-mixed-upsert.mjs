@@ -1,4 +1,7 @@
 #!/usr/bin/env node
+import { loadEnvFiles } from "./lib/load-env.mjs";
+loadEnvFiles();
+
 /**
  * Regression: TWO overlapping mixed bulk upserts against the same
  * product_sizes rows, run concurrently.
