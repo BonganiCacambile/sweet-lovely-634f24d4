@@ -2,7 +2,7 @@ process.chdir("/dev-server");
 const { loadEnvFiles } = await import("/dev-server/tests/regression/lib/load-env.mjs");
 loadEnvFiles();
 const { chromium } = await import("playwright");
-const { createClient } = await import("/dev-server/node_modules/@supabase/supabase-js/dist/module/index.js");
+const { createClient } = await import("@supabase/supabase-js");
 const { resolveAdminCredentials } = await import("/dev-server/tests/regression/lib/admin-session.mjs");
 const { storageKeyFor } = await import("/dev-server/tests/regression/lib/browser-session.mjs");
 const supa = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_PUBLISHABLE_KEY, { auth: { persistSession:false, autoRefreshToken:false }});
