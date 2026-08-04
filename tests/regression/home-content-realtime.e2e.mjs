@@ -187,6 +187,33 @@ function fieldInput(page, label) {
   return field.locator("input, textarea, select").first();
 }
 
+/** Featured tab renders its fields inline (no modal), so scope to the page. */
+function inlineFieldInput(page, label) {
+  return page
+    .locator(`[data-testid="${fieldTestId(label)}"]`)
+    .first()
+    .locator("input, textarea, select")
+    .first();
+}
+
+/**
+ * A previous aborted run can leave sections hidden, which makes every
+ * customer-side assertion fail for reasons unrelated to realtime.
+ * Force every section visible before the suite runs.
+ */
+async function ensureSectionsVisible(adminPage, keys) {
+  await openTab(adminPage, "Section Visibility");
+  for (const key of keys) {
+    const btn = adminPage.locator(`[data-testid="hc-visibility-${key}"]`).first();
+    await btn.waitFor({ state: "visible", timeout: 10000 }).catch(() => {});
+    const label = (await btn.innerText().catch(() => "")).trim().toLowerCase();
+    if (label === "show") {
+      await btn.click();
+      await adminPage.waitForTimeout(400);
+    }
+  }
+}
+
 async function setActiveCheckbox(page, active) {
   const cb = formScope(page).locator('[data-testid="hc-active"]').first();
   const current = await cb.isChecked();
