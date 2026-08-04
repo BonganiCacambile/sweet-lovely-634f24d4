@@ -502,6 +502,7 @@ function CheckoutPage() {
                   type="button"
                   onClick={handlePay}
                   disabled={paying}
+                  data-testid="checkout-pay"
                   className="inline-flex items-center justify-center gap-2 rounded-full bg-[#ff003c] px-6 py-3 text-sm font-semibold text-white shadow-[0_10px_24px_-10px_rgba(255,0,60,0.7)] transition-all hover:-translate-y-0.5 hover:bg-[#e6003a] disabled:cursor-not-allowed disabled:opacity-70"
                 >
                   {paying ? (
