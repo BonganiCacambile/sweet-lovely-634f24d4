@@ -9,7 +9,8 @@ loadEnvFiles();
  *
  * Env vars (required):
  *   BASE_URL             e.g. http://localhost:8080
- *   ADMIN_EMAIL, ADMIN_PASSWORD
+ *   ADMIN_EMAIL, ADMIN_PASSWORD (optional — an ephemeral admin is provisioned
+ *                                 automatically with the service-role key)
  *   SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY  (used to pick a product)
  *
  * Optional:
@@ -18,11 +19,11 @@ loadEnvFiles();
  */
 import { chromium } from "playwright";
 import { createClient } from "@supabase/supabase-js";
+import { resolveAdminCredentials } from "./lib/admin-session.mjs";
+import { createEphemeralCustomerSession, storageKeyFor } from "./lib/browser-session.mjs";
 
 const {
   BASE_URL = "http://localhost:8080",
-  ADMIN_EMAIL,
-  ADMIN_PASSWORD,
   SUPABASE_URL,
   SUPABASE_PUBLISHABLE_KEY,
   PRODUCT_SLUG,
@@ -32,8 +33,6 @@ const {
 function need(name, val) {
   if (!val) { console.error(`Missing required env var: ${name}`); process.exit(2); }
 }
-need("ADMIN_EMAIL", ADMIN_EMAIL);
-need("ADMIN_PASSWORD", ADMIN_PASSWORD);
 need("SUPABASE_URL", SUPABASE_URL);
 need("SUPABASE_PUBLISHABLE_KEY", SUPABASE_PUBLISHABLE_KEY);
 
@@ -62,19 +61,61 @@ async function pickProduct() {
   return data[0];
 }
 
+// Seed a real Supabase session into localStorage rather than driving the
+// sign-in form: the global auth gate can redirect mid-typing and detach the
+// form, and the configured admin password may have been rotated.
 async function signInAdmin(page) {
+  const creds = await resolveAdminCredentials();
+  const { data, error } = await supa.auth.signInWithPassword({
+    email: creds.email,
+    password: creds.password,
+  });
+  if (error || !data?.session) {
+    throw new Error(`admin sign-in failed: ${error?.message ?? "no session"}`);
+  }
+  const storageKey = storageKeyFor(SUPABASE_URL, process.env.SUPABASE_PROJECT_ID);
   await page.goto(`${BASE_URL}/auth`, { waitUntil: "domcontentloaded" });
-  await page.locator('input[type="email"]').first().fill(ADMIN_EMAIL);
-  await page.locator('input[type="password"]').first().fill(ADMIN_PASSWORD);
-  await Promise.all([
-    page.waitForURL((u) => !u.pathname.startsWith("/auth"), { timeout: 15000 }),
-    page.getByRole("button", { name: /^sign in$/i }).click(),
-  ]);
+  await page.evaluate(
+    ([key, session]) => window.localStorage.setItem(key, JSON.stringify(session)),
+    [storageKey, data.session],
+  );
+  await page.goto(`${BASE_URL}/admin/products`, { waitUntil: "domcontentloaded" });
+  // Wait for the auth gate to resolve the seeded session and the admin shell
+  // to mount before any interaction — otherwise the first fill() races the
+  // gate's loading screen.
+  await page.getByPlaceholder(/search by name or slug/i).waitFor({ state: "visible", timeout: 30000 });
+  await supa.auth.signOut().catch(() => {});
+  return creds;
+}
+
+/** Customer routes are behind the global auth gate too — seed a session. */
+async function seedCustomer(pages) {
+  const sess = await createEphemeralCustomerSession({
+    supabaseUrl: SUPABASE_URL,
+    serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY,
+    publishableKey: SUPABASE_PUBLISHABLE_KEY,
+    projectId: process.env.SUPABASE_PROJECT_ID,
+    emailPrefix: "regr-propagation",
+  });
+  const first = pages[0];
+  await first.goto(`${BASE_URL}/auth`, { waitUntil: "domcontentloaded" });
+  await first.evaluate(
+    ([key, session]) => window.localStorage.setItem(key, JSON.stringify(session)),
+    [sess.storageKey, sess.session],
+  );
+  return sess;
 }
 
 async function editProductTitle(adminPage, slug, newTitle) {
-  await adminPage.goto(`${BASE_URL}/admin/products`, { waitUntil: "domcontentloaded" });
-  await adminPage.getByPlaceholder(/search by name or slug/i).fill(slug);
+  // Avoid a hard reload when we are already on the products page: a fresh
+  // navigation re-runs the auth gate, which unmounts the admin shell while the
+  // session is re-validated and detaches locators mid-interaction.
+  if (!new URL(adminPage.url()).pathname.startsWith("/admin/products")) {
+    await adminPage.goto(`${BASE_URL}/admin/products`, { waitUntil: "domcontentloaded" });
+  }
+  const searchBox = adminPage.getByPlaceholder(/search by name or slug/i);
+  await searchBox.waitFor({ state: "visible", timeout: 30000 });
+  await searchBox.fill(slug);
   const row = adminPage.locator("tr", { hasText: slug }).first();
   await row.waitFor({ state: "visible", timeout: 10000 });
   await row.getByRole("button", { name: /edit/i }).click();
@@ -112,7 +153,10 @@ async function main() {
   const menuPage  = await custCtx.newPage();
 
   let editApplied = false;
+  let customer = null;
+  let adminCreds = null;
   try {
+    customer = await seedCustomer([homePage, menuPage]);
     // Prime customer pages first so realtime subscriptions are live.
     await homePage.goto(`${BASE_URL}/`, { waitUntil: "domcontentloaded" });
     await menuPage.goto(`${BASE_URL}/menu/full-menu`, { waitUntil: "domcontentloaded" });
@@ -123,13 +167,26 @@ async function main() {
     homePage.on("framenavigated", (f) => { if (f === homePage.mainFrame()) homeNavs++; });
     menuPage.on("framenavigated", (f) => { if (f === menuPage.mainFrame()) menuNavs++; });
 
-    await signInAdmin(adminPage);
+    adminCreds = await signInAdmin(adminPage);
     pass("admin signed in");
     await editProductTitle(adminPage, product.slug, updated);
     editApplied = true;
     pass("admin saved product title change");
 
-    const homeOk = await waitForTextNoReload(homePage, SUFFIX, "Home /");
+    // Home no longer silently swaps content underneath the visitor: it shows a
+    // non-intrusive "new updates available" pill (see content-update-banner).
+    // Assert the pill appears from the realtime/fingerprint signal, then that
+    // clicking Refresh surfaces the new title — all without a page reload.
+    let homeOk = false;
+    try {
+      const banner = homePage.getByTestId("home-content-update-banner");
+      await banner.waitFor({ state: "visible", timeout: TIMEOUT });
+      pass("Home / surfaced the content-update pill");
+      await homePage.getByTestId("home-content-refresh").click();
+      homeOk = await waitForTextNoReload(homePage, SUFFIX, "Home / after Refresh");
+    } catch {
+      fail(`Home / did NOT surface the content-update pill within ${TIMEOUT}ms`);
+    }
     const menuOk = await waitForTextNoReload(menuPage, SUFFIX, "Full menu /menu/full-menu");
 
     if (homeOk) (homeNavs === 0 ? pass("Home did not reload") : fail(`Home reloaded (${homeNavs})`));
@@ -144,6 +201,8 @@ async function main() {
       } catch (e) { console.warn("[admin-edit-e2e] cleanup failed:", e?.message); }
     }
     await browser.close();
+    if (customer) await customer.cleanup().catch(() => {});
+    if (adminCreds) await adminCreds.cleanup().catch(() => {});
   }
 
   if (failures > 0) { console.error(`\n[admin-edit-e2e] FAIL — ${failures} check(s) failed`); process.exit(1); }

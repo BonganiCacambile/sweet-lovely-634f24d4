@@ -1,21 +1,22 @@
 {
   "cart": {
-    "lcp": 616,
-    "domInteractive": 445.19999999925494,
-    "ttfb": 233.29999999981374
+    "lcp": 1716,
+    "domInteractive": 210,
+    "ttfb": 161.89999999990687
   },
   "checkout": {
-    "lcp": 844,
-    "domInteractive": 81.20000000018626,
-    "ttfb": 27.100000000558794
+    "lcp": 2076,
+    "domInteractive": 434.6999999997206,
+    "ttfb": 392.6999999997206
   },
-  "softNavMs": 282,
+  "softNavMs": 244,
   "serverFnTimings": {},
   "device": "iPhone 13",
   "viewport": {
     "width": 390,
     "height": 664
   },
-  "recordedAt": "2026-07-13T13:24:50.343Z",
-  "appUrl": "http://localhost:8080"
+  "appUrl": "http://localhost:8080",
+  "mode": "authenticated:dev",
+  "recordedAt": "2026-08-04T21:02:51.079Z"
 }

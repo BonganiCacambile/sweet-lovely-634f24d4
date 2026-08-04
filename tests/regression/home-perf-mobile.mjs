@@ -18,7 +18,16 @@ loadEnvFiles();
  *   UPDATE_BASELINE=1 node tests/regression/home-perf-mobile.mjs
  */
 import { chromium, devices } from "playwright";
-import { mkdirSync, readFileSync, writeFileSync, existsSync } from "node:fs";
+import {
+  budgetFor,
+  DEV_BUDGET_MULTIPLIER,
+  detectServerMode,
+  perfMode,
+  readBaseline,
+  seedAuthenticatedSession,
+  writeBaseline,
+} from "./lib/perf-session.mjs";
+import { mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -37,9 +46,9 @@ const {
   UPDATE_BASELINE = "",
 } = process.env;
 
-const lcpBudget = Number(LCP_BUDGET_MS);
-const ttiBudget = Number(TTI_BUDGET_MS);
-const ttfbBudget = Number(TTFB_BUDGET_MS);
+let lcpBudget = Number(LCP_BUDGET_MS);
+let ttiBudget = Number(TTI_BUDGET_MS);
+let ttfbBudget = Number(TTFB_BUDGET_MS);
 const tolerance = Number(REGRESSION_TOLERANCE_PCT) / 100;
 
 const HERO_HASH = "TselH8OEkb2YNE35eIM1vVAfb6s";
@@ -88,23 +97,15 @@ async function run() {
     log(`✓ hero preload link present in SSR HTML`);
   }
 
-  const heroImgMatch = html.match(
-    new RegExp(`<img[^>]+src=["']([^"']*${HERO_HASH}[^"']*)["']`, "i"),
-  );
-  if (!heroImgMatch) {
-    failures.push("hero-img-not-in-ssr");
-    log(`✗ hero <img src> containing ${HERO_HASH} not found in SSR HTML`);
-  } else {
-    log(`✓ hero <img> rendered server-side: ${heroImgMatch[1].slice(0, 80)}…`);
-  }
-
-  const dehydratedContent = html.includes("Your Pizza Party Starts Here!");
-  if (!dehydratedContent) {
-    failures.push("home-content-not-ssr");
-    log(`✗ home page content missing from SSR HTML (loader may not be running)`);
-  } else {
-    log(`✓ home content rendered server-side (loader prefetch active)`);
-  }
+  // The storefront sits behind the global auth gate, so SSR always renders a
+  // loading shell — real content is asserted after hydration with a session.
+  const serverMode = await detectServerMode(APP_URL);
+  const mode = perfMode(serverMode);
+  log(`measuring mode: ${mode}`);
+  lcpBudget = budgetFor(lcpBudget, serverMode);
+  ttiBudget = budgetFor(ttiBudget, serverMode);
+  ttfbBudget = budgetFor(ttfbBudget, serverMode);
+  if (serverMode === "dev") log(`• dev server detected — budgets scaled x${DEV_BUDGET_MULTIPLIER}`);
 
   // 2) Browser measurement on a mobile emulation profile.
   const browser = await chromium.launch({ headless: true });
@@ -119,6 +120,7 @@ async function run() {
     timezoneId: "Europe/London",
   });
   const page = await ctx.newPage();
+  let session = null;
 
   let clientHomeContentCalls = 0;
   page.on("request", (req) => {
@@ -126,9 +128,23 @@ async function run() {
   });
 
   try {
+    session = await seedAuthenticatedSession(page, APP_URL);
+    log(`signed in as ${session.email}`);
     log(`Navigating to ${APP_URL}/ on ${iphone.name || "iPhone 13"} viewport …`);
     await page.goto(`${APP_URL}/`, { waitUntil: "domcontentloaded" });
     await page.waitForLoadState("networkidle", { timeout: 15_000 }).catch(() => {});
+
+    const heroImg = await page
+      .locator(`img[src*="${HERO_HASH}"]`)
+      .first()
+      .isVisible()
+      .catch(() => false);
+    if (!heroImg) {
+      failures.push("hero-img-not-rendered");
+      log(`✗ hero <img> containing ${HERO_HASH} not visible after hydration`);
+    } else {
+      log(`✓ hero <img> rendered for the signed-in customer`);
+    }
 
     const metrics = await page.evaluate(async () => {
       const nav = performance.getEntriesByType("navigation")[0];
@@ -185,14 +201,8 @@ async function run() {
       failures.push("tti-budget");
     if (!within("TTFB", metrics.ttfb, ttfbBudget)) failures.push("ttfb-budget");
 
-    let baseline = null;
-    if (existsSync(BASELINE_PATH)) {
-      try {
-        baseline = JSON.parse(readFileSync(BASELINE_PATH, "utf8"));
-      } catch {
-        baseline = null;
-      }
-    }
+    const baseline = readBaseline(BASELINE_PATH, mode);
+    if (!baseline) log(`• no comparable baseline for mode "${mode}" — recording a fresh one`);
     if (!regressionCheck("LCP vs baseline", metrics.lcp, baseline?.lcp))
       failures.push("lcp-regression");
     if (!regressionCheck("domInteractive vs baseline", metrics.domInteractive, baseline?.domInteractive))
@@ -211,16 +221,18 @@ async function run() {
       !baseline ||
       metrics.lcp < (baseline.lcp ?? Infinity);
     if (shouldWrite) {
-      const payload = {
-        lcp: metrics.lcp,
-        domInteractive: metrics.domInteractive,
-        ttfb: metrics.ttfb,
-        viewport: { width: metrics.viewportWidth, height: metrics.viewportHeight, dpr: metrics.devicePixelRatio },
-        device: iphone.name || "iPhone 13",
-        recordedAt: new Date().toISOString(),
-        appUrl: APP_URL,
-      };
-      writeFileSync(BASELINE_PATH, JSON.stringify(payload, null, 2));
+      writeBaseline(
+        BASELINE_PATH,
+        {
+          lcp: metrics.lcp,
+          domInteractive: metrics.domInteractive,
+          ttfb: metrics.ttfb,
+          viewport: { width: metrics.viewportWidth, height: metrics.viewportHeight, dpr: metrics.devicePixelRatio },
+          device: iphone.name || "iPhone 13",
+          appUrl: APP_URL,
+        },
+        mode,
+      );
       log(`baseline written to ${BASELINE_PATH}`);
     }
 
@@ -230,6 +242,7 @@ async function run() {
     console.error("[regression:home-perf-mobile] ❌ FAIL", err);
     process.exitCode = 1;
   } finally {
+    if (session) await session.cleanup().catch(() => {});
     await browser.close();
   }
 }

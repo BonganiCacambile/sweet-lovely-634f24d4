@@ -78,6 +78,7 @@ function HomeContentPage() {
         {TABS.map((t) => (
           <button
             key={t.id}
+            data-testid={`hc-tab-${t.id}`}
             onClick={() => setTab(t.id)}
             className={
               "rounded-full border px-4 py-2 text-xs font-medium transition " +
@@ -120,17 +121,23 @@ function StatusPill({ active }: { active: boolean }) {
   );
 }
 
+export function fieldTestId(label: string) {
+  return "hc-field-" + label.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+}
+
 function Field({
   label,
   children,
   hint,
+  testId,
 }: {
   label: string;
   children: React.ReactNode;
   hint?: string;
+  testId?: string;
 }) {
   return (
-    <label className="flex flex-col gap-1">
+    <label className="flex flex-col gap-1" data-testid={testId ?? fieldTestId(label)}>
       <span className="text-[11px] font-semibold uppercase tracking-wide text-neutral-500">{label}</span>
       {children}
       {hint && <span className="text-[11px] text-neutral-400">{hint}</span>}
@@ -147,10 +154,13 @@ function Modal({ title, onClose, children }: { title: string; onClose: () => voi
       <div
         onClick={(e) => e.stopPropagation()}
         className="w-full max-w-2xl overflow-hidden rounded-3xl border border-neutral-200 bg-white shadow-2xl"
+        data-testid="hc-modal"
+        role="dialog"
+        aria-modal="true"
       >
         <div className="flex items-center justify-between border-b border-neutral-100 px-5 py-3">
           <h3 className="text-sm font-semibold">{title}</h3>
-          <button onClick={onClose} className="rounded-full p-1 text-neutral-500 hover:bg-neutral-100">
+          <button onClick={onClose} data-testid="hc-modal-close" aria-label="Close" className="rounded-full p-1 text-neutral-500 hover:bg-neutral-100">
             <X className="h-4 w-4" />
           </button>
         </div>
@@ -196,6 +206,7 @@ function PopularTab() {
       action={
         <button
           onClick={() => setEditing("new")}
+          data-testid="hc-new"
           className="inline-flex items-center gap-1.5 rounded-full bg-[#ff003c] px-3 py-1.5 text-xs font-semibold text-white"
         >
           <Plus className="h-3.5 w-3.5" /> New
@@ -248,6 +259,7 @@ function PopularTab() {
                       onClick={() => setEditing(r as unknown as Row)}
                       className="mr-2 rounded-full border border-neutral-200 p-1.5 hover:bg-neutral-100"
                       aria-label="Edit"
+                      data-testid="hc-row-edit"
                     >
                       <Pencil className="h-3.5 w-3.5" />
                     </button>
@@ -255,6 +267,7 @@ function PopularTab() {
                       onClick={() => confirm("Delete this item?") && removeMut.mutate(r.id)}
                       className="rounded-full border border-neutral-200 p-1.5 text-red-600 hover:bg-red-50"
                       aria-label="Delete"
+                      data-testid="hc-row-delete"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>
@@ -390,17 +403,18 @@ function PopularForm({
           <input type="datetime-local" className={inputCls} value={ends_at} onChange={(e) => setEnds(e.target.value)} />
         </Field>
         <label className="col-span-full mt-1 inline-flex items-center gap-2 text-sm">
-          <input type="checkbox" checked={is_active} onChange={(e) => setActive(e.target.checked)} />
+          <input type="checkbox" data-testid="hc-active" checked={is_active} onChange={(e) => setActive(e.target.checked)} />
           <span>Active</span>
         </label>
       </div>
       <div className="mt-5 flex justify-end gap-2">
-        <button onClick={onClose} className="rounded-full border border-neutral-200 px-4 py-2 text-xs font-medium">
+        <button onClick={onClose} data-testid="hc-cancel" className="rounded-full border border-neutral-200 px-4 py-2 text-xs font-medium">
           Cancel
         </button>
         <button
           disabled={!title || mut.isPending}
           onClick={() => mut.mutate()}
+          data-testid="hc-save"
           className="rounded-full bg-[#ff003c] px-4 py-2 text-xs font-semibold text-white disabled:opacity-50"
         >
           {mut.isPending ? "Saving…" : "Save"}
@@ -436,6 +450,7 @@ function DessertsTab() {
       action={
         <button
           onClick={() => setEditing("new")}
+          data-testid="hc-new"
           className="inline-flex items-center gap-1.5 rounded-full bg-[#ff003c] px-3 py-1.5 text-xs font-semibold text-white"
         >
           <Plus className="h-3.5 w-3.5" /> New
@@ -488,6 +503,7 @@ function DessertsTab() {
                       onClick={() => setEditing(r as unknown as Row)}
                       className="mr-2 rounded-full border border-neutral-200 p-1.5 hover:bg-neutral-100"
                       aria-label="Edit"
+                      data-testid="hc-row-edit"
                     >
                       <Pencil className="h-3.5 w-3.5" />
                     </button>
@@ -495,6 +511,7 @@ function DessertsTab() {
                       onClick={() => confirm("Delete this dessert?") && removeMut.mutate(r.id)}
                       className="rounded-full border border-neutral-200 p-1.5 text-red-600 hover:bg-red-50"
                       aria-label="Delete"
+                      data-testid="hc-row-delete"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>
@@ -607,17 +624,18 @@ function DessertForm({
           <input type="datetime-local" className={inputCls} value={ends_at} onChange={(e) => setEnds(e.target.value)} />
         </Field>
         <label className="col-span-full mt-1 inline-flex items-center gap-2 text-sm">
-          <input type="checkbox" checked={is_active} onChange={(e) => setActive(e.target.checked)} />
+          <input type="checkbox" data-testid="hc-active" checked={is_active} onChange={(e) => setActive(e.target.checked)} />
           <span>Active</span>
         </label>
       </div>
       <div className="mt-5 flex justify-end gap-2">
-        <button onClick={onClose} className="rounded-full border border-neutral-200 px-4 py-2 text-xs font-medium">
+        <button onClick={onClose} data-testid="hc-cancel" className="rounded-full border border-neutral-200 px-4 py-2 text-xs font-medium">
           Cancel
         </button>
         <button
           disabled={!title || mut.isPending}
           onClick={() => mut.mutate()}
+          data-testid="hc-save"
           className="rounded-full bg-[#ff003c] px-4 py-2 text-xs font-semibold text-white disabled:opacity-50"
         >
           {mut.isPending ? "Saving…" : "Save"}
@@ -652,6 +670,7 @@ function HotDealsTab() {
       action={
         <button
           onClick={() => setEditing("new")}
+          data-testid="hc-new"
           className="inline-flex items-center gap-1.5 rounded-full bg-[#ff003c] px-3 py-1.5 text-xs font-semibold text-white"
         >
           <Plus className="h-3.5 w-3.5" /> New deal
@@ -706,11 +725,13 @@ function HotDealsTab() {
                       <StatusPill active={!!r.is_active} />
                     </td>
                     <td className="p-3 text-right">
-                      <button onClick={() => setEditing(r as unknown as Row)} className="mr-2 rounded-full border border-neutral-200 p-1.5">
+                      <button onClick={() => setEditing(r as unknown as Row)} data-testid="hc-row-edit" aria-label="Edit" className="mr-2 rounded-full border border-neutral-200 p-1.5">
                         <Pencil className="h-3.5 w-3.5" />
                       </button>
                       <button
                         onClick={() => confirm("Delete this deal?") && removeMut.mutate(r.id)}
+                      data-testid="hc-row-delete"
+                      aria-label="Delete"
                         className="rounded-full border border-neutral-200 p-1.5 text-red-600"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
@@ -835,15 +856,16 @@ function HotDealForm({
           <input type="datetime-local" className={inputCls} value={ends_at} onChange={(e) => setEnds(e.target.value)} />
         </Field>
         <label className="col-span-full mt-1 inline-flex items-center gap-2 text-sm">
-          <input type="checkbox" checked={is_active} onChange={(e) => setActive(e.target.checked)} />
+          <input type="checkbox" data-testid="hc-active" checked={is_active} onChange={(e) => setActive(e.target.checked)} />
           <span>Active</span>
         </label>
       </div>
       <div className="mt-5 flex justify-end gap-2">
-        <button onClick={onClose} className="rounded-full border border-neutral-200 px-4 py-2 text-xs font-medium">Cancel</button>
+        <button onClick={onClose} data-testid="hc-cancel" className="rounded-full border border-neutral-200 px-4 py-2 text-xs font-medium">Cancel</button>
         <button
           disabled={!title || mut.isPending}
           onClick={() => mut.mutate()}
+          data-testid="hc-save"
           className="rounded-full bg-[#ff003c] px-4 py-2 text-xs font-semibold text-white disabled:opacity-50"
         >
           {mut.isPending ? "Saving…" : "Save"}
@@ -878,6 +900,7 @@ function SpecialsTab() {
       action={
         <button
           onClick={() => setEditing("new")}
+          data-testid="hc-new"
           className="inline-flex items-center gap-1.5 rounded-full bg-[#ff003c] px-3 py-1.5 text-xs font-semibold text-white"
         >
           <Plus className="h-3.5 w-3.5" /> New special
@@ -922,11 +945,13 @@ function SpecialsTab() {
                     <StatusPill active={!!r.is_active} />
                   </td>
                   <td className="p-3 text-right">
-                    <button onClick={() => setEditing(r as unknown as Row)} className="mr-2 rounded-full border border-neutral-200 p-1.5">
+                    <button onClick={() => setEditing(r as unknown as Row)} data-testid="hc-row-edit" aria-label="Edit" className="mr-2 rounded-full border border-neutral-200 p-1.5">
                       <Pencil className="h-3.5 w-3.5" />
                     </button>
                     <button
                       onClick={() => confirm("Delete this special?") && removeMut.mutate(r.id)}
+                      data-testid="hc-row-delete"
+                      aria-label="Delete"
                       className="rounded-full border border-neutral-200 p-1.5 text-red-600"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
@@ -1054,15 +1079,16 @@ function SpecialForm({
           <input type="datetime-local" className={inputCls} value={ends_at} onChange={(e) => setEnds(e.target.value)} />
         </Field>
         <label className="col-span-full mt-1 inline-flex items-center gap-2 text-sm">
-          <input type="checkbox" checked={is_active} onChange={(e) => setActive(e.target.checked)} />
+          <input type="checkbox" data-testid="hc-active" checked={is_active} onChange={(e) => setActive(e.target.checked)} />
           <span>Active</span>
         </label>
       </div>
       <div className="mt-5 flex justify-end gap-2">
-        <button onClick={onClose} className="rounded-full border border-neutral-200 px-4 py-2 text-xs font-medium">Cancel</button>
+        <button onClick={onClose} data-testid="hc-cancel" className="rounded-full border border-neutral-200 px-4 py-2 text-xs font-medium">Cancel</button>
         <button
           disabled={!title || mut.isPending}
           onClick={() => mut.mutate()}
+          data-testid="hc-save"
           className="rounded-full bg-[#ff003c] px-4 py-2 text-xs font-semibold text-white disabled:opacity-50"
         >
           {mut.isPending ? "Saving…" : "Save"}
@@ -1120,6 +1146,7 @@ function FeaturedTab() {
         <button
           disabled={!slug || addMut.isPending}
           onClick={() => addMut.mutate()}
+          data-testid="hc-featured-add"
           className="rounded-full bg-[#ff003c] px-4 py-2 text-xs font-semibold text-white disabled:opacity-50"
         >
           Add
@@ -1140,7 +1167,7 @@ function FeaturedTab() {
                 <p className="text-sm font-medium">{r.products?.title ?? r.product_slug}</p>
                 <p className="text-[11px] text-neutral-500">Order {r.sort_order}</p>
               </div>
-              <button onClick={() => delMut.mutate(r.id)} className="rounded-full border border-neutral-200 p-1.5 text-red-600">
+              <button onClick={() => delMut.mutate(r.id)} data-testid="hc-row-delete" aria-label="Delete" className="rounded-full border border-neutral-200 p-1.5 text-red-600">
                 <Trash2 className="h-3.5 w-3.5" />
               </button>
             </li>
@@ -1173,6 +1200,7 @@ function BannersTab() {
       action={
         <button
           onClick={() => setEditing("new")}
+          data-testid="hc-new"
           className="inline-flex items-center gap-1.5 rounded-full bg-[#ff003c] px-3 py-1.5 text-xs font-semibold text-white"
         >
           <Plus className="h-3.5 w-3.5" /> New banner
@@ -1204,11 +1232,13 @@ function BannersTab() {
                   </p>
                 )}
                 <div className="mt-3 flex gap-2">
-                  <button onClick={() => setEditing(r as unknown as Row)} className="rounded-full border border-neutral-200 px-3 py-1 text-xs">
+                  <button onClick={() => setEditing(r as unknown as Row)} data-testid="hc-row-edit" aria-label="Edit" className="rounded-full border border-neutral-200 px-3 py-1 text-xs">
                     <Pencil className="mr-1 inline h-3 w-3" /> Edit
                   </button>
                   <button
                     onClick={() => confirm("Delete this banner?") && removeMut.mutate(r.id)}
+                      data-testid="hc-row-delete"
+                      aria-label="Delete"
                     className="rounded-full border border-neutral-200 px-3 py-1 text-xs text-red-600"
                   >
                     <Trash2 className="mr-1 inline h-3 w-3" /> Delete
@@ -1298,15 +1328,16 @@ function BannerForm({ initial, onClose, onSaved }: { initial: Record<string, unk
           <input type="datetime-local" className={inputCls} value={ends_at} onChange={(e) => setEnds(e.target.value)} />
         </Field>
         <label className="col-span-full mt-1 inline-flex items-center gap-2 text-sm">
-          <input type="checkbox" checked={is_active} onChange={(e) => setActive(e.target.checked)} />
+          <input type="checkbox" data-testid="hc-active" checked={is_active} onChange={(e) => setActive(e.target.checked)} />
           <span>Active</span>
         </label>
       </div>
       <div className="mt-5 flex justify-end gap-2">
-        <button onClick={onClose} className="rounded-full border border-neutral-200 px-4 py-2 text-xs font-medium">Cancel</button>
+        <button onClick={onClose} data-testid="hc-cancel" className="rounded-full border border-neutral-200 px-4 py-2 text-xs font-medium">Cancel</button>
         <button
           disabled={!title || mut.isPending}
           onClick={() => mut.mutate()}
+          data-testid="hc-save"
           className="rounded-full bg-[#ff003c] px-4 py-2 text-xs font-semibold text-white disabled:opacity-50"
         >
           {mut.isPending ? "Saving…" : "Save"}
@@ -1359,6 +1390,7 @@ function VisibilityTab() {
                 </div>
                 <button
                   onClick={() => setMut.mutate({ section: s, is_visible: !v })}
+                  data-testid={`hc-visibility-${s}`}
                   className={
                     "rounded-full px-4 py-1.5 text-xs font-semibold " +
                     (v ? "bg-neutral-900 text-white" : "bg-neutral-100 text-neutral-700")

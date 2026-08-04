@@ -22,7 +22,16 @@ loadEnvFiles();
  *   UPDATE_BASELINE=1 node tests/regression/cart-checkout-perf-mobile.mjs
  */
 import { chromium, devices } from "playwright";
-import { mkdirSync, readFileSync, writeFileSync, existsSync } from "node:fs";
+import {
+  budgetFor,
+  DEV_BUDGET_MULTIPLIER,
+  detectServerMode,
+  perfMode,
+  readBaseline,
+  seedAuthenticatedSession,
+  writeBaseline,
+} from "./lib/perf-session.mjs";
+import { mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -46,11 +55,11 @@ const {
   UPDATE_BASELINE = "",
 } = process.env;
 
-const lcpBudget = Number(LCP_BUDGET_MS);
-const ttiBudget = Number(TTI_BUDGET_MS);
-const ttfbBudget = Number(TTFB_BUDGET_MS);
-const serverFnBudget = Number(SERVER_FN_BUDGET_MS);
-const softNavBudget = Number(SOFT_NAV_BUDGET_MS);
+let lcpBudget = Number(LCP_BUDGET_MS);
+let ttiBudget = Number(TTI_BUDGET_MS);
+let ttfbBudget = Number(TTFB_BUDGET_MS);
+let serverFnBudget = Number(SERVER_FN_BUDGET_MS);
+let softNavBudget = Number(SOFT_NAV_BUDGET_MS);
 const tolerance = Number(REGRESSION_TOLERANCE_PCT) / 100;
 
 const CART_STORAGE_KEY = "sweet-lovely-cart-v1";
@@ -150,6 +159,16 @@ async function run() {
     timezoneId: "Europe/London",
   });
   const page = await ctx.newPage();
+  let session = null;
+  const serverMode = await detectServerMode(APP_URL);
+  const mode = perfMode(serverMode);
+  log(`measuring mode: ${mode}`);
+  lcpBudget = budgetFor(lcpBudget, serverMode);
+  ttiBudget = budgetFor(ttiBudget, serverMode);
+  ttfbBudget = budgetFor(ttfbBudget, serverMode);
+  serverFnBudget = budgetFor(serverFnBudget, serverMode);
+  softNavBudget = budgetFor(softNavBudget, serverMode);
+  if (serverMode === "dev") log(`• dev server detected — budgets scaled x${DEV_BUDGET_MULTIPLIER}`);
 
   // Track server-fn request timings.
   const serverFnTimings = {}; // { fnName: { url, startedAt, durationMs, status } }
@@ -180,8 +199,11 @@ async function run() {
   try {
     // Establish localhost origin so we can write localStorage before the
     // cart context hydrates.
+    // The cart and checkout routes sit behind the global auth gate, so an
+    // anonymous run would only ever measure the redirect to /auth.
+    session = await seedAuthenticatedSession(page, APP_URL);
+    log(`signed in as ${session.email}`);
     log(`Seeding cart on ${APP_URL} …`);
-    await page.goto(`${APP_URL}/`, { waitUntil: "domcontentloaded" });
     await page.evaluate(
       ({ cartKey, cartValue, zoneKey, zoneValue }) => {
         window.localStorage.setItem(cartKey, cartValue);
@@ -291,14 +313,8 @@ async function run() {
     }
 
     // ── Baseline comparison ─────────────────────────────────────────
-    let baseline = null;
-    if (existsSync(BASELINE_PATH)) {
-      try {
-        baseline = JSON.parse(readFileSync(BASELINE_PATH, "utf8"));
-      } catch {
-        baseline = null;
-      }
-    }
+    const baseline = readBaseline(BASELINE_PATH, mode);
+    if (!baseline) log(`• no comparable baseline for mode "${mode}" — recording a fresh one`);
     if (!regressionCheck("/cart LCP vs baseline", cartMetrics.lcp, baseline?.cart?.lcp))
       failures.push("cart-lcp-regression");
     if (!regressionCheck("/cart TTI vs baseline", cartMetrics.domInteractive, baseline?.cart?.domInteractive))
@@ -320,7 +336,7 @@ async function run() {
       !baseline ||
       cartMetrics.lcp < (baseline.cart?.lcp ?? Infinity);
     if (shouldWrite) {
-      const payload = {
+      writeBaseline(BASELINE_PATH, {
         cart: {
           lcp: cartMetrics.lcp,
           domInteractive: cartMetrics.domInteractive,
@@ -335,10 +351,8 @@ async function run() {
         serverFnTimings,
         device: iphone.name || "iPhone 13",
         viewport: { width: cartMetrics.viewportWidth, height: cartMetrics.viewportHeight },
-        recordedAt: new Date().toISOString(),
         appUrl: APP_URL,
-      };
-      writeFileSync(BASELINE_PATH, JSON.stringify(payload, null, 2));
+      }, mode);
       log(`baseline written to ${BASELINE_PATH}`);
     }
 
@@ -348,6 +362,7 @@ async function run() {
     console.error("[regression:cart-checkout-perf-mobile] ❌ FAIL", err);
     process.exitCode = 1;
   } finally {
+    if (session) await session.cleanup().catch(() => {});
     await browser.close();
   }
 }
