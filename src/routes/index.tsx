@@ -161,6 +161,25 @@ function Index() {
   }));
   const desserts = dessertsFromAdmin.length > 0 ? dessertsFromAdmin : DESSERTS;
 
+  // Featured products curated in Admin → Home Content → Featured. The admin
+  // module and the "featured" visibility key already existed; this renders it.
+  const featured = (content?.featured ?? [])
+    .map((f) => {
+      const p = (f as unknown as {
+        products?: { slug: string; title: string; image: string | null; price_zar: number | null; description: string | null } | null;
+      }).products;
+      if (!p) return null;
+      return {
+        id: p.slug,
+        title: p.title,
+        price: p.price_zar != null ? `R${Number(p.price_zar).toFixed(0)}` : "",
+        image: p.image ?? undefined,
+        content: p.description ?? undefined,
+        nutrition: "from",
+      } satisfies Product;
+    })
+    .filter((p): p is Product => p !== null);
+
   return (
     <div className="min-h-screen bg-white text-neutral-900">
       <SiteHeader />
@@ -207,6 +226,21 @@ function Index() {
 
       {/* Fan Favorites */}
       {showSection("popular") && popular.length > 0 && <FanFavoritesSection items={popular} />}
+
+      {/* Featured products */}
+      {showSection("featured") && featured.length > 0 && (
+        <section id="featured" data-testid="home-featured" className="w-full bg-neutral-50 px-4 py-16 sm:px-6 md:py-24 lg:px-8">
+          <div className="mx-auto max-w-7xl">
+            <Reveal className="mb-12 text-center">
+              <h2 className="text-4xl font-extrabold tracking-tight md:text-5xl">Featured Right Now</h2>
+              <p className="mt-4 text-base text-neutral-700 md:text-lg">
+                Hand-picked favourites from our kitchen, updated by our team.
+              </p>
+            </Reveal>
+            <ProductGrid products={featured} />
+          </div>
+        </section>
+      )}
 
       {/* Hot Pizza, Hotter Deals */}
       {showSection("hot_deals") && (
