@@ -206,6 +206,12 @@ async function installPaystackMock(page, behavior) {
   }, behavior);
 }
 
+async function assertCheckoutCanStartPayment(page) {
+  const payButton = page.locator('[data-testid="checkout-pay"]');
+  await payButton.waitFor({ state: "visible", timeout: 10_000 });
+  assert.equal(await payButton.isEnabled(), true, "Checkout pay button should be enabled");
+}
+
 async function createPaystackCharge(amountKobo) {
   const res = await fetch("https://api.paystack.co/charge", {
     method: "POST",
@@ -377,6 +383,7 @@ async function testMinimumOrderWarning(page) {
   await waitForStep(page, "Payment");
 
   await installPaystackMock(page, { type: "failure" });
+  await assertCheckoutCanStartPayment(page);
   await page.click('[data-testid="checkout-pay"]');
   await page.waitForSelector('li[data-sonner-toast]:has-text("Order below")', { timeout: 10_000 });
   await screenshot(page, "minimum-order");
@@ -442,6 +449,7 @@ async function testPaymentSuccess(page) {
     await waitForStep(page, "Payment");
 
     await installPaystackMock(page, { type: "success", reference });
+    await assertCheckoutCanStartPayment(page);
     const success = page.locator('[data-testid="payment-success"]');
     await Promise.all([
       success.waitFor({ state: "attached", timeout: 30_000 }),

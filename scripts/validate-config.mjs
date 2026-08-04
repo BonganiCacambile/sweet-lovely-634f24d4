@@ -117,7 +117,11 @@ const RULES = [
 
   // Paystack.
   rule("PAYSTACK_SECRET_KEY", { scopes: ["ci", "regression", "server"], format: isPaystackSecret, expected: "sk_test_... or sk_live_..." }),
-  rule("PAYSTACK_PUBLIC_KEY", { optional: true, format: isPaystackPublic, expected: "pk_test_... or pk_live_..." }),
+  rule("PAYSTACK_PUBLIC_KEY", {
+    scopes: ["ci", "regression", "server"],
+    format: isPaystackPublic,
+    expected: "pk_test_... or pk_live_...",
+  }),
 
   // Regression admin auth.
   rule("ADMIN_EMAIL", { scopes: ["regression", "ci"], format: isEmail, expected: "user@example.com" }),
