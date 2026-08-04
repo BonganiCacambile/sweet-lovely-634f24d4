@@ -233,9 +233,9 @@ async function clickSave(page) {
   await page.waitForTimeout(300);
 }
 
-async function waitForVisible(page, selector, section, label) {
+async function waitForVisible(page, selector, section, label, timeoutMs = TIMEOUT) {
   const start = Date.now();
-  const deadline = Date.now() + TIMEOUT;
+  const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
     await drainUpdatePill(page);
     if (await page.locator(selector).first().isVisible().catch(() => false)) {
@@ -244,15 +244,15 @@ async function waitForVisible(page, selector, section, label) {
     }
     await page.waitForTimeout(300);
   }
-  fail(section, `${label} did NOT appear within ${TIMEOUT}ms`);
+  fail(section, `${label} did NOT appear within ${timeoutMs}ms`);
   return false;
 }
 
-async function waitForGone(page, selector, section, label) {
+async function waitForGone(page, selector, section, label, timeoutMs = TIMEOUT) {
   const start = Date.now();
   try {
     // Poll: locator may match zero elements as soon as the row disappears.
-    const deadline = Date.now() + TIMEOUT;
+    const deadline = Date.now() + timeoutMs;
     while (Date.now() < deadline) {
       await drainUpdatePill(page);
       const n = await page.locator(selector).count();
@@ -262,7 +262,7 @@ async function waitForGone(page, selector, section, label) {
       }
       await page.waitForTimeout(300);
     }
-    fail(section, `${label} still present after ${TIMEOUT}ms`);
+    fail(section, `${label} still present after ${timeoutMs}ms`);
     return false;
   } catch (e) {
     fail(section, `${label} check crashed`, e);
@@ -270,16 +270,27 @@ async function waitForGone(page, selector, section, label) {
   }
 }
 
-/** Ensure the row for `titleText` is visible in the admin table, then click its Edit button. */
+/**
+ * Resolve an admin list row for `titleText`. Rows render as <tr> (tables),
+ * <li> (lists) or card <div>s (banners), so match the innermost container
+ * that both holds the title and owns the row action buttons.
+ */
+function adminRow(adminPage, titleText) {
+  return adminPage
+    .locator(':is(tr, li, div):has([data-testid="hc-row-edit"])', { hasText: titleText })
+    .last();
+}
+
+/** Ensure the row for `titleText` is visible in the admin list, then click Edit. */
 async function editAdminRow(adminPage, titleText) {
-  const row = adminPage.locator("tr, li", { hasText: titleText }).first();
+  const row = adminRow(adminPage, titleText);
   await row.waitFor({ state: "visible", timeout: 8000 });
   await row.locator('[data-testid="hc-row-edit"], button[aria-label="Edit"]').first().click();
   await adminPage.locator('h3:has-text("Edit ")').first().waitFor({ state: "visible", timeout: 5000 });
 }
 
 async function deleteAdminRow(adminPage, titleText) {
-  const row = adminPage.locator("tr, li", { hasText: titleText }).first();
+  const row = adminRow(adminPage, titleText);
   if (await row.count() === 0) return;
   await row.locator('[data-testid="hc-row-delete"], button[aria-label="Delete"]').first().click();
   await adminPage.waitForTimeout(600);
