@@ -27,6 +27,10 @@ jobs:
       PROD_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.PROD_SUPABASE_PUBLISHABLE_KEY }}
       PROD_SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.PROD_SUPABASE_SERVICE_ROLE_KEY }}
       PAYSTACK_SECRET_KEY: ${{ secrets.PAYSTACK_SECRET_KEY }}
+      # The browser replaces PaystackPop with a deterministic mock, but the app
+      # still requires a public key before entering the processing state. This
+      # non-secret test key prevents CI from returning early as "not configured".
+      PAYSTACK_PUBLIC_KEY: pk_test_checkout_regression_1234567890
       ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
       ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
       PROPAGATION_TIMEOUT_MS: 20000
