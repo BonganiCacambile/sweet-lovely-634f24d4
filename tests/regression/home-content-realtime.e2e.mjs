@@ -134,6 +134,17 @@ async function seedCustomer(page) {
  * assertions below observe the refreshed content — still without a reload.
  */
 async function drainUpdatePill(page) {
+  // Rows that leave RLS scope (is_active → false, delete) emit no realtime
+  // event, so the app falls back to a 60s fingerprint poll. The same poll runs
+  // on the `online` / visibility signals — dispatching `online` forces an
+  // immediate re-check, which makes those assertions deterministic instead of
+  // waiting out the interval.
+  const now = Date.now();
+  if (now - lastForcedCheck > 1200) {
+    lastForcedCheck = now;
+    await page.evaluate(() => window.dispatchEvent(new Event("online"))).catch(() => {});
+    await page.waitForTimeout(250);
+  }
   const refresh = page.getByTestId("home-content-refresh");
   if (await refresh.count()) {
     await refresh.first().click({ timeout: 3000 }).catch(() => {});
@@ -143,6 +154,7 @@ async function drainUpdatePill(page) {
       .catch(() => {});
   }
 }
+let lastForcedCheck = 0;
 
 const TAB_IDS = {
   "Popular Items": "popular",
@@ -414,13 +426,22 @@ async function runItemSection({ adminPage, customerPage, section, tabLabel, crea
       await editAdminRow(adminPage, `${titleA} EDITED`);
       const newPrice = `R${(200 + Math.floor(Math.random() * 90)).toFixed(2)}`;
       if (section === "hot_deals") {
-        await fieldInput(adminPage, "Discounted price (ZAR)").fill("77.77");
+        // Home renders hot-deal prices as `R${disc.toFixed(0)}` — assert the
+        // exact rendered string, scoped to this deal's own card so another
+        // deal with the same amount cannot make the check pass by accident.
+        const disc = 300 + Math.floor(Math.random() * 400);
+        await fieldInput(adminPage, "Discounted price (ZAR)").fill(String(disc));
         await clickSave(adminPage);
-        await waitForVisible(customerPage, `:text("R77.77"), :text("77.77")`, section, "edit price (hot deal)").catch(() => {});
+        await waitForVisible(
+          customerPage,
+          `article:has-text("${titleA} EDITED"):has-text("R${disc}")`,
+          section,
+          `edit price (hot deal) R${disc}`,
+        );
       } else {
         await fieldInput(adminPage, "Price (display)").fill(newPrice);
         await clickSave(adminPage);
-        await waitForVisible(customerPage, `:text("${newPrice}")`, section, `edit price ${newPrice}`).catch(() => {});
+        await waitForVisible(customerPage, `:text("${newPrice}")`, section, `edit price ${newPrice}`);
       }
     }
 
@@ -442,7 +463,7 @@ async function runItemSection({ adminPage, customerPage, section, tabLabel, crea
       `:text("${titleA} EDITED")`,
       section,
       "disable (is_active=false)",
-      Math.max(TIMEOUT * 3, 80000),
+      TIMEOUT * 2,
     );
 
     // Toggle back on.
@@ -516,14 +537,27 @@ async function runFeaturedSection({ adminPage, customerPage }) {
     await inlineFieldInput(adminPage, "Sort order").fill("0");
     await adminPage.locator('[data-testid="hc-featured-add"]').first().click();
     addedSlug = chosen.slug;
-    await waitForVisible(customerPage, `:text("${chosen.title}")`, section, `feature product "${chosen.title}"`);
+    // Assert inside the dedicated featured strip so a product that also shows
+    // up in Popular/Desserts cannot satisfy the check.
+    await waitForVisible(
+      customerPage,
+      `[data-testid="home-featured"]:has-text("${chosen.title}")`,
+      section,
+      `feature product "${chosen.title}"`,
+    );
 
     // 2. DELETE via UI
     const row = adminPage.locator("li", { hasText: chosen.title }).first();
     await row.locator('button').last().click();
     await adminPage.waitForTimeout(600);
     addedSlug = null;
-    await waitForGone(customerPage, `:text("${chosen.title}")`, section, "unfeature product").catch(() => {});
+    await waitForGone(
+      customerPage,
+      `[data-testid="home-featured"]:has-text("${chosen.title}")`,
+      section,
+      "unfeature product",
+      TIMEOUT * 2,
+    );
   } catch (e) {
     fail(section, "unexpected error", e);
   }
