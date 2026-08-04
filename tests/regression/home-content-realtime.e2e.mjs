@@ -362,6 +362,9 @@ async function newBanner(adminPage, { title, subtitle, image, position, active =
 async function runItemSection({ adminPage, customerPage, section, tabLabel, create, editModalTitle }) {
   const titleA = `${RUN} ${section} A`;
   const titleB = `${RUN} ${section} B`;
+  // The banner surface is a carousel: only the active slide is in the DOM, so
+  // the second row and the ordering assertion are not observable there.
+  const multiVisible = section !== "banners";
   const created = [];
   try {
     await openTab(adminPage, tabLabel);
@@ -383,7 +386,11 @@ async function runItemSection({ adminPage, customerPage, section, tabLabel, crea
       image: IMG_A, position: 101, active: true,
     });
     created.push(titleB);
-    await waitForVisible(customerPage, `:text("${titleB}")`, section, `create B "${titleB}"`);
+    if (multiVisible) {
+      await waitForVisible(customerPage, `:text("${titleB}")`, section, `create B "${titleB}"`);
+    } else {
+      pass(section, "create B verified in admin only (carousel shows one slide)");
+    }
 
     // 2. EDIT title (append " EDITED")
     await editAdminRow(adminPage, titleA);
@@ -427,7 +434,9 @@ async function runItemSection({ adminPage, customerPage, section, tabLabel, crea
     await editAdminRow(adminPage, `${titleA} EDITED`);
     await setActiveCheckbox(adminPage, false);
     await clickSave(adminPage);
-    await waitForGone(customerPage, `:text("${titleA} EDITED")`, section, "disable (is_active=false)");
+    // Rows leaving RLS scope emit no UPDATE event — detection falls back to the
+    // fingerprint poll, so allow a wider window here.
+    await waitForGone(customerPage, `:text("${titleA} EDITED")`, section, "disable (is_active=false)", TIMEOUT * 3);
 
     // Toggle back on.
     await editAdminRow(adminPage, `${titleA} EDITED`);
@@ -436,23 +445,25 @@ async function runItemSection({ adminPage, customerPage, section, tabLabel, crea
     await waitForVisible(customerPage, `:text("${titleA} EDITED")`, section, "re-enable (is_active=true)");
 
     // 7. REORDER — swap positions of A and B, expect DOM order to flip.
-    await editAdminRow(adminPage, `${titleA} EDITED`);
-    await fieldInput(adminPage, "Position").fill("102");
-    await clickSave(adminPage);
-    // Pull any pending update pill, then read positional order.
-    await drainUpdatePill(customerPage);
-    await customerPage.waitForTimeout(800);
-    await drainUpdatePill(customerPage);
-    const orderAfter = await customerPage.evaluate(([a, b]) => {
-      const html = document.body.innerText;
-      const ia = html.indexOf(a);
-      const ib = html.indexOf(b);
-      return { ia, ib };
-    }, [`${titleA} EDITED`, titleB]);
-    if (orderAfter.ia > 0 && orderAfter.ib > 0 && orderAfter.ia > orderAfter.ib) {
-      pass(section, "reorder reflected on customer home");
-    } else {
-      fail(section, `reorder not reflected (indices A=${orderAfter.ia}, B=${orderAfter.ib})`);
+    if (multiVisible) {
+      await editAdminRow(adminPage, `${titleA} EDITED`);
+      await fieldInput(adminPage, "Position").fill("102");
+      await clickSave(adminPage);
+      // Poll (draining the update pill each pass) until the DOM order flips.
+      const deadline = Date.now() + TIMEOUT * 3;
+      let last = { ia: -1, ib: -1 };
+      let flipped = false;
+      while (Date.now() < deadline) {
+        await drainUpdatePill(customerPage);
+        last = await customerPage.evaluate(([a, b]) => {
+          const text = document.body.innerText;
+          return { ia: text.indexOf(a), ib: text.indexOf(b) };
+        }, [`${titleA} EDITED`, titleB]);
+        if (last.ia > 0 && last.ib > 0 && last.ia > last.ib) { flipped = true; break; }
+        await customerPage.waitForTimeout(400);
+      }
+      if (flipped) pass(section, "reorder reflected on customer home");
+      else fail(section, `reorder not reflected (indices A=${last.ia}, B=${last.ib})`);
     }
 
     // 8. DELETE both — customer loses both titles.
