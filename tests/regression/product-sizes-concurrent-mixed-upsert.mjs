@@ -24,8 +24,11 @@ loadEnvFiles();
  * Env vars: SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, ADMIN_EMAIL, ADMIN_PASSWORD
  */
 import { createClient } from "@supabase/supabase-js";
+import { resolveAdminCredentials } from "./lib/admin-session.mjs";
 
-const { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, ADMIN_EMAIL, ADMIN_PASSWORD } = process.env;
+const { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } = process.env;
+let ADMIN_EMAIL;
+let ADMIN_PASSWORD;
 function need(name, val) {
   if (!val) {
     console.error(`Missing required env var: ${name}`);
@@ -34,8 +37,6 @@ function need(name, val) {
 }
 need("SUPABASE_URL", SUPABASE_URL);
 need("SUPABASE_PUBLISHABLE_KEY", SUPABASE_PUBLISHABLE_KEY);
-need("ADMIN_EMAIL", ADMIN_EMAIL);
-need("ADMIN_PASSWORD", ADMIN_PASSWORD);
 
 const log = (...a) => console.log("[product-sizes-concurrent-mixed-upsert]", ...a);
 let failures = 0;
@@ -93,8 +94,24 @@ async function saveSizesSplit(client, rows) {
   return { insertedIds };
 }
 
+
+// Resolve an existing category slug at runtime — the seeded catalogue differs
+// between environments, so a hardcoded slug can violate the FK constraint.
+async function firstCategorySlug(client) {
+  const { data, error } = await client
+    .from("categories")
+    .select("slug")
+    .limit(1)
+    .maybeSingle();
+  if (error || !data?.slug) {
+    throw new Error(`could not resolve a category slug: ${error?.message ?? "no categories"}`);
+  }
+  return data.slug;
+}
+
 async function run() {
   const admin = makeClient();
+  ({ email: ADMIN_EMAIL, password: ADMIN_PASSWORD } = await resolveAdminCredentials());
   await signIn(admin);
 
   log(`creating fixture product ${PRODUCT_SLUG}`);
@@ -102,7 +119,7 @@ async function run() {
     const { error } = await admin.from("products").insert({
       slug: PRODUCT_SLUG,
       title: `Regression concurrent sizes ${SUFFIX}`,
-      category_slug: "bbq",
+      category_slug: await firstCategorySlug(admin),
       price_zar: 100,
       stock: 100,
       is_active: true,
@@ -302,7 +319,7 @@ async function run() {
 
     await admin2.auth.signOut().catch(() => {});
   } finally {
-    await admin.from("products").delete().eq("slug", PRODUCT_SLUG).catch(() => {});
+    await Promise.resolve(admin.from("products").delete().eq("slug", PRODUCT_SLUG)).catch(() => {});
     await admin.auth.signOut().catch(() => {});
   }
 

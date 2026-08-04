@@ -24,6 +24,7 @@ loadEnvFiles();
  */
 import { chromium } from "playwright";
 import { createClient } from "@supabase/supabase-js";
+import { resolveAdminCredentials } from "./lib/admin-session.mjs";
 
 const {
   BASE_URL = "http://localhost:8080",
@@ -38,8 +39,6 @@ const {
 function need(name, val) {
   if (!val) { console.error(`Missing required env var: ${name}`); process.exit(2); }
 }
-need("ADMIN_EMAIL", ADMIN_EMAIL);
-need("ADMIN_PASSWORD", ADMIN_PASSWORD);
 need("SUPABASE_URL", SUPABASE_URL);
 need("SUPABASE_PUBLISHABLE_KEY", SUPABASE_PUBLISHABLE_KEY);
 
@@ -66,14 +65,26 @@ const supa = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
 
 // ---------- helpers -------------------------------------------------------
 
+// Seed a real Supabase session into localStorage instead of driving the
+// sign-in form: the storefront auth gate can redirect mid-typing and detach
+// the form, and the configured admin password may have been rotated.
 async function signInAdmin(page) {
+  const creds = await resolveAdminCredentials();
+  const { data, error } = await supa.auth.signInWithPassword({
+    email: creds.email,
+    password: creds.password,
+  });
+  if (error || !data?.session) {
+    throw new Error(`admin sign-in failed: ${error?.message ?? "no session"}`);
+  }
+  const ref =
+    process.env.SUPABASE_PROJECT_ID || new URL(SUPABASE_URL).hostname.split(".")[0];
+  const storageKey = `sb-${ref}-auth-token`;
   await page.goto(`${BASE_URL}/auth`, { waitUntil: "domcontentloaded" });
-  await page.locator('input[type="email"]').first().fill(ADMIN_EMAIL);
-  await page.locator('input[type="password"]').first().fill(ADMIN_PASSWORD);
-  await Promise.all([
-    page.waitForURL((u) => !u.pathname.startsWith("/auth"), { timeout: 15000 }),
-    page.getByRole("button", { name: /^sign in$/i }).click(),
-  ]);
+  await page.evaluate(
+    ([key, session]) => window.localStorage.setItem(key, JSON.stringify(session)),
+    [storageKey, data.session],
+  );
   await page.goto(`${BASE_URL}/admin/home-content`, { waitUntil: "domcontentloaded" });
 }
 

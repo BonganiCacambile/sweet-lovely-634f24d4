@@ -10,6 +10,7 @@ loadEnvFiles();
  */
 import { chromium } from "playwright";
 import { createClient } from "@supabase/supabase-js";
+import { resolveAdminCredentials } from "./lib/admin-session.mjs";
 import { mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -38,8 +39,6 @@ function need(name, val) {
 need("SUPABASE_URL", SUPABASE_URL);
 need("SUPABASE_SERVICE_ROLE_KEY", SUPABASE_SERVICE_ROLE_KEY);
 need("SUPABASE_PUBLISHABLE_KEY", SUPABASE_PUBLISHABLE_KEY);
-need("ADMIN_EMAIL", ADMIN_EMAIL);
-need("ADMIN_PASSWORD", ADMIN_PASSWORD);
 
 const projectRef =
   SUPABASE_PROJECT_ID || new URL(SUPABASE_URL).hostname.split(".")[0];
@@ -55,14 +54,18 @@ const userClient = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
 const ORDER_NUMBER = `REGR-${Date.now()}`;
 const CUSTOMER_NAME = `Regression Bot ${ORDER_NUMBER}`;
 
+let ADMIN_LABEL = process.env.ADMIN_EMAIL ?? "(resolved admin)";
+
 function log(...args) {
   console.log(`[regression]`, ...args);
 }
 
 async function signInAdmin() {
+  const creds = await resolveAdminCredentials();
+  ADMIN_LABEL = creds.email;
   const { data, error } = await userClient.auth.signInWithPassword({
-    email: ADMIN_EMAIL,
-    password: ADMIN_PASSWORD,
+    email: creds.email,
+    password: creds.password,
   });
   if (error || !data.session) {
     throw new Error(`Admin sign-in failed: ${error?.message ?? "no session"}`);
@@ -96,8 +99,8 @@ async function cleanup(orderId) {
 }
 
 async function run() {
-  log(`Signing in as ${ADMIN_EMAIL}…`);
   const session = await signInAdmin();
+  log(`Signed in as ${ADMIN_LABEL}`);
 
   const browser = await chromium.launch({ headless: true });
   const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
