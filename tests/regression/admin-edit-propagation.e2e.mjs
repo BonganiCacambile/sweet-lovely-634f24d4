@@ -107,8 +107,15 @@ async function seedCustomer(pages) {
 }
 
 async function editProductTitle(adminPage, slug, newTitle) {
-  await adminPage.goto(`${BASE_URL}/admin/products`, { waitUntil: "domcontentloaded" });
-  await adminPage.getByPlaceholder(/search by name or slug/i).fill(slug);
+  // Avoid a hard reload when we are already on the products page: a fresh
+  // navigation re-runs the auth gate, which unmounts the admin shell while the
+  // session is re-validated and detaches locators mid-interaction.
+  if (!new URL(adminPage.url()).pathname.startsWith("/admin/products")) {
+    await adminPage.goto(`${BASE_URL}/admin/products`, { waitUntil: "domcontentloaded" });
+  }
+  const searchBox = adminPage.getByPlaceholder(/search by name or slug/i);
+  await searchBox.waitFor({ state: "visible", timeout: 30000 });
+  await searchBox.fill(slug);
   const row = adminPage.locator("tr", { hasText: slug }).first();
   await row.waitFor({ state: "visible", timeout: 10000 });
   await row.getByRole("button", { name: /edit/i }).click();
