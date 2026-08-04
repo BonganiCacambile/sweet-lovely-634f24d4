@@ -20,7 +20,7 @@ loadEnvFiles();
 import { chromium } from "playwright";
 import { createClient } from "@supabase/supabase-js";
 import { resolveAdminCredentials } from "./lib/admin-session.mjs";
-import { storageKeyFor } from "./lib/browser-session.mjs";
+import { createEphemeralCustomerSession, storageKeyFor } from "./lib/browser-session.mjs";
 
 const {
   BASE_URL = "http://localhost:8080",
@@ -80,7 +80,30 @@ async function signInAdmin(page) {
     [storageKey, data.session],
   );
   await page.goto(`${BASE_URL}/admin/products`, { waitUntil: "domcontentloaded" });
+  // Wait for the auth gate to resolve the seeded session and the admin shell
+  // to mount before any interaction — otherwise the first fill() races the
+  // gate's loading screen.
+  await page.getByPlaceholder(/search by name or slug/i).waitFor({ state: "visible", timeout: 30000 });
   await supa.auth.signOut().catch(() => {});
+  return creds;
+}
+
+/** Customer routes are behind the global auth gate too — seed a session. */
+async function seedCustomer(pages) {
+  const sess = await createEphemeralCustomerSession({
+    supabaseUrl: SUPABASE_URL,
+    serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY,
+    publishableKey: SUPABASE_PUBLISHABLE_KEY,
+    projectId: process.env.SUPABASE_PROJECT_ID,
+    emailPrefix: "regr-propagation",
+  });
+  const first = pages[0];
+  await first.goto(`${BASE_URL}/auth`, { waitUntil: "domcontentloaded" });
+  await first.evaluate(
+    ([key, session]) => window.localStorage.setItem(key, JSON.stringify(session)),
+    [sess.storageKey, sess.session],
+  );
+  return sess;
 }
 
 async function editProductTitle(adminPage, slug, newTitle) {
@@ -123,7 +146,10 @@ async function main() {
   const menuPage  = await custCtx.newPage();
 
   let editApplied = false;
+  let customer = null;
+  let adminCreds = null;
   try {
+    customer = await seedCustomer([homePage, menuPage]);
     // Prime customer pages first so realtime subscriptions are live.
     await homePage.goto(`${BASE_URL}/`, { waitUntil: "domcontentloaded" });
     await menuPage.goto(`${BASE_URL}/menu/full-menu`, { waitUntil: "domcontentloaded" });
@@ -134,7 +160,7 @@ async function main() {
     homePage.on("framenavigated", (f) => { if (f === homePage.mainFrame()) homeNavs++; });
     menuPage.on("framenavigated", (f) => { if (f === menuPage.mainFrame()) menuNavs++; });
 
-    await signInAdmin(adminPage);
+    adminCreds = await signInAdmin(adminPage);
     pass("admin signed in");
     await editProductTitle(adminPage, product.slug, updated);
     editApplied = true;
@@ -155,6 +181,8 @@ async function main() {
       } catch (e) { console.warn("[admin-edit-e2e] cleanup failed:", e?.message); }
     }
     await browser.close();
+    if (customer) await customer.cleanup().catch(() => {});
+    if (adminCreds) await adminCreds.cleanup().catch(() => {});
   }
 
   if (failures > 0) { console.error(`\n[admin-edit-e2e] FAIL — ${failures} check(s) failed`); process.exit(1); }
