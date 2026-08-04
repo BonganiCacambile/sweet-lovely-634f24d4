@@ -13,9 +13,9 @@ await p.evaluate(([k,s])=>localStorage.setItem(k,JSON.stringify(s)),[sess.storag
 await p.goto("http://localhost:8080/",{waitUntil:"domcontentloaded"});
 await p.waitForTimeout(4000);
 const admin = createClient(url, sr, {auth:{persistSession:false}});
-const { data: prod } = await admin.from("products").select("id,title").eq("is_active",true).limit(1).single();
+const { data: prod, error: perr } = await admin.from("products").select("id,title").eq("is_active",true).limit(1).maybeSingle();
 await admin.from("products").update({title: prod.title+" DBG"}).eq("id",prod.id);
-console.log("updated", prod.title);
+console.log("updated", prod?.title, perr?.message);
 await p.waitForTimeout(8000);
 console.log("banner visible:", await p.getByTestId("home-content-update-banner").isVisible().catch(()=>false));
 await admin.from("products").update({title: prod.title}).eq("id",prod.id);
