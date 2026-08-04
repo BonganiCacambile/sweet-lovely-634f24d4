@@ -173,7 +173,20 @@ async function main() {
     editApplied = true;
     pass("admin saved product title change");
 
-    const homeOk = await waitForTextNoReload(homePage, SUFFIX, "Home /");
+    // Home no longer silently swaps content underneath the visitor: it shows a
+    // non-intrusive "new updates available" pill (see content-update-banner).
+    // Assert the pill appears from the realtime/fingerprint signal, then that
+    // clicking Refresh surfaces the new title — all without a page reload.
+    let homeOk = false;
+    try {
+      const banner = homePage.getByTestId("home-content-update-banner");
+      await banner.waitFor({ state: "visible", timeout: TIMEOUT });
+      pass("Home / surfaced the content-update pill");
+      await homePage.getByTestId("home-content-refresh").click();
+      homeOk = await waitForTextNoReload(homePage, SUFFIX, "Home / after Refresh");
+    } catch {
+      fail(`Home / did NOT surface the content-update pill within ${TIMEOUT}ms`);
+    }
     const menuOk = await waitForTextNoReload(menuPage, SUFFIX, "Full menu /menu/full-menu");
 
     if (homeOk) (homeNavs === 0 ? pass("Home did not reload") : fail(`Home reloaded (${homeNavs})`));
