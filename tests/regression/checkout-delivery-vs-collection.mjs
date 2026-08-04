@@ -466,6 +466,10 @@ async function runAll() {
     { name: "Payment success creates order and shows animation", run: testPaymentSuccess },
   ];
 
+  const onlyArg = process.argv.find((a) => a.startsWith("--only="));
+  const only = onlyArg ? new RegExp(onlyArg.slice("--only=".length), "i") : null;
+  const selected = only ? tests.filter((t) => only.test(t.name)) : tests;
+
   const browser = await chromium.launch({ headless: true });
   const failures = [];
 
@@ -483,9 +487,12 @@ async function runAll() {
     `Zones resolved — both: ${ZONE_BOTH} (fee ${ZONE_BOTH_CFG.fee}, min ${ZONE_BOTH_CFG.min}, eta ${ZONE_BOTH_CFG.eta}), delivery-only: ${ZONE_DELIVERY_ONLY}`,
   );
 
-  for (const { name, run } of tests) {
+  for (const { name, run } of selected) {
     const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
     const page = await context.newPage();
+    page.on("console", (m) => {
+      if (process.env.DEBUG_CHECKOUT) console.log("  [browser]", m.type(), m.text().slice(0, 300));
+    });
     try {
       log(`Running ${name}…`);
       await run(page);
