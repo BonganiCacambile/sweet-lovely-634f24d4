@@ -1,4 +1,7 @@
 #!/usr/bin/env node
+import { loadEnvFiles } from "./lib/load-env.mjs";
+loadEnvFiles();
+
 /**
  * Regression: contact_email / contact_phone on public.delivery_zones must NEVER
  * reach Realtime subscribers. The table was removed from the supabase_realtime

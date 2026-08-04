@@ -1,4 +1,7 @@
 #!/usr/bin/env node
+import { loadEnvFiles } from "./lib/load-env.mjs";
+loadEnvFiles();
+
 /**
  * Regression: /api/public/paystack-webhook
  *

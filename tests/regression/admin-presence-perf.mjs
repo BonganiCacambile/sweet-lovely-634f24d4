@@ -1,4 +1,7 @@
 #!/usr/bin/env node
+import { loadEnvFiles } from "./lib/load-env.mjs";
+loadEnvFiles();
+
 /**
  * Performance regression for the new Employee Presence Monitoring +
  * Activity Feed admin features.

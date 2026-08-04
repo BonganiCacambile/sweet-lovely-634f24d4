@@ -1,4 +1,7 @@
 #!/usr/bin/env node
+import { loadEnvFiles } from "./lib/load-env.mjs";
+loadEnvFiles();
+
 /**
  * Runs the full existing realtime regression suite:
  *   - realtime-orders

@@ -1,4 +1,7 @@
 #!/usr/bin/env node
+import { loadEnvFiles } from "./lib/load-env.mjs";
+loadEnvFiles();
+
 import { chromium } from "playwright";
 
 const BASE_URL = (process.env.BASE_URL ?? "http://localhost:8080").replace(/\/$/, "");

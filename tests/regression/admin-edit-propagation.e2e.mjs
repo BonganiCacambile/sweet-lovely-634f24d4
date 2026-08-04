@@ -1,4 +1,7 @@
 #!/usr/bin/env node
+import { loadEnvFiles } from "./lib/load-env.mjs";
+loadEnvFiles();
+
 /**
  * End-to-end Playwright test: admin edits a product and both the home page
  * and the full menu update in real time in a separate customer session,

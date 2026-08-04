@@ -1,4 +1,7 @@
 #!/usr/bin/env node
+import { loadEnvFiles } from "./lib/load-env.mjs";
+loadEnvFiles();
+
 // Verifies customer-facing menu surfaces subscribe to products+categories
 // realtime, and that those tables are members of supabase_realtime with
 // anon SELECT so admin edits reach signed-out visitors.

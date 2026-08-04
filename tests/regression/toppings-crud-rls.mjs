@@ -1,4 +1,7 @@
 #!/usr/bin/env node
+import { loadEnvFiles } from "./lib/load-env.mjs";
+loadEnvFiles();
+
 /**
  * Integration test: pizza toppings CRUD through the app's Supabase client
  * (publishable/anon key) exercised against real RLS policies.

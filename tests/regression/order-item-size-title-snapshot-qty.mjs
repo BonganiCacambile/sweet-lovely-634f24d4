@@ -1,4 +1,7 @@
 #!/usr/bin/env node
+import { loadEnvFiles } from "./lib/load-env.mjs";
+loadEnvFiles();
+
 /**
  * Regression: places a sized-product order with quantity > 1 for EVERY size
  * and asserts that title_snapshot on every persisted order_items row includes

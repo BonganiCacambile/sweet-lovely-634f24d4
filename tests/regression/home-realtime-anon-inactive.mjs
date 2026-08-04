@@ -1,4 +1,7 @@
 #!/usr/bin/env node
+import { loadEnvFiles } from "./lib/load-env.mjs";
+loadEnvFiles();
+
 // Verifies anon Realtime subscribers still receive UPDATE events for every
 // home_* table when is_active toggles from true → false. This guards against
 // a regression where the RLS SELECT policy filters inactive rows and Realtime
