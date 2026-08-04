@@ -426,13 +426,22 @@ async function runItemSection({ adminPage, customerPage, section, tabLabel, crea
       await editAdminRow(adminPage, `${titleA} EDITED`);
       const newPrice = `R${(200 + Math.floor(Math.random() * 90)).toFixed(2)}`;
       if (section === "hot_deals") {
-        await fieldInput(adminPage, "Discounted price (ZAR)").fill("77.77");
+        // Home renders hot-deal prices as `R${disc.toFixed(0)}` — assert the
+        // exact rendered string, scoped to this deal's own card so another
+        // deal with the same amount cannot make the check pass by accident.
+        const disc = 300 + Math.floor(Math.random() * 400);
+        await fieldInput(adminPage, "Discounted price (ZAR)").fill(String(disc));
         await clickSave(adminPage);
-        await waitForVisible(customerPage, `:text("R77.77"), :text("77.77")`, section, "edit price (hot deal)").catch(() => {});
+        await waitForVisible(
+          customerPage,
+          `article:has-text("${titleA} EDITED"):has-text("R${disc}")`,
+          section,
+          `edit price (hot deal) R${disc}`,
+        );
       } else {
         await fieldInput(adminPage, "Price (display)").fill(newPrice);
         await clickSave(adminPage);
-        await waitForVisible(customerPage, `:text("${newPrice}")`, section, `edit price ${newPrice}`).catch(() => {});
+        await waitForVisible(customerPage, `:text("${newPrice}")`, section, `edit price ${newPrice}`);
       }
     }
 
@@ -454,7 +463,7 @@ async function runItemSection({ adminPage, customerPage, section, tabLabel, crea
       `:text("${titleA} EDITED")`,
       section,
       "disable (is_active=false)",
-      Math.max(TIMEOUT * 3, 80000),
+      TIMEOUT * 2,
     );
 
     // Toggle back on.
