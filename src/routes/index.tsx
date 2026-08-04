@@ -163,20 +163,21 @@ function Index() {
 
   // Featured products curated in Admin → Home Content → Featured. The admin
   // module and the "featured" visibility key already existed; this renders it.
-  const featured = (content?.featured ?? [])
+  const featured: Product[] = (content?.featured ?? [])
     .map((f) => {
       const p = (f as unknown as {
         products?: { slug: string; title: string; image: string | null; price_zar: number | null; description: string | null } | null;
       }).products;
       if (!p) return null;
-      return {
+      const item: Product = {
         id: p.slug,
         title: p.title,
         price: p.price_zar != null ? `R${Number(p.price_zar).toFixed(0)}` : "",
         image: p.image ?? undefined,
         content: p.description ?? undefined,
         nutrition: "from",
-      } satisfies Product;
+      };
+      return item;
     })
     .filter((p): p is Product => p !== null);
 
