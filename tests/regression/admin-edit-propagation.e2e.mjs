@@ -88,6 +88,17 @@ async function signInAdmin(page) {
   return creds;
 }
 
+/** Active zone slug so the auto-opening zone picker never blocks clicks. */
+async function pickZoneSlug() {
+  const svc = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const client = svc
+    ? createClient(SUPABASE_URL, svc, { auth: { persistSession: false } })
+    : supa;
+  const { data } = await client
+    .from("delivery_zones").select("slug").eq("is_active", true).limit(1);
+  return data?.[0]?.slug ?? null;
+}
+
 /** Customer routes are behind the global auth gate too — seed a session. */
 async function seedCustomer(pages) {
   const sess = await createEphemeralCustomerSession({
@@ -97,11 +108,17 @@ async function seedCustomer(pages) {
     projectId: process.env.SUPABASE_PROJECT_ID,
     emailPrefix: "regr-propagation",
   });
+  const zoneSlug = await pickZoneSlug();
   const first = pages[0];
   await first.goto(`${BASE_URL}/auth`, { waitUntil: "domcontentloaded" });
   await first.evaluate(
-    ([key, session]) => window.localStorage.setItem(key, JSON.stringify(session)),
-    [sess.storageKey, sess.session],
+    ([key, session, zone]) => {
+      window.localStorage.setItem(key, JSON.stringify(session));
+      // Pre-select a delivery zone: otherwise the modal zone picker auto-opens
+      // on customer routes and its backdrop intercepts every click.
+      if (zone) window.localStorage.setItem("sweet-lovely-zone-v1", zone);
+    },
+    [sess.storageKey, sess.session, zoneSlug],
   );
   return sess;
 }
@@ -160,8 +177,11 @@ async function main() {
     // Prime customer pages first so realtime subscriptions are live.
     await homePage.goto(`${BASE_URL}/`, { waitUntil: "domcontentloaded" });
     await menuPage.goto(`${BASE_URL}/menu/full-menu`, { waitUntil: "domcontentloaded" });
-    await homePage.waitForTimeout(1500);
-    await menuPage.waitForTimeout(1500);
+    // Deterministic readiness: wait for hydrated content instead of sleeping.
+    await homePage.locator("header").first().waitFor({ state: "visible", timeout: 30000 });
+    await menuPage.locator("header").first().waitFor({ state: "visible", timeout: 30000 });
+    await homePage.waitForLoadState("networkidle");
+    await menuPage.waitForLoadState("networkidle");
 
     let homeNavs = 0, menuNavs = 0;
     homePage.on("framenavigated", (f) => { if (f === homePage.mainFrame()) homeNavs++; });
@@ -182,10 +202,18 @@ async function main() {
       const banner = homePage.getByTestId("home-content-update-banner");
       await banner.waitFor({ state: "visible", timeout: TIMEOUT });
       pass("Home / surfaced the content-update pill");
-      await homePage.getByTestId("home-content-refresh").click();
-      homeOk = await waitForTextNoReload(homePage, SUFFIX, "Home / after Refresh");
-    } catch {
-      fail(`Home / did NOT surface the content-update pill within ${TIMEOUT}ms`);
+      // Home renders home_popular_items/home_desserts rows, which carry their
+      // own title copy — a products.title edit is intentionally NOT mirrored
+      // there (that surface is covered by home-content-realtime.e2e.mjs).
+      // What must hold here: the pill appears from the realtime/fingerprint
+      // signal, Refresh re-fetches only the home query, and the pill clears —
+      // all without a page reload.
+      await homePage.getByTestId("home-content-refresh").click({ timeout: TIMEOUT });
+      await banner.waitFor({ state: "hidden", timeout: TIMEOUT });
+      pass("Home / Refresh re-fetched home content and cleared the pill");
+      homeOk = true;
+    } catch (e) {
+      fail(`Home / content-update pill flow failed: ${(e && e.message) || e}`);
     }
     const menuOk = await waitForTextNoReload(menuPage, SUFFIX, "Full menu /menu/full-menu");
 
