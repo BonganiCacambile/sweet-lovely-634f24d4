@@ -13,9 +13,11 @@ await p.evaluate(([k,s])=>localStorage.setItem(k,JSON.stringify(s)),[sess.storag
 await p.goto("http://localhost:8080/",{waitUntil:"domcontentloaded"});
 await p.waitForTimeout(4000);
 const admin = createClient(url, sr, {auth:{persistSession:false}});
-const { data: prod, error: perr } = await admin.from("products").select("id,title").eq("is_active",true).limit(1).maybeSingle();
+const { data: rows, error: perr } = await admin.from("products").select("id,title").eq("is_active",true).limit(1);
+console.log("pick", rows, perr?.message);
+const prod = rows[0];
 await admin.from("products").update({title: prod.title+" DBG"}).eq("id",prod.id);
-console.log("updated", prod?.title, perr?.message);
+console.log("updated", prod.title);
 await p.waitForTimeout(8000);
 console.log("banner visible:", await p.getByTestId("home-content-update-banner").isVisible().catch(()=>false));
 await admin.from("products").update({title: prod.title}).eq("id",prod.id);
