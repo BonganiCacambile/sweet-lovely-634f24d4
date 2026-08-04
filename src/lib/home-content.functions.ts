@@ -135,3 +135,51 @@ export const trackHomeContentEvent = createServerFn({ method: "POST" })
     });
     return { ok: true };
   });
+
+/**
+ * Cheap public fingerprint of the *anon-visible* home content. Only reads ids,
+ * so it costs a fraction of getHomeContent. Deactivating a row (is_active →
+ * false) removes it from the anon RLS SELECT scope, which is exactly why anon
+ * Realtime subscribers never receive that UPDATE — the fingerprint changes
+ * instead, letting the storefront offer a manual refresh without ever
+ * exposing hidden rows.
+ */
+export const getHomeContentFingerprint = createServerFn({ method: "GET" }).handler(async () => {
+  const sb = publicClient();
+  const tables = [
+    "home_popular_items",
+    "home_hot_deals",
+    "home_specials",
+    "home_banners",
+    "home_desserts",
+  ] as const;
+  const results = await Promise.all([
+    ...tables.map((t) => sb.from(t).select("id, is_active, starts_at, ends_at")),
+    sb.from("featured_items").select("id, is_active, starts_at, ends_at").eq("placement", "home"),
+    sb.from("home_section_visibility").select("section, is_visible, zone_id"),
+  ]);
+
+  const parts: string[] = [];
+  for (let i = 0; i < tables.length + 1; i += 1) {
+    const rows = activeNow((results[i]?.data ?? []) as TimedHomeRow[]) as Array<{ id?: string }>;
+    parts.push(
+      `${i}:${rows
+        .map((r) => r.id)
+        .sort()
+        .join(",")}`,
+    );
+  }
+  const vis = (results[results.length - 1]?.data ?? []) as Array<{
+    section: string;
+    is_visible: boolean;
+    zone_id: string | null;
+  }>;
+  parts.push(
+    `v:${vis
+      .map((v) => `${v.section}|${v.zone_id ?? ""}|${v.is_visible ? 1 : 0}`)
+      .sort()
+      .join(",")}`,
+  );
+
+  return { fingerprint: parts.join(";") };
+});

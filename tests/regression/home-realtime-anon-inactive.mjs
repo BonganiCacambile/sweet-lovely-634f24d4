@@ -2,10 +2,19 @@
 import { loadEnvFiles } from "./lib/load-env.mjs";
 loadEnvFiles();
 
-// Verifies anon Realtime subscribers still receive UPDATE events for every
-// home_* table when is_active toggles from true → false. This guards against
-// a regression where the RLS SELECT policy filters inactive rows and Realtime
-// silently drops the event for anon clients.
+// Verifies the SECURE storefront-refresh contract for home content.
+//
+// When an admin flips a home_* row from is_active true → false, the anon RLS
+// SELECT policy stops matching the row, so Postgres correctly withholds the
+// UPDATE from anonymous Realtime subscribers. That is expected behaviour and
+// must NOT be "fixed" by relaxing RLS. Instead the storefront detects the
+// change via a cheap anon-visible fingerprint and offers a manual refresh.
+//
+// Per table this asserts:
+//   1. anon can see the row while it is active,
+//   2. anon does NOT receive the hidden UPDATE broadcast (RLS enforced),
+//   3. the anon-visible fingerprint changes → "new content available",
+//   4. re-reading (Refresh) returns only active rows; the inactive row is gone.
 //
 // Runs against every configured environment so RLS/publication drift between
 // preview and production is caught. Targets are picked from env vars:
@@ -88,23 +97,53 @@ async function ensureActiveRow(admin, table) {
   return { id: ins.id, cleanup: async () => { await admin.from(table).delete().eq("id", ins.id); } };
 }
 
+async function fingerprint(anon, table) {
+  const { data } = await anon.from(table).select("id").order("id");
+  return (data ?? []).map((r) => r.id).join(",");
+}
+
 async function runTarget(target) {
   console.log(`\n=== ${target.name.toUpperCase()} (${new URL(target.url).host}) ===`);
   const anon = createClient(target.url, target.anon, { auth: { persistSession: false } });
   const admin = createClient(target.url, target.svc, { auth: { persistSession: false } });
   for (const table of TABLES) {
-    console.log(`\n[${target.name}] ${table}: anon receives UPDATE when is_active → false`);
+    console.log(`\n[${target.name}] ${table}: RLS hides deactivated row; refresh signal fires`);
     const events = [];
     let ch, seed;
     try {
       ch = await subscribe(anon, table, events);
       seed = await ensureActiveRow(admin, table);
+      const fpBefore = await fingerprint(anon, table);
+      check(
+        `[${target.name}] anon sees the row while active`,
+        fpBefore.split(",").includes(seed.id),
+      );
       const before = events.length;
       const { error } = await admin.from(table).update({ is_active: false }).eq("id", seed.id);
       check(`[${target.name}] admin toggle succeeded`, !error, error?.message);
       await new Promise((r) => setTimeout(r, WAIT_MS));
       const received = events.slice(before).filter((e) => e.eventType === "UPDATE" || e.type === "UPDATE");
-      check(`[${target.name}] anon received UPDATE broadcast`, received.length > 0, `events=${events.length - before}`);
+      check(
+        `[${target.name}] anon did NOT receive the hidden UPDATE (RLS enforced)`,
+        received.length === 0,
+        `unexpected events=${received.length}`,
+      );
+
+      // Storefront signal: the anon-visible fingerprint must change so the
+      // "New menu updates are available" banner can appear.
+      const fpAfter = await fingerprint(anon, table);
+      check(`[${target.name}] anon fingerprint changed → refresh prompt`, fpAfter !== fpBefore);
+
+      // Refresh: re-reading returns only active rows, without the hidden one.
+      const { data: rows } = await anon.from(table).select("id, is_active");
+      check(
+        `[${target.name}] inactive row hidden after refresh`,
+        !(rows ?? []).some((r) => r.id === seed.id),
+      );
+      check(
+        `[${target.name}] only active rows visible to anon`,
+        (rows ?? []).every((r) => r.is_active !== false),
+      );
       await admin.from(table).update({ is_active: true }).eq("id", seed.id);
     } catch (e) {
       check(`[${target.name}] no error`, false, e.message);
