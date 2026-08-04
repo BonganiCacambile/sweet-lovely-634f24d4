@@ -537,14 +537,27 @@ async function runFeaturedSection({ adminPage, customerPage }) {
     await inlineFieldInput(adminPage, "Sort order").fill("0");
     await adminPage.locator('[data-testid="hc-featured-add"]').first().click();
     addedSlug = chosen.slug;
-    await waitForVisible(customerPage, `:text("${chosen.title}")`, section, `feature product "${chosen.title}"`);
+    // Assert inside the dedicated featured strip so a product that also shows
+    // up in Popular/Desserts cannot satisfy the check.
+    await waitForVisible(
+      customerPage,
+      `[data-testid="home-featured"]:has-text("${chosen.title}")`,
+      section,
+      `feature product "${chosen.title}"`,
+    );
 
     // 2. DELETE via UI
     const row = adminPage.locator("li", { hasText: chosen.title }).first();
     await row.locator('button').last().click();
     await adminPage.waitForTimeout(600);
     addedSlug = null;
-    await waitForGone(customerPage, `:text("${chosen.title}")`, section, "unfeature product").catch(() => {});
+    await waitForGone(
+      customerPage,
+      `[data-testid="home-featured"]:has-text("${chosen.title}")`,
+      section,
+      "unfeature product",
+      TIMEOUT * 2,
+    );
   } catch (e) {
     fail(section, "unexpected error", e);
   }
