@@ -79,7 +79,13 @@ export function useHomeContentUpdates() {
         "postgres_changes" as any,
         { event: "*", schema: "public", table },
         () => {
-          if (!cancelled) void check();
+          if (cancelled) return;
+          // A row the visitor is allowed to see actually changed (new item,
+          // edited title/price, …). The id-only fingerprint cannot see those
+          // edits, so surface the pill directly. Nothing is swapped until the
+          // visitor presses Refresh.
+          setUpdateAvailable(true);
+          void check();
         },
       );
     }
