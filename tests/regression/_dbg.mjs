@@ -16,5 +16,10 @@ await p.evaluate(([k,s])=>localStorage.setItem(k,JSON.stringify(s)), [storageKey
 await p.goto("http://localhost:8080/admin/products", {waitUntil:"domcontentloaded"});
 await p.waitForTimeout(6000);
 console.log("URL", p.url());
-console.log((await p.locator("body").innerText()).slice(0,800));
+await p.goto("http://localhost:8080/admin/products", {waitUntil:"domcontentloaded"});
+try {
+  await p.getByPlaceholder(/search by name or slug/i).fill("chicken-mayo", {timeout: 15000});
+  console.log("FILL OK");
+} catch (e) { console.log("FILL FAIL", e.message.slice(0,200)); console.log(await p.locator("body").innerText()); }
+console.log("count", await p.locator('input[placeholder]').count(), await p.locator('input[placeholder]').evaluateAll(els=>els.map(e=>e.placeholder)));
 await b.close();
