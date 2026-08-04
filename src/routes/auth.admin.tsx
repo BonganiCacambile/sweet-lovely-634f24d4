@@ -294,7 +294,7 @@ function AdminAuth() {
 
         {existing.state !== "signed-in" && (
           <>
-            <GoogleButton label="Continue with Google" redirectTo="/auth/admin" />
+            <GoogleButton testId="admin-google-button" label="Continue with Google" redirectTo="/auth/admin" />
             <div className="flex items-center gap-3 py-1">
               <span className="h-px flex-1 bg-neutral-200" />
               <span className="text-xs uppercase tracking-wider text-neutral-400">or email</span>
@@ -304,11 +304,13 @@ function AdminAuth() {
         )}
 
         {existing.state !== "signed-in" && (
-          <form onSubmit={submit} className="space-y-4">
+          <form onSubmit={submit} data-testid="admin-signin-form" aria-label="Administrator sign in" className="space-y-4">
           <Field label="Admin email">
             <input
               type="email"
               required
+              data-testid="admin-signin-email"
+              aria-label="Admin email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className={fieldCls}
@@ -321,6 +323,8 @@ function AdminAuth() {
               <input
                 type={show ? "text" : "password"}
                 required
+                data-testid="admin-signin-password"
+                aria-label="Admin password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className={fieldCls + " pr-10"}
@@ -329,6 +333,7 @@ function AdminAuth() {
               />
               <button
                 type="button"
+                data-testid="admin-signin-password-toggle"
                 onClick={() => setShow((v) => !v)}
                 aria-label={show ? "Hide password" : "Show password"}
                 className="absolute inset-y-0 right-2 my-auto inline-flex h-7 w-7 items-center justify-center rounded-md text-neutral-500 hover:bg-neutral-100"
@@ -342,19 +347,26 @@ function AdminAuth() {
             <label className="inline-flex cursor-pointer items-center gap-2 text-neutral-700">
               <input
                 type="checkbox"
+                data-testid="admin-signin-remember"
+                aria-label="Trust this device for 30 days"
                 checked={remember}
                 onChange={(e) => setRemember(e.target.checked)}
                 className="h-4 w-4 rounded border-neutral-300 text-[#ff003c] focus:ring-[#ff003c]"
               />
               Trust this device for 30 days
             </label>
-            <Link to="/auth/forgot-password" className="font-medium text-[#ff003c] hover:underline">
+            <Link
+              to="/auth/forgot-password"
+              data-testid="admin-forgot-password-link"
+              className="font-medium text-[#ff003c] hover:underline"
+            >
               Forgot password?
             </Link>
           </div>
 
           <button
             type="submit"
+            data-testid="admin-signin-submit"
             disabled={loading}
             className="inline-flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-3.5 text-sm font-semibold text-white shadow-[0_18px_40px_-16px_rgba(255,0,60,0.55)] transition-all hover:scale-[1.01] disabled:opacity-60"
             style={{ background: "linear-gradient(135deg,#ff003c,#ff5a36)" }}
@@ -409,6 +421,8 @@ function KindChooser({ onPick }: { onPick: (k: "main" | "zone") => void }) {
           <motion.button
             key={o.id}
             type="button"
+            data-testid={o.id === "main" ? "admin-kind-main" : "admin-kind-zone"}
+            aria-label={`${o.title} sign in`}
             onClick={() => onPick(o.id)}
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}

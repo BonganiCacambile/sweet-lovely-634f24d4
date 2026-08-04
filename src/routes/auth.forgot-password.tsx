@@ -69,12 +69,16 @@ function ForgotPasswordPage() {
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             onSubmit={sendLink}
+            data-testid="forgot-password-form"
+            aria-label="Forgot password"
             className="space-y-4"
           >
             <Field label="Account email">
               <input
                 type="email"
                 required
+                data-testid="forgot-password-email"
+                aria-label="Account email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className={fieldCls}
@@ -83,6 +87,7 @@ function ForgotPasswordPage() {
             </Field>
             <button
               type="submit"
+              data-testid="forgot-password-submit"
               disabled={loading}
               className="inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-white disabled:opacity-60"
               style={{ background: "linear-gradient(135deg,#ff003c,#ff5a36)" }}
@@ -93,7 +98,12 @@ function ForgotPasswordPage() {
           </motion.form>
         )}
         {step === 1 && sent && (
-          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            data-testid="forgot-password-sent"
+            className="space-y-4"
+          >
             <div className="flex items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-50/60 p-4 text-sm text-emerald-900">
               <CheckCircle2 className="mt-0.5 h-5 w-5 flex-none" />
               <div>
@@ -106,6 +116,7 @@ function ForgotPasswordPage() {
             </div>
             <button
               onClick={() => sendLink()}
+              data-testid="forgot-password-resend"
               disabled={loading}
               className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-neutral-200 bg-white px-4 py-3 text-sm font-medium text-neutral-700 hover:bg-neutral-50"
             >

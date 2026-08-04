@@ -31,9 +31,22 @@ export function ErrorPanel({ error, onRetry }: { error: unknown; onRetry?: () =>
   );
 }
 
-export function EmptyState({ icon, title, hint }: { icon?: React.ReactNode; title: string; hint?: string }) {
+export function EmptyState({
+  icon,
+  title,
+  hint,
+  "data-testid": testId,
+}: {
+  icon?: React.ReactNode;
+  title: string;
+  hint?: string;
+  "data-testid"?: string;
+}) {
   return (
-    <div className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-neutral-200 bg-neutral-50/60 p-10 text-center">
+    <div
+      data-testid={testId}
+      className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-neutral-200 bg-neutral-50/60 p-10 text-center"
+    >
       <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-neutral-400 shadow-sm">{icon ?? <Inbox className="h-5 w-5" />}</div>
       <p className="text-sm font-medium text-neutral-700">{title}</p>
       {hint && <p className="text-xs text-neutral-500">{hint}</p>}

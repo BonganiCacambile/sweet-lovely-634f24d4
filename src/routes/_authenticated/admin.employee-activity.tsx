@@ -118,7 +118,7 @@ function EmployeeActivityPage() {
   }, [rows]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" data-testid="employee-activity-page">
       <PageHeader
         title="Employee Activity"
         description="Live presence, sessions, and zone coverage across all admin users."
@@ -138,12 +138,13 @@ function EmployeeActivityPage() {
           <ErrorPanel error={query.error} onRetry={() => { void query.refetch(); }} />
         ) : rows.length === 0 ? (
           <EmptyState
+            data-testid="employee-presence-empty"
             title="No admin users yet"
             hint="Invite team members from the Users module to start tracking presence."
           />
         ) : (
           <div className="overflow-x-auto">
-            <table className="min-w-full text-sm">
+            <table className="min-w-full text-sm" data-testid="employee-presence-table">
               <thead className="text-left text-xs uppercase tracking-wide text-neutral-500">
                 <tr className="border-b border-neutral-200/70">
                   <th className="px-4 py-3 font-medium">Employee</th>
@@ -256,7 +257,10 @@ function ActivityFeedPanel() {
 
   return (
     <Card>
-      <div className="flex flex-col gap-3 border-b border-neutral-200/70 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+      <div
+        data-testid="activity-feed-panel"
+        className="flex flex-col gap-3 border-b border-neutral-200/70 px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
+      >
         <div>
           <p className="text-sm font-semibold text-neutral-900">Activity Feed</p>
           <p className="text-xs text-neutral-500">
@@ -287,11 +291,12 @@ function ActivityFeedPanel() {
         <ErrorPanel error={feed.error} onRetry={() => { void feed.refetch(); }} />
       ) : rows.length === 0 ? (
         <EmptyState
+          data-testid="activity-feed-empty"
           title="No activity yet"
           hint="Admin actions will appear here the moment they happen."
         />
       ) : (
-        <ol className="divide-y divide-neutral-100">
+        <ol className="divide-y divide-neutral-100" data-testid="activity-feed-list">
           {rows.map((row) => {
             const v = actionVisual(row.action);
             const who = row.actor_name || row.actor_email || "Unknown user";

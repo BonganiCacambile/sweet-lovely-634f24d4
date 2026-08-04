@@ -2,7 +2,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useState } from "react";
 
-export function GoogleButton({ label = "Continue with Google", redirectTo = "/" }: { label?: string; redirectTo?: string }) {
+export function GoogleButton({
+  label = "Continue with Google",
+  redirectTo = "/",
+  testId = "google-oauth-button",
+}: {
+  label?: string;
+  redirectTo?: string;
+  testId?: string;
+}) {
   const [loading, setLoading] = useState(false);
   const onClick = async () => {
     setLoading(true);
@@ -21,6 +29,8 @@ export function GoogleButton({ label = "Continue with Google", redirectTo = "/" 
   return (
     <button
       type="button"
+      data-testid={testId}
+      aria-label={label}
       onClick={onClick}
       disabled={loading}
       className="group inline-flex w-full items-center justify-center gap-3 rounded-xl border border-neutral-200 bg-white px-4 py-2.5 text-sm font-medium text-neutral-800 transition-all hover:border-neutral-300 hover:bg-neutral-50 disabled:opacity-50"
