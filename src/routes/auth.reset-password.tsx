@@ -108,20 +108,28 @@ function ResetPassword() {
       subtitle="Use at least 8 characters with a mix of letters, numbers, and symbols."
     >
       {checking ? (
-        <div className="flex items-center justify-center py-8 text-sm text-neutral-600">
+        <div
+          data-testid="reset-password-verifying"
+          className="flex items-center justify-center py-8 text-sm text-neutral-600"
+        >
           <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Verifying your reset link…
         </div>
       ) : !ready ? (
-        <div className="rounded-2xl border border-amber-200 bg-amber-50/60 p-4 text-sm text-amber-900">
+        <div
+          data-testid="reset-password-invalid-link"
+          className="rounded-2xl border border-amber-200 bg-amber-50/60 p-4 text-sm text-amber-900"
+        >
           This page must be opened from the reset link we emailed you. If the link expired, request a new
           one from the forgot-password page.
         </div>
       ) : (
-        <form onSubmit={submit} className="space-y-4">
+        <form onSubmit={submit} data-testid="reset-password-form" aria-label="Set a new password" className="space-y-4">
           <Field label="New password">
             <input
               type="password"
               required
+              data-testid="reset-password-new"
+              aria-label="New password"
               value={pwd}
               onChange={(e) => setPwd(e.target.value)}
               className={fieldCls}
@@ -132,6 +140,8 @@ function ResetPassword() {
             <input
               type="password"
               required
+              data-testid="reset-password-confirm"
+              aria-label="Confirm new password"
               value={confirm}
               onChange={(e) => setConfirm(e.target.value)}
               className={fieldCls}
@@ -140,6 +150,7 @@ function ResetPassword() {
           </Field>
           <button
             type="submit"
+            data-testid="reset-password-submit"
             disabled={loading}
             className="inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-white disabled:opacity-60"
             style={{ background: "linear-gradient(135deg,#ff003c,#ff5a36)" }}

@@ -138,6 +138,8 @@ export function RegisterForm() {
   return (
     <motion.form
       onSubmit={submit}
+      data-testid="register-form"
+      aria-label="Create account"
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       className="space-y-4"
@@ -147,7 +149,7 @@ export function RegisterForm() {
         <p className="mt-1 text-sm text-neutral-500">Join Sweet & Lovely in less than a minute.</p>
       </div>
 
-      <GoogleButton label="Sign up with Google" />
+      <GoogleButton testId="register-google-button" label="Sign up with Google" />
 
       <div className="flex items-center gap-3 py-1">
         <span className="h-px flex-1 bg-neutral-200" />
@@ -159,6 +161,8 @@ export function RegisterForm() {
         <Field label="Full name">
           <input
             required
+            data-testid="register-full-name"
+            aria-label="Full name"
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
             className={fieldCls}
@@ -170,6 +174,8 @@ export function RegisterForm() {
           <input
             type="tel"
             required
+            data-testid="register-phone"
+            aria-label="Cell number"
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
             className={fieldCls}
@@ -184,6 +190,8 @@ export function RegisterForm() {
         <input
           type="email"
           required
+          data-testid="register-email"
+          aria-label="Email address"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           className={fieldCls}
@@ -197,6 +205,8 @@ export function RegisterForm() {
           <input
             type={show ? "text" : "password"}
             required
+            data-testid="register-password"
+            aria-label="Password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             className={fieldCls + " pr-10"}
@@ -205,6 +215,7 @@ export function RegisterForm() {
           />
           <button
             type="button"
+            data-testid="register-password-toggle"
             onClick={() => setShow((v) => !v)}
             aria-label={show ? "Hide password" : "Show password"}
             className="absolute inset-y-0 right-2 my-auto inline-flex h-7 w-7 items-center justify-center rounded-md text-neutral-500 hover:bg-neutral-100"
@@ -238,6 +249,8 @@ export function RegisterForm() {
         <input
           type={show ? "text" : "password"}
           required
+          data-testid="register-confirm-password"
+          aria-label="Confirm password"
           value={confirm}
           onChange={(e) => setConfirm(e.target.value)}
           className={fieldCls}
@@ -249,6 +262,8 @@ export function RegisterForm() {
       <label className="flex select-none items-start gap-2 text-xs text-neutral-600">
         <input
           type="checkbox"
+          data-testid="register-accept-terms"
+          aria-label="Accept terms and privacy policy"
           checked={accepted}
           onChange={(e) => setAccepted(e.target.checked)}
           className="mt-0.5 h-4 w-4 rounded border-neutral-300 text-[#ff003c] focus:ring-[#ff003c]"
@@ -261,6 +276,7 @@ export function RegisterForm() {
 
       <button
         type="submit"
+        data-testid="register-submit"
         disabled={loading}
         className="inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-white shadow-[0_10px_30px_-10px_rgba(255,0,60,0.6)] transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-60"
         style={{ background: "linear-gradient(135deg,#ff003c,#ff5a36)" }}

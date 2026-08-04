@@ -31,49 +31,50 @@ async function main() {
   page.setDefaultNavigationTimeout(60_000);
 
   await page.goto(`${BASE_URL}/auth`, { waitUntil: "domcontentloaded" });
-  await page.getByText("Welcome back. Let's get you in.").waitFor();
+  await page.getByTestId("customer-signin-form").waitFor();
 
   await check("signed-out users are redirected from ordering pages", async () => {
     await page.goto(`${BASE_URL}/account/orders`, { waitUntil: "domcontentloaded" });
-    await page.getByText("Welcome back. Let's get you in.").waitFor({ timeout: MAX_LOADING_MS });
+    await page.getByTestId("customer-signin-form").waitFor({ timeout: MAX_LOADING_MS });
     if (!page.url().endsWith("/auth")) throw new Error(`Expected /auth, received ${page.url()}`);
   });
 
   await check("registration rejects invalid South African cell numbers", async () => {
     await page.goto(`${BASE_URL}/auth`, { waitUntil: "domcontentloaded" });
-    await page.getByRole("button", { name: "Create account", exact: true }).first().click();
-    await page.getByPlaceholder("Ada Lovelace").fill("Auth Regression");
-    await page.getByPlaceholder("+27 71 234 5678").fill("123");
-    await page.getByPlaceholder("you@sweetandlovely.pizza").fill("auth-regression@example.com");
-    await page.getByPlaceholder("Create a strong password").fill("Regression1!");
-    await page.getByPlaceholder("Repeat your password").fill("Regression1!");
-    await page.locator('input[type="checkbox"]').check();
-    await page.getByRole("button", { name: "Create account", exact: true }).last().click();
-    await page.getByPlaceholder("+27 71 234 5678").evaluate((element) => {
+    await page.getByTestId("auth-tab-signup").click();
+    await page.getByTestId("register-form").waitFor();
+    await page.getByTestId("register-full-name").fill("Auth Regression");
+    await page.getByTestId("register-phone").fill("123");
+    await page.getByTestId("register-email").fill("auth-regression@example.com");
+    await page.getByTestId("register-password").fill("Regression1!");
+    await page.getByTestId("register-confirm-password").fill("Regression1!");
+    await page.getByTestId("register-accept-terms").check();
+    await page.getByTestId("register-submit").click();
+    await page.getByTestId("register-phone").evaluate((element) => {
       if (!(element instanceof HTMLInputElement) || !element.checkValidity()) {
         throw new Error("Phone input failed native validity before app validation");
       }
     });
-    await page.getByRole("button", { name: "Create account", exact: true }).last().waitFor();
+    await page.getByTestId("register-submit").waitFor();
   });
 
   await check("login validation fails clearly and never leaves a loading screen", async () => {
-    await page.getByRole("button", { name: "Sign in", exact: true }).first().click();
-    const loginEmail = page.getByPlaceholder("you@sweetandlovely.pizza");
-    await loginEmail.fill("not-an-email");
-    await page.getByPlaceholder("••••••••").fill("WrongPassword1!");
-    const signIn = page.getByRole("button", { name: "Sign in", exact: true }).last();
+    await page.getByTestId("auth-tab-signin").click();
+    await page.getByTestId("customer-signin-form").waitFor();
+    await page.getByTestId("signin-email").fill("not-an-email");
+    await page.getByTestId("signin-password").fill("WrongPassword1!");
+    const signIn = page.getByTestId("signin-submit");
     await signIn.click();
     if (!page.url().endsWith("/auth")) throw new Error(`Invalid login navigated to ${page.url()}`);
     if (await signIn.isDisabled()) throw new Error("Login remained stuck in its loading state");
-    await page.getByRole("button", { name: "Sign in", exact: true }).last().waitFor();
+    await signIn.waitFor();
   });
 
   await check("forgot-password validates input and accepts a recovery request", async () => {
     await page.goto(`${BASE_URL}/auth/forgot-password`, { waitUntil: "domcontentloaded" });
-    const email = page.getByPlaceholder("you@sweetandlovely.pizza");
+    const email = page.getByTestId("forgot-password-email");
     await email.fill("invalid");
-    await page.getByRole("button", { name: "Send reset link" }).click();
+    await page.getByTestId("forgot-password-submit").click();
     await email.evaluate((element) => {
       if (!(element instanceof HTMLInputElement) || element.validity.typeMismatch !== true) {
         throw new Error("Invalid email was not rejected by the browser");
@@ -81,15 +82,14 @@ async function main() {
     });
     await page.route("**/auth/v1/recover**", (route) => route.fulfill({ status: 200, contentType: "application/json", body: "{}" }));
     await email.fill("auth-regression@example.com");
-    await page.getByRole("button", { name: "Send reset link" }).click();
-    await page.getByText("Check your inbox").waitFor({ timeout: MAX_LOADING_MS });
+    await page.getByTestId("forgot-password-submit").click();
+    await page.getByTestId("forgot-password-sent").waitFor({ timeout: MAX_LOADING_MS });
     await page.unroute("**/auth/v1/recover**");
   });
 
   await check("an invalid recovery link exits verification loading state", async () => {
     await page.goto(`${BASE_URL}/auth/reset-password`, { waitUntil: "domcontentloaded" });
-    await page.getByText("This page must be opened from the reset link we emailed you.", { exact: false })
-      .waitFor({ timeout: MAX_LOADING_MS });
+    await page.getByTestId("reset-password-invalid-link").waitFor({ timeout: MAX_LOADING_MS });
   });
 
   await browser.close();

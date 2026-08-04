@@ -48,6 +48,8 @@ export function LoginForm() {
   return (
     <motion.form
       onSubmit={submit}
+      data-testid="customer-signin-form"
+      aria-label="Customer sign in"
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       className="space-y-4"
@@ -57,7 +59,7 @@ export function LoginForm() {
         <p className="mt-1 text-sm text-neutral-500">Welcome back. Let's get you in.</p>
       </div>
 
-      <GoogleButton />
+      <GoogleButton testId="signin-google-button" label="Continue with Google" />
 
       <div className="flex items-center gap-3 py-1">
         <span className="h-px flex-1 bg-neutral-200" />
@@ -68,6 +70,8 @@ export function LoginForm() {
       <Field label="Email">
         <input
           type="email"
+          data-testid="signin-email"
+          aria-label="Email address"
           autoComplete="email"
           required
           value={email}
@@ -82,6 +86,7 @@ export function LoginForm() {
         trailing={
           <Link
             to="/auth/forgot-password"
+            data-testid="signin-forgot-password-link"
             className="text-xs font-medium text-[#ff003c] hover:underline"
           >
             Forgot?
@@ -91,6 +96,8 @@ export function LoginForm() {
         <div className="relative">
           <input
             type={show ? "text" : "password"}
+            data-testid="signin-password"
+            aria-label="Password"
             autoComplete="current-password"
             required
             value={password}
@@ -100,6 +107,7 @@ export function LoginForm() {
           />
           <button
             type="button"
+            data-testid="signin-password-toggle"
             onClick={() => setShow((v) => !v)}
             aria-label={show ? "Hide password" : "Show password"}
             className="absolute inset-y-0 right-2 my-auto inline-flex h-7 w-7 items-center justify-center rounded-md text-neutral-500 hover:bg-neutral-100"
@@ -112,6 +120,7 @@ export function LoginForm() {
       <label className="flex select-none items-center gap-2 text-sm text-neutral-600">
         <input
           type="checkbox"
+          data-testid="signin-remember"
           checked={remember}
           onChange={(e) => setRemember(e.target.checked)}
           className="h-4 w-4 rounded border-neutral-300 text-[#ff003c] focus:ring-[#ff003c]"
@@ -121,6 +130,7 @@ export function LoginForm() {
 
       <button
         type="submit"
+        data-testid="signin-submit"
         disabled={loading}
         className="group inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-white shadow-[0_10px_30px_-10px_rgba(255,0,60,0.6)] transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-60"
         style={{ background: "linear-gradient(135deg,#ff003c,#ff5a36)" }}

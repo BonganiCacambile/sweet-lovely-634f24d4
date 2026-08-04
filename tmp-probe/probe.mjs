@@ -1,0 +1,33 @@
+import { loadEnvFiles } from "../tests/regression/lib/load-env.mjs";
+loadEnvFiles();
+import { chromium } from "playwright";
+import { createClient } from "@supabase/supabase-js";
+import { assignRole, clearRoles } from "../tests/regression/lib/role-provider.mjs";
+const { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, SUPABASE_SERVICE_ROLE_KEY, SUPABASE_PROJECT_ID } = process.env;
+const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, { auth: { persistSession: false } });
+const anon = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, { auth: { persistSession: false } });
+const email = `probe-admin-${Date.now()}@example.com`;
+const password = `Probe-${Date.now()}!A9`;
+const { data: cu, error: ce } = await admin.auth.admin.createUser({ email, password, email_confirm: true });
+if (ce) throw ce;
+await assignRole(admin, { userId: cu.user.id, role: "mainAdmin" });
+const { data, error } = await anon.auth.signInWithPassword({ email, password });
+if (error) throw error;
+const key = `sb-${SUPABASE_PROJECT_ID}-auth-token`;
+const b = await chromium.launch({ headless: true });
+const ctx = await b.newContext({ viewport: { width: 1400, height: 1000 } });
+const p = await ctx.newPage();
+p.on("pageerror", (e) => console.log("[pageerror]", String(e).slice(0,300)));
+p.on("console", (m) => { if (m.type()==="error") console.log("[console]", m.text().slice(0,300)); });
+await p.goto("http://localhost:8080/", { waitUntil: "domcontentloaded" });
+await p.evaluate(([k,v]) => localStorage.setItem(k,v), [key, JSON.stringify(data.session)]);
+await p.goto("http://localhost:8080/admin/employee-activity", { waitUntil: "domcontentloaded" });
+for (let i=0;i<6;i++) {
+  await p.waitForTimeout(2500);
+  const txt = await p.evaluate(() => document.body.innerText.replace(/\s+/g," ").slice(0,300));
+  console.log("---", i, p.url(), JSON.stringify(txt));
+}
+await p.screenshot({ path: "tmp-probe/final.png" });
+await b.close();
+await clearRoles(admin, cu.user.id);
+await admin.auth.admin.deleteUser(cu.user.id);
