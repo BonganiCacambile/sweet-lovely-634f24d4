@@ -134,6 +134,17 @@ async function seedCustomer(page) {
  * assertions below observe the refreshed content — still without a reload.
  */
 async function drainUpdatePill(page) {
+  // Rows that leave RLS scope (is_active → false, delete) emit no realtime
+  // event, so the app falls back to a 60s fingerprint poll. The same poll runs
+  // on the `online` / visibility signals — dispatching `online` forces an
+  // immediate re-check, which makes those assertions deterministic instead of
+  // waiting out the interval.
+  const now = Date.now();
+  if (now - lastForcedCheck > 1200) {
+    lastForcedCheck = now;
+    await page.evaluate(() => window.dispatchEvent(new Event("online"))).catch(() => {});
+    await page.waitForTimeout(250);
+  }
   const refresh = page.getByTestId("home-content-refresh");
   if (await refresh.count()) {
     await refresh.first().click({ timeout: 3000 }).catch(() => {});
@@ -143,6 +154,7 @@ async function drainUpdatePill(page) {
       .catch(() => {});
   }
 }
+let lastForcedCheck = 0;
 
 const TAB_IDS = {
   "Popular Items": "popular",
