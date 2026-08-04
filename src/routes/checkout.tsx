@@ -502,6 +502,7 @@ function CheckoutPage() {
                   type="button"
                   onClick={handlePay}
                   disabled={paying}
+                  data-testid="checkout-pay"
                   className="inline-flex items-center justify-center gap-2 rounded-full bg-[#ff003c] px-6 py-3 text-sm font-semibold text-white shadow-[0_10px_24px_-10px_rgba(255,0,60,0.7)] transition-all hover:-translate-y-0.5 hover:bg-[#e6003a] disabled:cursor-not-allowed disabled:opacity-70"
                 >
                   {paying ? (
@@ -1042,6 +1043,7 @@ function StepPayment({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.2 }}
+            data-testid="payment-processing"
             className="mt-6 flex items-center gap-3 rounded-2xl border border-neutral-200 bg-white p-4"
           >
             <div className="relative flex h-10 w-10 shrink-0 items-center justify-center">
@@ -1064,6 +1066,7 @@ function StepPayment({
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
+            data-testid="payment-success"
             className="mt-6 overflow-hidden rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-white p-6 text-center"
           >
             <motion.div
@@ -1102,6 +1105,7 @@ function StepPayment({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.25 }}
+            data-testid="payment-failed"
             className="mt-6 rounded-2xl border border-red-200 bg-gradient-to-br from-red-50 to-white p-5"
           >
             <div className="flex items-start gap-3">
@@ -1125,6 +1129,7 @@ function StepPayment({
                   <button
                     type="button"
                     onClick={onRetry}
+                    data-testid="payment-retry"
                     className="inline-flex items-center gap-1.5 rounded-full bg-[#ff003c] px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm transition-transform hover:-translate-y-0.5"
                   >
                     <RefreshCw className="h-3.5 w-3.5" /> Try again

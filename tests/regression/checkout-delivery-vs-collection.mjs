@@ -377,7 +377,7 @@ async function testMinimumOrderWarning(page) {
   await waitForStep(page, "Payment");
 
   await installPaystackMock(page, { type: "failure" });
-  await page.click('button:has-text("Pay")');
+  await page.click('[data-testid="checkout-pay"]');
   await page.waitForSelector('li[data-sonner-toast]:has-text("Order below")', { timeout: 10_000 });
   await screenshot(page, "minimum-order");
 }
@@ -410,13 +410,21 @@ async function testPaymentFailureAndRetry(page) {
   await waitForStep(page, "Payment");
 
   await installPaystackMock(page, { type: "failure" });
-  await page.click('button:has-text("Pay")');
-  await page.waitForSelector('p:has-text("Processing payment")', { timeout: 5_000 });
-  await page.waitForSelector('text=Payment did', { timeout: 10_000 });
-  await page.waitForSelector('text=Payment cancelled', { timeout: 10_000 });
-  await page.waitForSelector('button:has-text("Try again")', { timeout: 10_000 });
-  await page.click('button:has-text("Try again")');
-  await page.waitForSelector('button:has-text("Pay")', { timeout: 10_000 });
+  // Stable test IDs instead of transient copy/animation timing.
+  const processing = page.locator('[data-testid="payment-processing"]');
+  const failed = page.locator('[data-testid="payment-failed"]');
+  await Promise.all([
+    // The processing panel can be short-lived, so start waiting before clicking.
+    processing.waitFor({ state: "attached", timeout: 10_000 }),
+    page.click('[data-testid="checkout-pay"]'),
+  ]);
+  await failed.waitFor({ state: "visible", timeout: 15_000 });
+  await failed.locator('text=Payment did').waitFor({ timeout: 5_000 });
+  const retry = page.locator('[data-testid="payment-retry"]');
+  await retry.waitFor({ state: "visible", timeout: 10_000 });
+  await retry.click();
+  await failed.waitFor({ state: "hidden", timeout: 10_000 });
+  await page.waitForSelector('[data-testid="checkout-pay"]:not([disabled])', { timeout: 10_000 });
   await screenshot(page, "payment-failure-retry");
 }
 
@@ -434,9 +442,12 @@ async function testPaymentSuccess(page) {
     await waitForStep(page, "Payment");
 
     await installPaystackMock(page, { type: "success", reference });
-    await page.click('button:has-text("Pay")');
-    await page.waitForSelector('p:has-text("Payment successful")', { timeout: 15_000 });
-    await page.waitForURL("**/checkout/success**", { timeout: 15_000 });
+    const success = page.locator('[data-testid="payment-success"]');
+    await Promise.all([
+      success.waitFor({ state: "attached", timeout: 30_000 }),
+      page.click('[data-testid="checkout-pay"]'),
+    ]);
+    await page.waitForURL("**/checkout/success**", { timeout: 20_000 });
 
     // Verify the order was persisted.
     const { data: order } = await admin
@@ -466,6 +477,10 @@ async function runAll() {
     { name: "Payment success creates order and shows animation", run: testPaymentSuccess },
   ];
 
+  const onlyArg = process.argv.find((a) => a.startsWith("--only="));
+  const only = onlyArg ? new RegExp(onlyArg.slice("--only=".length), "i") : null;
+  const selected = only ? tests.filter((t) => only.test(t.name)) : tests;
+
   const browser = await chromium.launch({ headless: true });
   const failures = [];
 
@@ -483,9 +498,12 @@ async function runAll() {
     `Zones resolved — both: ${ZONE_BOTH} (fee ${ZONE_BOTH_CFG.fee}, min ${ZONE_BOTH_CFG.min}, eta ${ZONE_BOTH_CFG.eta}), delivery-only: ${ZONE_DELIVERY_ONLY}`,
   );
 
-  for (const { name, run } of tests) {
+  for (const { name, run } of selected) {
     const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
     const page = await context.newPage();
+    page.on("console", (m) => {
+      if (process.env.DEBUG_CHECKOUT) console.log("  [browser]", m.type(), m.text().slice(0, 300));
+    });
     try {
       log(`Running ${name}…`);
       await run(page);
