@@ -503,8 +503,7 @@ async function runFeaturedSection({ adminPage, customerPage }) {
 
 async function runVisibilitySection({ adminPage, customerPage }) {
   const section = "visibility";
-  // Section keys as defined in src/lib/admin/home-content.functions.ts
-  const keys = ["popular", "hot_deals", "specials", "banners", "desserts", "featured"];
+  const keys = VISIBILITY_KEYS;
   const toggledOff = [];
   try {
     await openTab(adminPage, "Section Visibility");
