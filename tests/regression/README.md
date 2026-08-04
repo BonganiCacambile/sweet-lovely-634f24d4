@@ -349,3 +349,21 @@ The suite verifies its own cleanup: after teardown it re-reads every fixture
 table and the auth users with the service role and fails if anything survives.
 It ends with a report of assertions run/passed/failed, missing permissions,
 unexpected access, cross-zone leaks, cleanup status and the overall result.
+
+## Visual snapshots — `visual-home-cards.e2e.mjs`
+
+Pixel baselines for the home page **Featured** card and a **Hot Deal** card, to
+catch styling / text-rendering regressions (font, spacing, colour, truncation).
+
+```bash
+bun run test:regression:visual          # compare against baselines
+bun run test:regression:visual:update   # accept intentional design changes
+```
+
+- Baselines: `tests/regression/__screenshots__/*.png` (commit these).
+- Failures write `actual` + `diff` PNGs to `tests/regression/artifacts/visual/`.
+- Determinism: service-role seeded fixture rows (fixed title/price/copy), an
+  inline SVG data-URI image, `prefers-reduced-motion: reduce`, frozen
+  animations, fixed viewport/locale/timezone, element-only screenshots.
+- Tolerance: `VISUAL_TOLERANCE` (default `0.5` % of differing pixels); a size
+  change always fails as a layout regression.
