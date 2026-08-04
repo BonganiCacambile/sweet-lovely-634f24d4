@@ -137,49 +137,74 @@ export const trackHomeContentEvent = createServerFn({ method: "POST" })
   });
 
 /**
- * Cheap public fingerprint of the *anon-visible* home content. Only reads ids,
- * so it costs a fraction of getHomeContent. Deactivating a row (is_active →
- * false) removes it from the anon RLS SELECT scope, which is exactly why anon
- * Realtime subscribers never receive that UPDATE — the fingerprint changes
- * instead, letting the storefront offer a manual refresh without ever
- * exposing hidden rows.
+ * Public *content* fingerprint of the anon-visible home content.
+ *
+ * It hashes the customer-visible fields (title, subtitle, description, price,
+ * image, ordering, active/featured state, category, size pricing, …) of every
+ * row the anonymous RLS policies already expose — never hidden rows — so it
+ * detects both membership changes (insert/delete/activate/deactivate) *and*
+ * in-place edits to an existing row. Deactivating a row removes it from the
+ * anon SELECT scope, which is why anon Realtime never receives that UPDATE;
+ * the fingerprint changes instead and the storefront offers a manual refresh.
+ *
+ * Only ~10 narrow projections are read and the result is reduced to a short
+ * hash, so it stays far cheaper than getHomeContent.
  */
+function hash(input: string): string {
+  // djb2-xor — deterministic, allocation-free, good enough for change detection.
+  let h = 5381;
+  for (let i = 0; i < input.length; i += 1) h = ((h * 33) ^ input.charCodeAt(i)) >>> 0;
+  return h.toString(36);
+}
+
+/** Stable, order-independent digest of a row set. */
+function digest(rows: Array<Record<string, unknown>> | null | undefined): string {
+  return hash(
+    (rows ?? [])
+      .map((r) =>
+        Object.keys(r)
+          .sort()
+          .map((k) => `${k}=${r[k] == null ? "" : String(r[k])}`)
+          .join("|"),
+      )
+      .sort()
+      .join(";"),
+  );
+}
+
 export const getHomeContentFingerprint = createServerFn({ method: "GET" }).handler(async () => {
   const sb = publicClient();
-  const tables = [
-    "home_popular_items",
-    "home_hot_deals",
-    "home_specials",
-    "home_banners",
-    "home_desserts",
-  ] as const;
-  const results = await Promise.all([
-    ...tables.map((t) => sb.from(t).select("id, is_active, starts_at, ends_at")),
-    sb.from("featured_items").select("id, is_active, starts_at, ends_at").eq("placement", "home"),
-    sb.from("home_section_visibility").select("section, is_visible, zone_id"),
-  ]);
+  const [popular, deals, specials, banners, desserts, featured, visibility, products, sizes, categories] =
+    await Promise.all([
+      sb.from("home_popular_items").select("*"),
+      sb.from("home_hot_deals").select("*"),
+      sb.from("home_specials").select("*"),
+      sb.from("home_banners").select("*"),
+      sb.from("home_desserts").select("*"),
+      sb
+        .from("featured_items")
+        .select("id, product_slug, placement, sort_order, is_active, starts_at, ends_at")
+        .eq("placement", "home"),
+      sb.from("home_section_visibility").select("section, is_visible, zone_id"),
+      sb
+        .from("products")
+        .select(
+          "slug, title, description, image, price_zar, price_medium_zar, price_large_zar, category_slug, sort_order, is_active, size_selection_enabled, stock",
+        )
+        .eq("is_active", true),
+      sb
+        .from("product_sizes")
+        .select("id, product_slug, name, portion, price_zar, sort_order")
+        .eq("is_available", true),
+      sb.from("categories").select("slug, label, image, sort_order"),
+    ]);
 
-  const parts: string[] = [];
-  for (let i = 0; i < tables.length + 1; i += 1) {
-    const rows = activeNow((results[i]?.data ?? []) as TimedHomeRow[]) as Array<{ id?: string }>;
-    parts.push(
-      `${i}:${rows
-        .map((r) => r.id)
-        .sort()
-        .join(",")}`,
-    );
-  }
-  const vis = (results[results.length - 1]?.data ?? []) as Array<{
-    section: string;
-    is_visible: boolean;
-    zone_id: string | null;
-  }>;
-  parts.push(
-    `v:${vis
-      .map((v) => `${v.section}|${v.zone_id ?? ""}|${v.is_visible ? 1 : 0}`)
-      .sort()
-      .join(",")}`,
-  );
+  const timed = [popular, deals, specials, banners, desserts, featured];
+  const parts = timed.map((r, i) => `${i}:${digest(activeNow(r.data as TimedHomeRow[]) as Array<Record<string, unknown>>)}`);
+  parts.push(`v:${digest(visibility.data as Array<Record<string, unknown>>)}`);
+  parts.push(`p:${digest(products.data as Array<Record<string, unknown>>)}`);
+  parts.push(`s:${digest(sizes.data as Array<Record<string, unknown>>)}`);
+  parts.push(`c:${digest(categories.data as Array<Record<string, unknown>>)}`);
 
   return { fingerprint: parts.join(";") };
 });
