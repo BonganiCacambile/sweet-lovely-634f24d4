@@ -13,6 +13,7 @@ loadEnvFiles();
  */
 import { chromium } from "playwright";
 import { createClient } from "@supabase/supabase-js";
+import { resolveCustomerCredentials } from "./lib/admin-session.mjs";
 import { mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -41,8 +42,6 @@ function need(name, val) {
 need("SUPABASE_URL", SUPABASE_URL);
 need("SUPABASE_SERVICE_ROLE_KEY", SUPABASE_SERVICE_ROLE_KEY);
 need("SUPABASE_PUBLISHABLE_KEY", SUPABASE_PUBLISHABLE_KEY);
-need("CUSTOMER_EMAIL", CUSTOMER_EMAIL);
-need("CUSTOMER_PASSWORD", CUSTOMER_PASSWORD);
 
 const projectRef =
   SUPABASE_PROJECT_ID || new URL(SUPABASE_URL).hostname.split(".")[0];
@@ -61,10 +60,14 @@ function log(...args) {
   console.log(`[regression:notif]`, ...args);
 }
 
+let CUSTOMER_LABEL = process.env.CUSTOMER_EMAIL ?? "(resolved customer)";
+
 async function signInCustomer() {
+  const creds = await resolveCustomerCredentials();
+  CUSTOMER_LABEL = creds.email;
   const { data, error } = await userClient.auth.signInWithPassword({
-    email: CUSTOMER_EMAIL,
-    password: CUSTOMER_PASSWORD,
+    email: creds.email,
+    password: creds.password,
   });
   if (error || !data.session || !data.user) {
     throw new Error(`Customer sign-in failed: ${error?.message ?? "no session"}`);
@@ -79,7 +82,7 @@ async function insertOrderForCustomer(userId) {
       order_number: ORDER_NUMBER,
       user_id: userId,
       customer_name: "Regression Notif Bot",
-      customer_email: CUSTOMER_EMAIL,
+      customer_email: CUSTOMER_LABEL,
       customer_phone: "+27000000000",
       status: "pending",
       total_zar: 99.0,
@@ -117,7 +120,7 @@ async function readBadgeCount(page) {
 }
 
 async function run() {
-  log(`Signing in as customer ${CUSTOMER_EMAIL}…`);
+  log("Signing in as regression customer…");
   const { session, userId } = await signInCustomer();
 
   const browser = await chromium.launch({ headless: true });

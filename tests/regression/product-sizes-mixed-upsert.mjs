@@ -19,8 +19,11 @@ loadEnvFiles();
  * Uses only the publishable key — RLS runs on every request.
  */
 import { createClient } from "@supabase/supabase-js";
+import { resolveAdminCredentials } from "./lib/admin-session.mjs";
 
-const { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, ADMIN_EMAIL, ADMIN_PASSWORD } = process.env;
+const { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } = process.env;
+let ADMIN_EMAIL;
+let ADMIN_PASSWORD;
 function need(name, val) {
   if (!val) {
     console.error(`Missing required env var: ${name}`);
@@ -29,8 +32,6 @@ function need(name, val) {
 }
 need("SUPABASE_URL", SUPABASE_URL);
 need("SUPABASE_PUBLISHABLE_KEY", SUPABASE_PUBLISHABLE_KEY);
-need("ADMIN_EMAIL", ADMIN_EMAIL);
-need("ADMIN_PASSWORD", ADMIN_PASSWORD);
 
 const log = (...a) => console.log("[product-sizes-mixed-upsert]", ...a);
 let failures = 0;
@@ -55,7 +56,23 @@ async function signIn(client, email, password, label) {
   if (error || !data.session) throw new Error(`${label} sign-in failed: ${error?.message ?? "no session"}`);
 }
 
+
+// Resolve an existing category slug at runtime — the seeded catalogue differs
+// between environments, so a hardcoded slug can violate the FK constraint.
+async function firstCategorySlug(client) {
+  const { data, error } = await client
+    .from("categories")
+    .select("slug")
+    .limit(1)
+    .maybeSingle();
+  if (error || !data?.slug) {
+    throw new Error(`could not resolve a category slug: ${error?.message ?? "no categories"}`);
+  }
+  return data.slug;
+}
+
 async function run() {
+  ({ email: ADMIN_EMAIL, password: ADMIN_PASSWORD } = await resolveAdminCredentials());
   const admin = makeClient();
   await signIn(admin, ADMIN_EMAIL, ADMIN_PASSWORD, "admin");
 
@@ -65,7 +82,7 @@ async function run() {
     const { error } = await admin.from("products").insert({
       slug: PRODUCT_SLUG,
       title: `Regression sizes ${SUFFIX}`,
-      category_slug: "bbq",
+      category_slug: await firstCategorySlug(admin),
       price_zar: 100,
       stock: 100,
       is_active: true,
@@ -206,7 +223,7 @@ async function run() {
     }
   } finally {
     // Cleanup — ON DELETE CASCADE on product_sizes removes children.
-    await admin.from("products").delete().eq("slug", PRODUCT_SLUG).catch(() => {});
+    await Promise.resolve(admin.from("products").delete().eq("slug", PRODUCT_SLUG)).catch(() => {});
     await admin.auth.signOut().catch(() => {});
   }
 

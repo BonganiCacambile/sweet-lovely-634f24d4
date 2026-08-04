@@ -21,12 +21,11 @@ loadEnvFiles();
  * request, exactly as the app's browser client would experience it.
  */
 import { createClient } from "@supabase/supabase-js";
+import { resolveAdminCredentials } from "./lib/admin-session.mjs";
 
 const {
   SUPABASE_URL,
   SUPABASE_PUBLISHABLE_KEY,
-  ADMIN_EMAIL,
-  ADMIN_PASSWORD,
   USER_EMAIL,
   USER_PASSWORD,
 } = process.env;
@@ -40,8 +39,9 @@ function need(name, val) {
 }
 need("SUPABASE_URL", SUPABASE_URL);
 need("SUPABASE_PUBLISHABLE_KEY", SUPABASE_PUBLISHABLE_KEY);
-need("ADMIN_EMAIL", ADMIN_EMAIL);
-need("ADMIN_PASSWORD", ADMIN_PASSWORD);
+
+let ADMIN_EMAIL;
+let ADMIN_PASSWORD;
 
 const log = (...a) => console.log("[toppings-rls]", ...a);
 let failures = 0;
@@ -74,6 +74,7 @@ const NAME = `Regression Topping ${SUFFIX}`;
 async function run() {
   const anon = makeClient();
   const adminC = makeClient();
+  ({ email: ADMIN_EMAIL, password: ADMIN_PASSWORD } = await resolveAdminCredentials());
   await signIn(adminC, ADMIN_EMAIL, ADMIN_PASSWORD, "admin");
 
   // 1) Anon writes must be blocked by RLS.
