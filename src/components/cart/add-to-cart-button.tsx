@@ -311,14 +311,14 @@ export function AddToCartButton({ item, className = "", label = "Add", isPizza =
                   {/* Body */}
                   <div className="flex-1 overflow-y-auto">
                     {step === "size" ? (
-                      <div className="grid grid-cols-2 gap-3 px-6">
-                        {SIZE_META.map((s) => {
-                          const isActive = selected === s.id;
+                      <div className={`grid gap-3 px-6 ${pizzaOptions.length > 2 ? "grid-cols-2 sm:grid-cols-3" : "grid-cols-2"}`}>
+                        {pizzaOptions.map((s) => {
+                          const isActive = selected === s.key;
                           return (
                             <button
-                              key={s.id}
+                              key={s.key}
                               type="button"
-                              onClick={() => setSelected(s.id)}
+                              onClick={() => setSelected(s.key)}
                               className={`group relative flex flex-col items-center rounded-2xl border-2 px-3 py-4 text-center transition-all ${
                                 isActive
                                   ? "border-[#ff003c] bg-[#fff5f7] shadow-[0_10px_24px_-12px_rgba(255,0,60,0.45)]"
@@ -351,9 +351,9 @@ export function AddToCartButton({ item, className = "", label = "Add", isPizza =
                               <span className="mt-2 text-sm font-bold text-neutral-900">
                                 {s.label}
                               </span>
-                              <span className="text-[11px] text-neutral-500">{s.diameter} · {s.desc}</span>
+                              {s.sub && <span className="text-[11px] text-neutral-500">{s.sub}</span>}
                               <span className="mt-1 text-sm font-extrabold text-[#ff003c]">
-                                {formatPrice(sizePrices[s.id])}
+                                {formatPrice(s.price)}
                               </span>
                             </button>
                           );
