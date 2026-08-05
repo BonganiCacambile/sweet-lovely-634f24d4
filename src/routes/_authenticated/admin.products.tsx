@@ -397,8 +397,7 @@ function ProductForm({ initial, categories, onClose }: { initial: ProductRow | n
                   </button>
                 </div>
               )}
-            </fieldset>
-          )}
+          </fieldset>
 
           <div className="flex items-center justify-between gap-2 pt-2">
             {initial ? (
