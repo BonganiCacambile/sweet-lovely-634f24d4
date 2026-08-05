@@ -67,4 +67,12 @@ describe("splitVariantId (BBQ / dynamic sizes)", () => {
       sizeId: uuid,
     });
   });
+  test("pizza custom size + extras hash → slug + clean sizeId", () => {
+    const uuid = "3f9c9a5e-1234-4abc-9def-abc123abc123";
+    expect(splitVariantId(`margherita--sz-${uuid}-x-57eaf07c-8af8a8a7`)).toEqual({
+      slug: "margherita",
+      size: null,
+      sizeId: uuid,
+    });
+  });
 });

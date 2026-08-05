@@ -40,12 +40,17 @@ export function AddToCartButton({ item, className = "", label = "Add", isPizza =
   const { addItem } = useCart();
   const [added, setAdded] = React.useState(false);
   const [open, setOpen] = React.useState(false);
-  const [selected, setSelected] = React.useState<SizeId>("medium");
+  const [selected, setSelected] = React.useState<string>("medium");
   const [step, setStep] = React.useState<"size" | "toppings">("size");
   const [selectedExtras, setSelectedExtras] = React.useState<Set<string>>(new Set());
   const toppingsQuery = usePizzaToppings();
   const toppings = toppingsQuery.data ?? [];
 
+  /** Admin-defined sizes on a pizza replace the fixed Medium/Large pair (toppings step stays). */
+  const customPizzaSizes = React.useMemo(
+    () => (isPizza && Array.isArray(sizes) && sizes.length > 0 ? sizes : null),
+    [isPizza, sizes],
+  );
   const hasSizes = !isPizza && Array.isArray(sizes) && sizes.length > 0;
   const sortedSizes = React.useMemo(
     () => (hasSizes ? [...(sizes as ProductSize[])] : []),
@@ -63,6 +68,43 @@ export function AddToCartButton({ item, className = "", label = "Add", isPizza =
     medium: item.priceMedium ?? PIZZA_SIZE_DEFAULTS.medium,
     large: item.priceLarge ?? PIZZA_SIZE_DEFAULTS.large,
   };
+
+  /** Unified option list rendered in the pizza size step. */
+  const pizzaOptions = React.useMemo(() => {
+    if (customPizzaSizes) {
+      const n = customPizzaSizes.length;
+      return customPizzaSizes.map((s, i) => ({
+        key: s.id,
+        label: s.name,
+        sub: [s.portion, s.description].filter(Boolean).join(" · "),
+        price: Number(s.price_zar),
+        scale:
+          n === 1
+            ? "h-24 w-24 sm:h-28 sm:w-28"
+            : ["h-14 w-14 sm:h-16 sm:w-16", "h-16 w-16 sm:h-20 sm:w-20", "h-20 w-20 sm:h-24 sm:w-24", "h-24 w-24 sm:h-28 sm:w-28"][
+                Math.min(3, Math.round((i / (n - 1)) * 3))
+              ],
+        variationLabel: s.name,
+        cartSuffix: `--sz-${s.id}`,
+      }));
+    }
+    return SIZE_META.map((s) => ({
+      key: s.id as string,
+      label: s.label,
+      sub: `${s.diameter} · ${s.desc}`,
+      price: sizePrices[s.id],
+      scale: s.scale,
+      variationLabel: s.label,
+      cartSuffix: `-${s.id}`,
+    }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [customPizzaSizes, item.priceMedium, item.priceLarge]);
+
+  React.useEffect(() => {
+    if (pizzaOptions.length > 0 && !pizzaOptions.some((o) => o.key === selected)) {
+      setSelected(pizzaOptions[0].key);
+    }
+  }, [pizzaOptions, selected]);
 
   React.useEffect(() => {
     if (!open) return;
@@ -120,8 +162,8 @@ export function AddToCartButton({ item, className = "", label = "Add", isPizza =
   }, [toppings, selectedExtras]);
 
   const extrasTotal = pickedExtras.reduce((s, e) => s + e.price, 0);
-  const size = SIZE_META.find((p) => p.id === selected)!;
-  const basePrice = sizePrices[selected];
+  const size = pizzaOptions.find((p) => p.key === selected) ?? pizzaOptions[0];
+  const basePrice = size?.price ?? 0;
   const totalPrice = basePrice + extrasTotal;
 
   const commitAdd = () => {
@@ -129,13 +171,14 @@ export function AddToCartButton({ item, className = "", label = "Add", isPizza =
       pickedExtras.length > 0
         ? "-x-" + [...pickedExtras].map((e) => e.id.slice(0, 8)).sort().join("-")
         : "";
+    if (!size) return;
     const variationText =
       pickedExtras.length > 0
-        ? `${size.label} pizza + ${pickedExtras.map((e) => e.name).join(", ")}`
-        : `${size.label} pizza`;
+        ? `${size.variationLabel} pizza + ${pickedExtras.map((e) => e.name).join(", ")}`
+        : `${size.variationLabel} pizza`;
     addItem(
       {
-        id: `${item.id}-${selected}${extrasKey}`,
+        id: `${item.id}${size.cartSuffix}${extrasKey}`,
         title: item.title,
         price: totalPrice,
         basePrice,
@@ -268,14 +311,14 @@ export function AddToCartButton({ item, className = "", label = "Add", isPizza =
                   {/* Body */}
                   <div className="flex-1 overflow-y-auto">
                     {step === "size" ? (
-                      <div className="grid grid-cols-2 gap-3 px-6">
-                        {SIZE_META.map((s) => {
-                          const isActive = selected === s.id;
+                      <div className={`grid gap-3 px-6 ${pizzaOptions.length > 2 ? "grid-cols-2 sm:grid-cols-3" : "grid-cols-2"}`}>
+                        {pizzaOptions.map((s) => {
+                          const isActive = selected === s.key;
                           return (
                             <button
-                              key={s.id}
+                              key={s.key}
                               type="button"
-                              onClick={() => setSelected(s.id)}
+                              onClick={() => setSelected(s.key)}
                               className={`group relative flex flex-col items-center rounded-2xl border-2 px-3 py-4 text-center transition-all ${
                                 isActive
                                   ? "border-[#ff003c] bg-[#fff5f7] shadow-[0_10px_24px_-12px_rgba(255,0,60,0.45)]"
@@ -308,9 +351,9 @@ export function AddToCartButton({ item, className = "", label = "Add", isPizza =
                               <span className="mt-2 text-sm font-bold text-neutral-900">
                                 {s.label}
                               </span>
-                              <span className="text-[11px] text-neutral-500">{s.diameter} · {s.desc}</span>
+                              {s.sub && <span className="text-[11px] text-neutral-500">{s.sub}</span>}
                               <span className="mt-1 text-sm font-extrabold text-[#ff003c]">
-                                {formatPrice(sizePrices[s.id])}
+                                {formatPrice(s.price)}
                               </span>
                             </button>
                           );
