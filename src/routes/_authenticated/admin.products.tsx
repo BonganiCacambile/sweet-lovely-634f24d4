@@ -339,10 +339,14 @@ function ProductForm({ initial, categories, onClose }: { initial: ProductRow | n
             <input value={form.allergens} onChange={(e) => setForm({ ...form, allergens: e.target.value })} placeholder="Dairy, Gluten" className="input" />
           </fieldset>
 
-          {form.category_slug !== "pizza" && (
-            <fieldset className="space-y-3 rounded-2xl border border-neutral-200 bg-neutral-50/60 p-3">
-              <legend className="px-1 text-xs font-semibold uppercase tracking-wider text-neutral-600">Product sizes</legend>
-              <label className="flex items-center gap-2 text-xs">
+          <fieldset className="space-y-3 rounded-2xl border border-neutral-200 bg-neutral-50/60 p-3">
+            <legend className="px-1 text-xs font-semibold uppercase tracking-wider text-neutral-600">Product sizes</legend>
+            {form.category_slug === "pizza" && (
+              <p className="text-xs text-neutral-600">
+                Enable this to replace the fixed Medium/Large picker with your own pizza sizes (e.g. Small, Medium, Large, Family).
+              </p>
+            )}
+            <label className="flex items-center gap-2 text-xs">
                 <input
                   type="checkbox"
                   checked={form.size_selection_enabled}
