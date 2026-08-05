@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { getMySecurityActivity } from "@/lib/account/account.functions";
+import { checkPasswordBreached } from "@/lib/password-safety.functions";
 import { useAuth } from "@/lib/auth-context";
 
 export const Route = createFileRoute("/_authenticated/account/security")({
@@ -42,6 +43,15 @@ function ChangePasswordCard() {
     if (pwd.length < 8) return toast.error("Min 8 characters");
     if (pwd !== confirm) return toast.error("Passwords don't match");
     setLoading(true);
+    try {
+      const { breached } = await checkPasswordBreached({ data: { password: pwd } });
+      if (breached) {
+        setLoading(false);
+        return toast.error("This password appeared in a known data breach. Please choose a different one.");
+      }
+    } catch {
+      // Breach lookup unavailable — continue with the password update.
+    }
     const { error } = await supabase.auth.updateUser({ password: pwd });
     setLoading(false);
     if (error) return toast.error(error.message);
