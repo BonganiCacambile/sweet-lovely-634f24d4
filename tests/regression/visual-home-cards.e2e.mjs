@@ -239,11 +239,14 @@ async function main() {
       .first();
     const dealCard = page.locator("article").filter({ hasText: DEAL_TITLE }).first();
 
-    for (const [name, locator] of [
+    for (const [name, locator, sectionKey] of [
       ["home-featured-card", featuredCard, "featured"],
       ["home-hot-deal-card", dealCard, "hot_deals"],
     ]) {
-      if (fixtures.hiddenSections?.includes(arguments)) { /* unreachable */ }
+      if (fixtures.hiddenSections?.includes(sectionKey)) {
+        console.warn(`[visual-home-cards] skipping ${name}: "${sectionKey}" is hidden in admin settings.`);
+        continue;
+      }
       try {
         await locator.waitFor({ state: "visible", timeout: 20000 });
         await locator.scrollIntoViewIfNeeded();
