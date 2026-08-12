@@ -571,6 +571,13 @@ async function runVisibilitySection({ adminPage, customerPage }) {
   const section = "visibility";
   const keys = VISIBILITY_KEYS;
   const toggledOff = [];
+  // These toggles write the *global* (zone_id IS NULL) production settings.
+  // A crashed run used to leave admin-hidden sections switched back on, so the
+  // destructive part is opt-in.
+  if (process.env.ALLOW_VISIBILITY_WRITES !== "1") {
+    pass(section, "skipped — set ALLOW_VISIBILITY_WRITES=1 to exercise global section toggles");
+    return;
+  }
   try {
     await openTab(adminPage, "Section Visibility");
     for (const key of keys) {
