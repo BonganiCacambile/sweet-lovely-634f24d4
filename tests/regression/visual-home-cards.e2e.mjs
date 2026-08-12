@@ -112,39 +112,30 @@ async function seedFixtures() {
     .select("id")
     .single();
 
-  // Make sure both sections are visible, remembering what to restore.
+  // Read the live section visibility. We NEVER mutate the global
+  // (zone_id IS NULL) rows here: those are production admin settings, and a
+  // crashed/timed-out run used to leave hidden sections switched back on.
   const { data: vis } = await admin
     .from("home_section_visibility")
     .select("section, is_visible, zone_id")
     .in("section", ["featured", "hot_deals"])
     .is("zone_id", null);
   const previous = vis ?? [];
-  for (const row of previous) {
-    if (row.is_visible === false) {
-      await admin
-        .from("home_section_visibility")
-        .update({ is_visible: true })
-        .eq("section", row.section)
-        .is("zone_id", null);
-    }
+  const hidden = previous.filter((row) => row.is_visible === false).map((row) => row.section);
+  if (hidden.length > 0) {
+    console.warn(
+      `[visual-home-cards] section(s) hidden by admin: ${hidden.join(", ")} — snapshots for those sections are skipped (visibility left untouched).`,
+    );
   }
 
   return {
     featuredId: feat?.id ?? null,
     dealId: deal?.id ?? null,
+    hiddenSections: hidden,
     async cleanup() {
       if (feat?.id) await admin.from("featured_items").delete().eq("id", feat.id);
       if (deal?.id) await admin.from("home_hot_deals").delete().eq("id", deal.id);
       await admin.from("products").delete().eq("slug", PRODUCT_SLUG);
-      for (const row of previous) {
-        if (row.is_visible === false) {
-          await admin
-            .from("home_section_visibility")
-            .update({ is_visible: false })
-            .eq("section", row.section)
-            .is("zone_id", null);
-        }
-      }
     },
   };
 }
