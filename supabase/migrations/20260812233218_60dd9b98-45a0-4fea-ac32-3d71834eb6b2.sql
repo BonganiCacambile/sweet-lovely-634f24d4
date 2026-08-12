@@ -1,0 +1,2 @@
+UPDATE public.home_section_visibility SET is_visible = false WHERE zone_id IS NULL AND section IN ('banners','hot_deals','specials','desserts','featured');
+UPDATE public.home_section_visibility SET is_visible = true WHERE zone_id IS NULL AND section = 'popular';
