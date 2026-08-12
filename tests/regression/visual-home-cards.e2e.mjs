@@ -240,9 +240,10 @@ async function main() {
     const dealCard = page.locator("article").filter({ hasText: DEAL_TITLE }).first();
 
     for (const [name, locator] of [
-      ["home-featured-card", featuredCard],
-      ["home-hot-deal-card", dealCard],
+      ["home-featured-card", featuredCard, "featured"],
+      ["home-hot-deal-card", dealCard, "hot_deals"],
     ]) {
+      if (fixtures.hiddenSections?.includes(arguments)) { /* unreachable */ }
       try {
         await locator.waitFor({ state: "visible", timeout: 20000 });
         await locator.scrollIntoViewIfNeeded();
