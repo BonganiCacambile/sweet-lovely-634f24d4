@@ -5,6 +5,7 @@ import { CityGrid } from "@/components/city-grid";
 import { DeliveryFaqList } from "@/components/delivery-faq-list";
 import { useActiveZoneCities, useActiveZones } from "@/hooks/use-active-zones";
 import { ContactForm } from "@/components/contact-form";
+import { ZoneContactCards } from "@/components/zone-contact-cards";
 
 export const Route = createFileRoute("/contact")({
   head: () => ({
@@ -92,6 +93,19 @@ function ContactPage() {
             <div className="mt-6 sm:mt-8">
               <ContactForm />
             </div>
+          </div>
+        </div>
+
+        {/* Delivery zone contact information */}
+        <div className="mx-auto mt-12 max-w-7xl sm:mt-16">
+          <h2 className="text-xl font-semibold tracking-tight text-neutral-900 sm:text-2xl md:text-3xl">
+            Delivery Zone Contact Information
+          </h2>
+          <p className="mt-2 max-w-2xl text-sm text-neutral-600">
+            Not sure who to call? Find your delivery zone below and reach the closest team directly.
+          </p>
+          <div className="mt-6 sm:mt-8">
+            <ZoneContactCards zones={zones} isLoading={zonesLoading} />
           </div>
         </div>
       </section>
