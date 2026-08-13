@@ -2,7 +2,7 @@ import { chromium } from 'playwright';
 import { loadEnvFiles } from '/dev-server/tests/regression/lib/load-env.mjs';
 import { createEphemeralCustomerSession } from '/dev-server/tests/regression/lib/browser-session.mjs';
 loadEnvFiles();
-const s = await createEphemeralCustomerSession({});
+const s = await createEphemeralCustomerSession({ supabaseUrl: process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL, serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY, publishableKey: process.env.SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY, projectId: process.env.SUPABASE_PROJECT_ID || process.env.VITE_SUPABASE_PROJECT_ID });
 const b = await chromium.launch();
 for (const w of [390, 1280]) {
   const c = await b.newContext({ viewport: { width: w, height: 1800 } });
