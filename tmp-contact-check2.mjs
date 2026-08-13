@@ -1,0 +1,33 @@
+import { chromium } from 'playwright';
+import { createClient } from '@supabase/supabase-js';
+import { loadEnvFiles } from './tests/regression/lib/load-env.mjs';
+loadEnvFiles();
+const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+const admin = createClient(url, process.env.SUPABASE_SERVICE_ROLE_KEY, { auth: { persistSession: false } });
+const email = `regr-${Date.now()}@regression.sweetnlovely.test`;
+const { data: created, error: ce } = await admin.auth.admin.createUser({ email, password: 'Rgr-'+Date.now()+'!A9', email_confirm: true });
+if (ce) throw ce;
+const { data: link, error: le } = await admin.auth.admin.generateLink({ type: 'magiclink', email });
+if (le) throw le;
+const anon = createClient(url, process.env.SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY, { auth: { persistSession: false } });
+const { data: v, error: ve } = await anon.auth.verifyOtp({ email, token: link.properties.email_otp, type: 'email' });
+if (ve) throw ve;
+const ref = new URL(url).hostname.split('.')[0];
+const storageKey = `sb-${ref}-auth-token`;
+const b = await chromium.launch();
+for (const w of [390, 1280]) {
+  const c = await b.newContext({ viewport: { width: w, height: 1800 } });
+  const pg = await c.newPage();
+  await pg.goto('http://localhost:8080/');
+  await pg.evaluate(([k,s])=>localStorage.setItem(k,s), [storageKey, JSON.stringify(v.session)]);
+  await pg.goto('http://localhost:8080/contact', { waitUntil: 'networkidle' });
+  const el = pg.locator('[data-testid="zone-contact-directory"]');
+  console.log('W'+w, pg.url(), 'visible=', await el.isVisible().catch(()=>false));
+  console.log((await el.innerText().catch(()=>'N/A')).slice(0,900));
+  console.log('tel', await pg.locator('[data-testid="zone-contact-directory"] a[href^="tel:"]').evaluateAll(e=>e.map(x=>x.getAttribute('href'))));
+  console.log('mail', await pg.locator('[data-testid="zone-contact-directory"] a[href^="mailto:"]').evaluateAll(e=>e.map(x=>x.getAttribute('href'))));
+  console.log('form fields', await pg.locator('input, textarea').count());
+  await pg.screenshot({ path: `/tmp/browser/contact/c${w}.png` });
+}
+await b.close();
+await admin.auth.admin.deleteUser(created.user.id).catch(()=>{});
