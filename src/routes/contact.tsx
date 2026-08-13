@@ -92,62 +92,6 @@ function ContactPage() {
             <div className="mt-6 sm:mt-8">
               <ContactForm />
             </div>
-
-            {/* Zone contact directory */}
-            <div className="mt-10 sm:mt-12" data-testid="zone-contact-directory">
-              <h3 className="text-base font-semibold tracking-tight text-neutral-900 sm:text-lg">
-                Not sure who to contact?
-              </h3>
-              <p className="mt-2 text-sm text-neutral-600">
-                Use the details for the location closest to you.
-              </p>
-              {zonesLoading && zones.length === 0 ? (
-                <p className="mt-6 text-sm text-neutral-500">Loading contact details…</p>
-              ) : zones.length === 0 ? (
-                <p className="mt-6 text-sm text-neutral-500">No locations available yet.</p>
-              ) : (
-                <ul className="mt-5 grid gap-4 sm:grid-cols-2">
-                  {zones.map((z) => (
-                    <li
-                      key={z.id}
-                      className="rounded-2xl border border-neutral-200 bg-neutral-50 p-4 sm:p-5"
-                    >
-                      <p className="text-sm font-semibold text-neutral-900">{z.name}</p>
-                      <p className="mt-2 flex gap-2 text-sm text-neutral-700">
-                        <span aria-hidden="true">📍</span>
-                        <span>{z.description ?? z.collection_address ?? "Address not listed"}</span>
-                      </p>
-                      <p className="mt-2 flex gap-2 text-sm">
-                        <span aria-hidden="true">☎️</span>
-                        {z.contact_phone ? (
-                          <a
-                            href={`tel:${z.contact_phone.replace(/\s+/g, "")}`}
-                            className="text-neutral-900 underline-offset-2 hover:underline"
-                          >
-                            {z.contact_phone}
-                          </a>
-                        ) : (
-                          <span className="text-neutral-500">Phone number not available</span>
-                        )}
-                      </p>
-                      <p className="mt-2 flex gap-2 text-sm">
-                        <span aria-hidden="true">✉️</span>
-                        {z.contact_email ? (
-                          <a
-                            href={`mailto:${z.contact_email}`}
-                            className="break-all text-neutral-900 underline-offset-2 hover:underline"
-                          >
-                            {z.contact_email}
-                          </a>
-                        ) : (
-                          <span className="text-neutral-500">Email not available</span>
-                        )}
-                      </p>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
           </div>
         </div>
       </section>
