@@ -89,10 +89,11 @@ export async function resolveAdminCredentials({ prefix = "regr-admin", autoClean
   const userId = created.user.id;
   await assignRole(admin, { userId, role: "mainAdmin" });
 
-  const { data: signIn, error: signInErr } = await anon.auth.signInWithPassword({ email, password });
-  if (signInErr || !signIn?.session) {
+  try {
+    await establishSession(anon, { email, password });
+  } catch (e) {
     await admin.auth.admin.deleteUser(userId).catch(() => {});
-    throw new Error(`Ephemeral admin sign-in failed: ${signInErr?.message ?? "no session"}`);
+    throw new Error(`Ephemeral admin sign-in failed: ${e.message}`);
   }
   await anon.auth.signOut().catch(() => {});
 

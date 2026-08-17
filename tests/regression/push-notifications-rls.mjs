@@ -25,7 +25,7 @@ loadEnvFiles();
  * fixture setup/teardown.
  */
 import { createClient } from "@supabase/supabase-js";
-import { resolveAdminCredentials, resolveCustomerCredentials } from "./lib/admin-session.mjs";
+import { establishSession, resolveAdminCredentials, resolveCustomerCredentials } from "./lib/admin-session.mjs";
 import { assignRole, clearRoles } from "./lib/role-provider.mjs";
 
 const { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, SUPABASE_SERVICE_ROLE_KEY } = process.env;
@@ -54,10 +54,13 @@ const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-async function signIn(client, { email, password }, label) {
-  const { data, error } = await client.auth.signInWithPassword({ email, password });
-  if (error || !data.session) throw new Error(`${label} sign-in failed: ${error?.message ?? "no session"}`);
-  return data.user.id;
+async function signIn(client, creds, label) {
+  try {
+    const session = await establishSession(client, creds);
+    return session.user.id;
+  } catch (e) {
+    throw new Error(`${label} ${e.message}`);
+  }
 }
 
 async function waitFor(fn, { tries = 20, delay = 300 } = {}) {
