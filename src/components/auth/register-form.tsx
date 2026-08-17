@@ -88,12 +88,14 @@ export function RegisterForm() {
       } catch {
         // Breach lookup unavailable — continue with sign-up.
       }
+      const captchaToken = await getCaptchaToken();
       const { data, error } = await supabase.auth.signUp({
         email: email.trim().toLowerCase(),
         password,
         options: {
           emailRedirectTo: window.location.origin + "/auth",
           data: { full_name: fullName.trim(), phone: normalizedPhone },
+          ...(captchaToken ? { captchaToken } : {}),
         },
       });
       if (error) {
