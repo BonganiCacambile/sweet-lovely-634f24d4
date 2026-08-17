@@ -14,6 +14,7 @@ import { useRealtimeTable } from "@/hooks/use-realtime-table";
 import { formatDateTime, formatRelative } from "@/lib/admin/format";
 import {
   broadcastNotification, deleteNotifications, listNotifications, markNotifications, notificationStats,
+  pushDeliveryStats,
 } from "@/lib/admin/notifications.functions";
 
 export const Route = createFileRoute("/_authenticated/admin/notifications")({
@@ -45,6 +46,11 @@ function NotificationsPage() {
     queryFn: () => listFn({ data: { search: debounced, category, read, page, pageSize: 50 } }),
   });
   const { data: stats } = useQuery({ queryKey: ["admin", "notifications", "stats"], queryFn: () => statsFn() });
+  const pushStatsFn = useServerFn(pushDeliveryStats);
+  const { data: push } = useQuery({
+    queryKey: ["admin", "notifications", "push-stats"],
+    queryFn: () => pushStatsFn(),
+  });
 
   useRealtimeTable("notifications", [["admin", "notifications"], ["admin", "notifications", "stats"]], (e) => {
     if (e.eventType === "INSERT") toast("New notification");
@@ -102,6 +108,35 @@ function NotificationsPage() {
         <Stat label="Unread" value={(stats?.unread ?? 0).toLocaleString()} />
         <Stat label="Categories" value={(stats?.categories.length ?? 0).toLocaleString()} />
       </div>
+
+      <Card>
+        <div className="border-b border-neutral-100 px-4 py-3">
+          <p className="text-sm font-semibold text-neutral-900">Push delivery</p>
+          <p className="mt-0.5 text-xs text-neutral-500">
+            Registered devices and the status of the last 1,000 delivery attempts. Device tokens are never shown.
+          </p>
+        </div>
+        <div className="grid gap-4 px-4 py-4 sm:grid-cols-4" data-testid="push-delivery-stats">
+          <Stat label="Active devices" value={(push?.activeDevices ?? 0).toLocaleString()} />
+          <Stat label="Sent" value={(push?.byStatus?.["sent"] ?? 0).toLocaleString()} />
+          <Stat label="Queued" value={(push?.byStatus?.["queued"] ?? 0).toLocaleString()} />
+          <Stat
+            label="Failed / invalid"
+            value={(
+              (push?.byStatus?.["failed"] ?? 0) + (push?.byStatus?.["invalid_token"] ?? 0)
+            ).toLocaleString()}
+          />
+        </div>
+        {push && Object.keys(push.byPlatform).length > 0 ? (
+          <div className="flex flex-wrap gap-2 px-4 pb-4">
+            {Object.entries(push.byPlatform).map(([p, n]) => (
+              <span key={p} className="rounded-full bg-neutral-100 px-2.5 py-1 text-[11px] font-semibold text-neutral-700">
+                {p}: {n}
+              </span>
+            ))}
+          </div>
+        ) : null}
+      </Card>
 
       <Card>
         <div className="flex flex-wrap items-center gap-2 border-b border-neutral-100 px-4 py-3">
