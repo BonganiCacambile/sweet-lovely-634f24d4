@@ -12,6 +12,7 @@ import {
   updatePreferences,
 } from "@/lib/account/account.functions";
 import { useAuth } from "@/lib/auth-context";
+import { PushDevicesCard } from "@/components/notifications/push-devices-card";
 import { Bell, Check, Loader2, Trash2, CheckCheck } from "lucide-react";
 import { toast } from "sonner";
 
@@ -21,13 +22,13 @@ export const Route = createFileRoute("/_authenticated/account/notifications")({
 });
 
 type Channel = "email" | "sms" | "push";
-type Kind = "orders" | "security" | "promotions" | "account";
+type Kind = "orders" | "security" | "promotions" | "announcements" | "account";
 type Prefs = Record<Channel, Record<Kind, boolean>>;
 
 const DEFAULT_PREFS: Prefs = {
-  email: { orders: true, security: true, promotions: false, account: true },
-  sms: { orders: false, security: true, promotions: false, account: false },
-  push: { orders: true, security: true, promotions: false, account: true },
+  email: { orders: true, security: true, promotions: false, announcements: false, account: true },
+  sms: { orders: false, security: true, promotions: false, announcements: false, account: false },
+  push: { orders: true, security: true, promotions: false, announcements: false, account: true },
 };
 
 const FILTERS = [
@@ -226,12 +227,20 @@ function NotificationsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-neutral-100">
-              {(["orders", "security", "account", "promotions"] as Kind[]).map((kind) => (
+              {(["orders", "security", "account", "promotions", "announcements"] as Kind[]).map((kind) => (
                 <tr key={kind}>
-                  <td className="py-3 pr-3 font-medium capitalize text-neutral-800">{kind}</td>
+                  <td
+                    className="py-3 pr-3 font-medium capitalize text-neutral-800"
+                    data-testid={`pref-row-${kind}`}
+                  >
+                    {kind}
+                  </td>
                   {(["email", "sms", "push"] as Channel[]).map((ch) => (
                     <td key={ch} className="px-3">
-                      <Toggle on={Boolean(prefs[ch]?.[kind])} onChange={() => togglePref(ch, kind)} />
+                      <Toggle
+                        on={Boolean(prefs[ch]?.[kind])}
+                        onChange={() => togglePref(ch, kind)}
+                      />
                     </td>
                   ))}
                 </tr>
@@ -239,6 +248,11 @@ function NotificationsPage() {
             </tbody>
           </table>
         </div>
+      </Card>
+
+      {/* Devices */}
+      <Card>
+        <PushDevicesCard />
       </Card>
     </AccountShell>
   );

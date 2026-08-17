@@ -169,6 +169,7 @@ function RootComponent() {
               <ZonePicker />
               <FloatingZoneChip />
               <MobileBottomNav />
+              <PushOptInPrompt />
               </AuthGate>
             </ZoneProvider>
             <Toaster position="top-center" richColors />
