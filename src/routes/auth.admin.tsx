@@ -1,3 +1,4 @@
+import { getCaptchaToken } from "@/lib/captcha";
 import { createFileRoute, Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Loader2, ShieldCheck, Eye, EyeOff, LifeBuoy, KeyRound, LogOut, ArrowRight, ArrowLeft, Crown, Users } from "lucide-react";
@@ -81,7 +82,12 @@ function AdminAuth() {
     e.preventDefault();
     if (!kind) return;
     setLoading(true);
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    const captchaToken = await getCaptchaToken();
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+      ...(captchaToken ? { options: { captchaToken } } : {}),
+    });
     if (error || !data.user) {
       setLoading(false);
       const msg = error?.message ?? "Unknown error";
