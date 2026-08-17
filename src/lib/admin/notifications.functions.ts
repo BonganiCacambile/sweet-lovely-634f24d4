@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { requireAdmin } from "./server-helpers.server";
+import { requireAdmin, requireMainAdmin } from "./server-helpers.server";
 import { logAudit } from "./server-helpers.server";
 
 const listInput = z.object({
@@ -84,12 +84,21 @@ const broadcastInput = z.object({
   category: z.string().min(1).max(50).default("general"),
   audience: z.enum(["all", "admins", "user"]).default("all"),
   userId: z.string().uuid().optional(),
+  /** Same-origin path opened when the notification is tapped. */
+  url: z.string().max(300).optional(),
 });
 export const broadcastNotification = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => broadcastInput.parse(d))
   .handler(async ({ data, context }) => {
-    await requireAdmin(context.supabase, context.userId);
+    const cat = data.category.toLowerCase();
+    // Global promotional / announcement blasts are main-admin only. Zone
+    // admins and employees keep their existing (non-global) capabilities.
+    if (data.audience === "all" && (cat.includes("promo") || cat.includes("announce"))) {
+      await requireMainAdmin(context.supabase, context.userId);
+    } else {
+      await requireAdmin(context.supabase, context.userId);
+    }
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     let targetIds: string[] = [];
@@ -107,8 +116,14 @@ export const broadcastNotification = createServerFn({ method: "POST" })
     }
     if (!targetIds.length) throw new Error("No recipients matched the audience");
 
+    const safeUrl = data.url && /^\/[A-Za-z0-9\-._~/?#[\]@!$&'()*+,;=%]*$/.test(data.url) ? data.url : null;
     const payload = targetIds.map(uid => ({
-      user_id: uid, title: data.title, body: data.body || null, category: data.category, read: false,
+      user_id: uid,
+      title: data.title,
+      body: data.body || null,
+      category: data.category,
+      read: false,
+      data: safeUrl ? { url: safeUrl } : {},
     }));
     // Insert in chunks to keep payloads small
     const chunk = 500;
@@ -120,4 +135,45 @@ export const broadcastNotification = createServerFn({ method: "POST" })
       audience: data.audience, recipients: targetIds.length, category: data.category, title: data.title,
     });
     return { ok: true, sent: targetIds.length };
+  });
+
+/* ----------------------- Push delivery insights ----------------------- */
+
+/**
+ * Aggregate push health for the admin panel. Deliberately returns NO device
+ * tokens — only counts, statuses and platforms.
+ */
+export const pushDeliveryStats = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await requireMainAdmin(context.supabase, context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const [{ data: devices }, { data: deliveries }] = await Promise.all([
+      supabaseAdmin.from("user_notification_devices").select("platform, is_active").limit(5000),
+      supabaseAdmin
+        .from("notification_deliveries")
+        .select("status, platform, category, created_at")
+        .order("created_at", { ascending: false })
+        .limit(1000),
+    ]);
+
+    const byPlatform: Record<string, number> = {};
+    let activeDevices = 0;
+    for (const d of devices ?? []) {
+      if (d.is_active) {
+        activeDevices += 1;
+        byPlatform[d.platform] = (byPlatform[d.platform] ?? 0) + 1;
+      }
+    }
+    const byStatus: Record<string, number> = {};
+    for (const d of deliveries ?? []) byStatus[d.status] = (byStatus[d.status] ?? 0) + 1;
+
+    return {
+      activeDevices,
+      totalDevices: (devices ?? []).length,
+      byPlatform,
+      byStatus,
+      recent: (deliveries ?? []).slice(0, 25),
+    };
   });
