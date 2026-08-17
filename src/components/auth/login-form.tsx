@@ -8,7 +8,6 @@ import { useAuth } from "@/lib/auth-context";
 import { GoogleButton } from "./social-buttons";
 import { authErrorMessage, isValidEmail } from "@/lib/auth-validation";
 import { logAuthEvent } from "@/lib/auth-events";
-import { getCaptchaToken } from "@/lib/captcha";
 
 export function LoginForm() {
   const navigate = useNavigate();
@@ -28,12 +27,7 @@ export function LoginForm() {
     setLoading(true);
     logAuthEvent("login", "started");
     try {
-      const captchaToken = await getCaptchaToken();
-      const { error } = await supabase.auth.signInWithPassword({
-        email: email.trim().toLowerCase(),
-        password,
-        ...(captchaToken ? { options: { captchaToken } } : {}),
-      });
+      const { error } = await supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password });
       if (error) {
         logAuthEvent("login", "failed", { status: error.status ?? null });
         toast.error("Couldn't sign you in", { description: authErrorMessage(error, "Please check your details and try again.") });

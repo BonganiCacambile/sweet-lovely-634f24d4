@@ -10,7 +10,6 @@ import { GoogleButton } from "./social-buttons";
 import { authErrorMessage, isValidEmail, normalizeSouthAfricanPhone, registrationDestination } from "@/lib/auth-validation";
 import { logAuthEvent } from "@/lib/auth-events";
 import { checkPasswordBreached } from "@/lib/password-safety.functions";
-import { getCaptchaToken } from "@/lib/captcha";
 
 function strength(p: string) {
   let s = 0;
@@ -89,14 +88,12 @@ export function RegisterForm() {
       } catch {
         // Breach lookup unavailable — continue with sign-up.
       }
-      const captchaToken = await getCaptchaToken();
       const { data, error } = await supabase.auth.signUp({
         email: email.trim().toLowerCase(),
         password,
         options: {
           emailRedirectTo: window.location.origin + "/auth",
           data: { full_name: fullName.trim(), phone: normalizedPhone },
-          ...(captchaToken ? { captchaToken } : {}),
         },
       });
       if (error) {

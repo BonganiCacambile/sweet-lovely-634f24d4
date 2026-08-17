@@ -8,7 +8,6 @@ import { Field, fieldCls } from "@/components/auth/login-form";
 import { supabase } from "@/integrations/supabase/client";
 import { authErrorMessage, isValidEmail } from "@/lib/auth-validation";
 import { logAuthEvent } from "@/lib/auth-events";
-import { getCaptchaToken } from "@/lib/captcha";
 
 export const Route = createFileRoute("/auth/forgot-password")({
   head: () => ({
@@ -37,10 +36,8 @@ function ForgotPasswordPage() {
     setLoading(true);
     logAuthEvent("password_reset_request", "started");
     try {
-      const captchaToken = await getCaptchaToken();
       const { error } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
         redirectTo: window.location.origin + "/auth/reset-password",
-        ...(captchaToken ? { captchaToken } : {}),
       });
       if (error) {
         logAuthEvent("password_reset_request", "failed", { status: error.status ?? null });

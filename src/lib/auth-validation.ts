@@ -18,9 +18,6 @@ export function registrationDestination(hasSession: boolean): "home" | "sign_in"
 
 export function authErrorMessage(error: { message?: string; status?: number } | null, fallback: string) {
   const message = error?.message?.toLowerCase() ?? "";
-  if (message.includes("captcha")) {
-    return "Security verification failed. Captcha protection is enabled on this project — configure the captcha site key (or disable captcha protection in Supabase Auth) and try again.";
-  }
   if (message.includes("already registered") || message.includes("already exists")) {
     return "An account with these details already exists. Try signing in instead.";
   }
