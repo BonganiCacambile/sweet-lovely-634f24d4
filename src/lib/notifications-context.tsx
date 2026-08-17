@@ -14,6 +14,7 @@ import { Bell } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { playNotificationPing, vibrate } from "@/lib/notification-sound";
+import { deliverLocally } from "@/lib/push/push-service";
 
 export type NotificationRow = {
   id: string;
@@ -22,6 +23,7 @@ export type NotificationRow = {
   category: string | null;
   read: boolean;
   created_at: string;
+  data?: Record<string, unknown> | null;
 };
 
 type Ctx = {
@@ -77,7 +79,7 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
     const [{ data: rows }, { count }] = await Promise.all([
       supabase
         .from("notifications")
-        .select("id, title, body, category, read, created_at")
+        .select("id, title, body, category, read, created_at, data")
         .eq("user_id", user.id)
         .order("created_at", { ascending: false })
         .limit(20),
@@ -132,6 +134,8 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
             // Alert (sound + vibrate + toast), filtered by user prefs.
             const prefs = prefsRef.current;
             if (!categoryAllowed(row.category, prefs)) return;
+            // Background/closed tab → real system notification (web channel).
+            void deliverLocally({ id: row.id, title: row.title, body: row.body, data: row.data ?? null });
             if (prefs.sound) playNotificationPing();
             if (prefs.vibration) {
               const important = /deliver|out_for|ready|cancel|refund/i.test(

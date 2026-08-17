@@ -953,11 +953,70 @@ export type Database = {
         }
         Relationships: []
       }
+      notification_deliveries: {
+        Row: {
+          category: string
+          created_at: string
+          delivered_at: string | null
+          device_id: string | null
+          error: string | null
+          id: string
+          notification_id: string | null
+          order_id: string | null
+          platform: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          delivered_at?: string | null
+          device_id?: string | null
+          error?: string | null
+          id?: string
+          notification_id?: string | null
+          order_id?: string | null
+          platform?: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          delivered_at?: string | null
+          device_id?: string | null
+          error?: string | null
+          id?: string
+          notification_id?: string | null
+          order_id?: string | null
+          platform?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_deliveries_device_id_fkey"
+            columns: ["device_id"]
+            isOneToOne: false
+            referencedRelation: "user_notification_devices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notification_deliveries_notification_id_fkey"
+            columns: ["notification_id"]
+            isOneToOne: false
+            referencedRelation: "notifications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           body: string | null
           category: string
           created_at: string
+          data: Json
+          dedupe_key: string | null
           id: string
           read: boolean
           title: string
@@ -967,6 +1026,8 @@ export type Database = {
           body?: string | null
           category?: string
           created_at?: string
+          data?: Json
+          dedupe_key?: string | null
           id?: string
           read?: boolean
           title: string
@@ -976,6 +1037,8 @@ export type Database = {
           body?: string | null
           category?: string
           created_at?: string
+          data?: Json
+          dedupe_key?: string | null
           id?: string
           read?: boolean
           title?: string
@@ -1596,6 +1659,51 @@ export type Database = {
           postal_code?: string | null
           province?: string | null
           recipient?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_notification_devices: {
+        Row: {
+          app_version: string | null
+          created_at: string
+          device_name: string | null
+          id: string
+          is_active: boolean
+          last_active_at: string
+          last_error: string | null
+          platform: string
+          provider: string
+          token: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          app_version?: string | null
+          created_at?: string
+          device_name?: string | null
+          id?: string
+          is_active?: boolean
+          last_active_at?: string
+          last_error?: string | null
+          platform: string
+          provider?: string
+          token: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          app_version?: string | null
+          created_at?: string
+          device_name?: string | null
+          id?: string
+          is_active?: boolean
+          last_active_at?: string
+          last_error?: string | null
+          platform?: string
+          provider?: string
+          token?: string
           updated_at?: string
           user_id?: string
         }

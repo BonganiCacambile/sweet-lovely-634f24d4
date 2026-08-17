@@ -21,6 +21,7 @@ import { LoadingScreen } from "@/components/loading-screen";
 import { ZoneProvider } from "@/lib/zone-context";
 import { ZonePicker, ZoneChip } from "@/components/zone-picker";
 import { NotificationsProvider } from "@/lib/notifications-context";
+import { PushOptInPrompt } from "@/components/notifications/push-opt-in";
 import { MobileBottomNav } from "@/components/mobile-bottom-nav";
 
 function NotFoundComponent() {
@@ -169,6 +170,7 @@ function RootComponent() {
               <ZonePicker />
               <FloatingZoneChip />
               <MobileBottomNav />
+              <PushOptInPrompt />
               </AuthGate>
             </ZoneProvider>
             <Toaster position="top-center" richColors />
