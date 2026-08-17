@@ -16,6 +16,7 @@
  */
 
 import { createClient } from "@supabase/supabase-js";
+import { establishSession } from "./admin-session.mjs";
 
 function newClient(url, key) {
   return createClient(url, key, {
@@ -24,11 +25,7 @@ function newClient(url, key) {
 }
 
 async function signIn(client, email, password) {
-  const { data, error } = await client.auth.signInWithPassword({ email, password });
-  if (error || !data.session) {
-    throw new Error(`sign-in failed for ${email}: ${error?.message ?? "no session"}`);
-  }
-  return data.session;
+  return establishSession(client, { email, password });
 }
 
 function assert(cond, msg) {

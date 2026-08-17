@@ -12,6 +12,7 @@
  * Run: bun run test:regression:rls-matrix
  */
 import { createClient } from "@supabase/supabase-js";
+import { establishSession } from "./lib/admin-session.mjs";
 import { assignRole, clearRoles } from "./lib/role-provider.mjs";
 import { requireEnv } from "./lib/load-env.mjs";
 
@@ -73,9 +74,10 @@ function anonClient() {
 
 async function signedInClient(email, password, label) {
   const c = anonClient();
-  const { data, error } = await c.auth.signInWithPassword({ email, password });
-  if (error || !data.session) {
-    throw new Error(`${label} sign-in failed: ${error?.message ?? "no session"}`);
+  try {
+    await establishSession(c, { email, password });
+  } catch (e) {
+    throw new Error(`${label} ${e.message}`);
   }
   return c;
 }
