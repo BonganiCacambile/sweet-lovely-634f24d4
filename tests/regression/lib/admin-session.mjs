@@ -219,3 +219,13 @@ export async function establishSession(client, { email, password }) {
   }
   return data.session;
 }
+
+/** Drop-in replacement for `client.auth.signInWithPassword` that survives captcha. */
+export async function signInCompat(client, creds) {
+  try {
+    const session = await establishSession(client, creds);
+    return { data: { session, user: session.user }, error: null };
+  } catch (e) {
+    return { data: { session: null, user: null }, error: e };
+  }
+}

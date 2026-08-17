@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { loadEnvFiles } from "./lib/load-env.mjs";
+import { signInCompat } from "./lib/admin-session.mjs";
 loadEnvFiles();
 
 /**
@@ -65,7 +66,7 @@ let CUSTOMER_LABEL = process.env.CUSTOMER_EMAIL ?? "(resolved customer)";
 async function signInCustomer() {
   const creds = await resolveCustomerCredentials();
   CUSTOMER_LABEL = creds.email;
-  const { data, error } = await userClient.auth.signInWithPassword({
+  const { data, error } = await signInCompat(userClient, {
     email: creds.email,
     password: creds.password,
   });

@@ -9,6 +9,7 @@
  * logged-in customer.
  */
 import { createClient } from "@supabase/supabase-js";
+import { signInCompat } from "./admin-session.mjs";
 
 export function storageKeyFor(supabaseUrl, projectId) {
   const ref = projectId || new URL(supabaseUrl).hostname.split(".")[0];
@@ -49,7 +50,7 @@ export async function createEphemeralCustomerSession({
   }
   const userId = created.user.id;
 
-  const { data: signIn, error: signInErr } = await anon.auth.signInWithPassword({
+  const { data: signIn, error: signInErr } = await signInCompat(anon, {
     email,
     password,
   });
