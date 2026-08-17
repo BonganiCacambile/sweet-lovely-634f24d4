@@ -81,7 +81,12 @@ function AdminAuth() {
     e.preventDefault();
     if (!kind) return;
     setLoading(true);
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    const captchaToken = await getCaptchaToken();
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+      ...(captchaToken ? { options: { captchaToken } } : {}),
+    });
     if (error || !data.user) {
       setLoading(false);
       const msg = error?.message ?? "Unknown error";
