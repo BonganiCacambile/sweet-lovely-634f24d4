@@ -151,6 +151,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = useCallback(async () => {
     setAuthTransition("signing-out");
     logAuthEvent("logout", "started");
+    // Retire this device's push binding *before* the session goes away so the
+    // next account on this device can never inherit these notifications.
+    try {
+      const { releaseDeviceOnSignOut } = await import("@/lib/push/push-service");
+      await releaseDeviceOnSignOut();
+    } catch {
+      /* never block sign-out */
+    }
     await queryClient.cancelQueries();
     queryClient.clear();
     const { error } = await supabase.auth.signOut();
