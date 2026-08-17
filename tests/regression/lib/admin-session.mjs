@@ -89,10 +89,11 @@ export async function resolveAdminCredentials({ prefix = "regr-admin", autoClean
   const userId = created.user.id;
   await assignRole(admin, { userId, role: "mainAdmin" });
 
-  const { data: signIn, error: signInErr } = await anon.auth.signInWithPassword({ email, password });
-  if (signInErr || !signIn?.session) {
+  try {
+    await establishSession(anon, { email, password });
+  } catch (e) {
     await admin.auth.admin.deleteUser(userId).catch(() => {});
-    throw new Error(`Ephemeral admin sign-in failed: ${signInErr?.message ?? "no session"}`);
+    throw new Error(`Ephemeral admin sign-in failed: ${e.message}`);
   }
   await anon.auth.signOut().catch(() => {});
 
@@ -178,4 +179,53 @@ export async function resolveCustomerCredentials({ prefix = "regr-customer", aut
     },
     autoCleanup,
   );
+}
+/**
+ * Captcha-safe sign-in for regression suites.
+ *
+ * Supabase Auth can have CAPTCHA protection enabled on this project, which
+ * rejects password grants from headless test runners ("captcha protection:
+ * request disallowed"). When that happens we fall back to a service-role
+ * magic link (generateLink + verifyOtp), which is not captcha-gated. The
+ * resulting session is a normal user session, so RLS assertions stay honest.
+ */
+export async function establishSession(client, { email, password }) {
+  const first = await client.auth.signInWithPassword({ email, password });
+  if (!first.error && first.data?.session) return first.data.session;
+
+  const msg = String(first.error?.message ?? "");
+  if (!/captcha/i.test(msg)) {
+    throw new Error(`sign-in failed for ${email}: ${msg || "no session"}`);
+  }
+
+  const { SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY } = process.env;
+  if (!SUPABASE_SERVICE_ROLE_KEY) {
+    throw new Error(`sign-in blocked by captcha and no SUPABASE_SERVICE_ROLE_KEY available: ${msg}`);
+  }
+  const svc = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  const { data: link, error: linkErr } = await svc.auth.admin.generateLink({
+    type: "magiclink",
+    email,
+  });
+  const hash = link?.properties?.hashed_token;
+  if (linkErr || !hash) {
+    throw new Error(`captcha fallback failed for ${email}: ${linkErr?.message ?? "no token"}`);
+  }
+  const { data, error } = await client.auth.verifyOtp({ token_hash: hash, type: "magiclink" });
+  if (error || !data?.session) {
+    throw new Error(`captcha fallback verify failed for ${email}: ${error?.message ?? "no session"}`);
+  }
+  return data.session;
+}
+
+/** Drop-in replacement for `client.auth.signInWithPassword` that survives captcha. */
+export async function signInCompat(client, creds) {
+  try {
+    const session = await establishSession(client, creds);
+    return { data: { session, user: session.user }, error: null };
+  } catch (e) {
+    return { data: { session: null, user: null }, error: e };
+  }
 }

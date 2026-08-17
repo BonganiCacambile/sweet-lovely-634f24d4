@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { loadEnvFiles } from "./lib/load-env.mjs";
+import { signInCompat } from "./lib/admin-session.mjs";
 loadEnvFiles();
 
 /**
@@ -57,7 +58,7 @@ function makeClient() {
 }
 
 async function signIn(client) {
-  const { data, error } = await client.auth.signInWithPassword({
+  const { data, error } = await signInCompat(client, {
     email: ADMIN_EMAIL,
     password: ADMIN_PASSWORD,
   });

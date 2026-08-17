@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { loadEnvFiles } from "./lib/load-env.mjs";
+import { signInCompat } from "./lib/admin-session.mjs";
 loadEnvFiles();
 
 /**
@@ -66,7 +67,7 @@ async function pickProduct() {
 // form, and the configured admin password may have been rotated.
 async function signInAdmin(page) {
   const creds = await resolveAdminCredentials();
-  const { data, error } = await supa.auth.signInWithPassword({
+  const { data, error } = await signInCompat(supa, {
     email: creds.email,
     password: creds.password,
   });

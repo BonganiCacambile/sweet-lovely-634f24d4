@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { loadEnvFiles } from "./lib/load-env.mjs";
+import { signInCompat } from "./lib/admin-session.mjs";
 loadEnvFiles();
 
 /**
@@ -60,7 +61,7 @@ function makeClient() {
 }
 
 async function signIn(client, email, password, label) {
-  const { data, error } = await client.auth.signInWithPassword({ email, password });
+  const { data, error } = await signInCompat(client, { email, password });
   if (error || !data.session) {
     throw new Error(`${label} sign-in failed: ${error?.message ?? "no session"}`);
   }

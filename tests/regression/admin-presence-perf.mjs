@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { loadEnvFiles } from "./lib/load-env.mjs";
+import { signInCompat } from "./lib/admin-session.mjs";
 loadEnvFiles();
 
 /**
@@ -81,7 +82,7 @@ function log(...args) {
 const EPHEMERAL_PASSWORD = `Regr-Perf-${Date.now()}!aZ`;
 
 async function signInWith(email, password) {
-  const { data, error } = await userClient.auth.signInWithPassword({ email, password });
+  const { data, error } = await signInCompat(userClient, { email, password });
   if (error || !data.session || !data.user) return null;
   return { session: data.session, userId: data.user.id, email };
 }

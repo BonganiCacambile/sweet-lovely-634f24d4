@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { loadEnvFiles } from "./lib/load-env.mjs";
+import { signInCompat } from "./lib/admin-session.mjs";
 loadEnvFiles();
 
 /**
@@ -219,14 +220,14 @@ async function main() {
   }
 
   // Verify sign-in works before launching the browsers.
-  const adminSignIn = await userClient.auth.signInWithPassword({
+  const adminSignIn = await signInCompat(userClient, {
     email: ADMIN_EMAIL,
     password: ADMIN_PASSWORD,
   });
   if (adminSignIn.error || !adminSignIn.data.session) {
     throw new Error(`Admin sign-in verification failed: ${adminSignIn.error?.message ?? "no session"}`);
   }
-  const customerSignIn = await userClient.auth.signInWithPassword({
+  const customerSignIn = await signInCompat(userClient, {
     email: CUSTOMER_EMAIL,
     password: CUSTOMER_PASSWORD,
   });
