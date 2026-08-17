@@ -10,6 +10,7 @@ import { GoogleButton } from "./social-buttons";
 import { authErrorMessage, isValidEmail, normalizeSouthAfricanPhone, registrationDestination } from "@/lib/auth-validation";
 import { logAuthEvent } from "@/lib/auth-events";
 import { checkPasswordBreached } from "@/lib/password-safety.functions";
+import { getCaptchaToken } from "@/lib/captcha";
 
 function strength(p: string) {
   let s = 0;
