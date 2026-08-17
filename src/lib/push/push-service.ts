@@ -73,7 +73,10 @@ async function acquireNativeToken(): Promise<{ token: string; provider: string }
   if (!cap?.isNativePlatform?.()) return null;
   if (cap.isPluginAvailable && !cap.isPluginAvailable("PushNotifications")) return null;
   try {
-    const mod = (await import(/* @vite-ignore */ "@capacitor/push-notifications")) as {
+    // Resolved at runtime only: the package is intentionally not a dependency
+    // yet, so it must not be statically analysable by TS/Vite.
+    const spec = "@capacitor/push-notifications";
+    const mod = (await import(/* @vite-ignore */ spec)) as {
       PushNotifications: {
         requestPermissions: () => Promise<{ receive: string }>;
         register: () => Promise<void>;
