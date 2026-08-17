@@ -250,7 +250,7 @@ function ActivityFeedPanel() {
     // `audit_logs` is deliberately NOT in the realtime publication (it would
     // broadcast sensitive admin activity), so the feed stays fresh by polling
     // while the page is open.
-    refetchInterval: 5_000,
+    refetchInterval: 3_000,
     refetchIntervalInBackground: false,
   });
 
