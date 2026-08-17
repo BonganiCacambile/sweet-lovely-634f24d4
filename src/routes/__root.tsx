@@ -22,6 +22,7 @@ import { ZoneProvider } from "@/lib/zone-context";
 import { ZonePicker, ZoneChip } from "@/components/zone-picker";
 import { NotificationsProvider } from "@/lib/notifications-context";
 import { PushOptInPrompt } from "@/components/notifications/push-opt-in";
+import { NativePushBridge } from "@/components/notifications/native-push-bridge";
 import { MobileBottomNav } from "@/components/mobile-bottom-nav";
 
 function NotFoundComponent() {
@@ -171,6 +172,7 @@ function RootComponent() {
               <FloatingZoneChip />
               <MobileBottomNav />
               <PushOptInPrompt />
+              <NativePushBridge />
               </AuthGate>
             </ZoneProvider>
             <Toaster position="top-center" richColors />
