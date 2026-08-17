@@ -179,3 +179,42 @@ export async function resolveCustomerCredentials({ prefix = "regr-customer", aut
     autoCleanup,
   );
 }
+/**
+ * Captcha-safe sign-in for regression suites.
+ *
+ * Supabase Auth can have CAPTCHA protection enabled on this project, which
+ * rejects password grants from headless test runners ("captcha protection:
+ * request disallowed"). When that happens we fall back to a service-role
+ * magic link (generateLink + verifyOtp), which is not captcha-gated. The
+ * resulting session is a normal user session, so RLS assertions stay honest.
+ */
+export async function establishSession(client, { email, password }) {
+  const first = await client.auth.signInWithPassword({ email, password });
+  if (!first.error && first.data?.session) return first.data.session;
+
+  const msg = String(first.error?.message ?? "");
+  if (!/captcha/i.test(msg)) {
+    throw new Error(`sign-in failed for ${email}: ${msg || "no session"}`);
+  }
+
+  const { SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY } = process.env;
+  if (!SUPABASE_SERVICE_ROLE_KEY) {
+    throw new Error(`sign-in blocked by captcha and no SUPABASE_SERVICE_ROLE_KEY available: ${msg}`);
+  }
+  const svc = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  const { data: link, error: linkErr } = await svc.auth.admin.generateLink({
+    type: "magiclink",
+    email,
+  });
+  const hash = link?.properties?.hashed_token;
+  if (linkErr || !hash) {
+    throw new Error(`captcha fallback failed for ${email}: ${linkErr?.message ?? "no token"}`);
+  }
+  const { data, error } = await client.auth.verifyOtp({ token_hash: hash, type: "magiclink" });
+  if (error || !data?.session) {
+    throw new Error(`captcha fallback verify failed for ${email}: ${error?.message ?? "no session"}`);
+  }
+  return data.session;
+}
