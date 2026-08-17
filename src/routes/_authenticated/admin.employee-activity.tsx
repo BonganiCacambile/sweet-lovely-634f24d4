@@ -247,11 +247,12 @@ function ActivityFeedPanel() {
   const feed = useQuery({
     queryKey: ["admin-activity-feed", category],
     queryFn: () => feedFn({ data: { limit: 75, category } }),
-    refetchInterval: 60_000,
+    // `audit_logs` is deliberately NOT in the realtime publication (it would
+    // broadcast sensitive admin activity), so the feed stays fresh by polling
+    // while the page is open.
+    refetchInterval: 5_000,
+    refetchIntervalInBackground: false,
   });
-
-  // Realtime: any new audit row repaints the feed instantly.
-  useRealtimeInvalidate(["audit_logs"], [["admin-activity-feed"]]);
 
   const rows = feed.data ?? [];
 
