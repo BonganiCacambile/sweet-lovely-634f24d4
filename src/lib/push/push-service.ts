@@ -2,11 +2,11 @@ import {
   clearWebLocalToken,
   describeDevice,
   detectPlatform,
-  getCapacitor,
   getOrCreateWebLocalToken,
   isNativeRuntime,
   type PushPlatform,
 } from "./platform";
+import { acquireNativePushToken } from "./native";
 import {
   ackLocalDelivery,
   deactivatePushDevice,
@@ -65,46 +65,10 @@ function setCurrentToken(token: string) {
 }
 
 /**
- * Native token acquisition. Returns null when Capacitor (or the push plugin)
- * is not installed — we never fabricate a native token.
+ * Native token acquisition (FCM on Android, APNs on iOS) via Capacitor.
+ * Returns null on the web so the browser Notification channel takes over.
  */
-async function acquireNativeToken(): Promise<{ token: string; provider: string } | null> {
-  const cap = getCapacitor();
-  if (!cap?.isNativePlatform?.()) return null;
-  if (cap.isPluginAvailable && !cap.isPluginAvailable("PushNotifications")) return null;
-  try {
-    // Resolved at runtime only: the package is intentionally not a dependency
-    // yet, so it must not be statically analysable by TS/Vite.
-    const spec = "@capacitor/push-notifications";
-    const mod = (await import(/* @vite-ignore */ spec)) as {
-      PushNotifications: {
-        requestPermissions: () => Promise<{ receive: string }>;
-        register: () => Promise<void>;
-        addListener: (
-          event: string,
-          cb: (payload: { value?: string }) => void,
-        ) => Promise<{ remove: () => Promise<void> }>;
-      };
-    };
-    const PN = mod.PushNotifications;
-    const perm = await PN.requestPermissions();
-    if (perm.receive !== "granted") return null;
-
-    const token = await new Promise<string | null>((resolve) => {
-      const timer = setTimeout(() => resolve(null), 15000);
-      void PN.addListener("registration", (payload) => {
-        clearTimeout(timer);
-        resolve(payload.value ?? null);
-      });
-      void PN.register();
-    });
-    if (!token) return null;
-    return { token, provider: detectPlatform() === "ios" ? "apns" : "fcm" };
-  } catch {
-    // Plugin not installed / native layer not configured yet.
-    return null;
-  }
-}
+const acquireNativeToken = acquireNativePushToken;
 
 export type EnableResult =
   | { ok: true; platform: PushPlatform; provider: string }
