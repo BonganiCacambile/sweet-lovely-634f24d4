@@ -48,7 +48,12 @@
     "test:regression:rls-matrix": "node tests/regression/rls-matrix.e2e.mjs",
     "test:regression:visual": "node tests/regression/visual-home-cards.e2e.mjs",
     "test:regression:visual:update": "UPDATE_SNAPSHOTS=1 node tests/regression/visual-home-cards.e2e.mjs",
-    "test:regression:push": "node tests/regression/push-notifications-rls.mjs"
+    "test:regression:push": "node tests/regression/push-notifications-rls.mjs",
+    "cap:sync": "bun run build && npx cap sync",
+    "cap:add:android": "npx cap add android",
+    "cap:add:ios": "npx cap add ios",
+    "cap:open:android": "npx cap open android",
+    "cap:open:ios": "npx cap open ios"
   },
   "dependencies": {
     "@capacitor/app": "^7",
