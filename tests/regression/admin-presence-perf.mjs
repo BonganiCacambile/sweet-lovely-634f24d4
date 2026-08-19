@@ -233,6 +233,71 @@ async function run() {
       log(`✓ listActivityFeed requests observed: ${timings.feed.length}`);
     }
 
+    // 3b) Polling schedule. The page is left completely idle for
+    //     POLL_WINDOW_MS and we count how many times each server fn fires.
+    //     This catches accidental extra polling (duplicate mounted queries,
+    //     a shortened refetchInterval, or a refetch loop) as well as polling
+    //     that silently stopped.
+    const feedPoll = Number(FEED_POLL_MS);
+    const presencePoll = Number(PRESENCE_POLL_MS);
+    const windowMs = Number(POLL_WINDOW_MS);
+    log(`Observing polling schedule for ${windowMs}ms (idle page)…`);
+    const feedBase = stamps.feed.length;
+    const presenceBase = stamps.presence.length;
+    const windowStart = Date.now();
+    await page.waitForTimeout(windowMs);
+    const elapsed = Date.now() - windowStart;
+    const feedCount = stamps.feed.length - feedBase;
+    const presenceCount = stamps.presence.length - presenceBase;
+
+    // Expected = elapsed / interval, ±1 to absorb scheduler jitter at the
+    // window edges. Anything above that is extra, unintended traffic.
+    const expectedFeed = elapsed / feedPoll;
+    const feedMin = Math.max(1, Math.floor(expectedFeed) - 1);
+    const feedMax2 = Math.ceil(expectedFeed) + 1;
+    if (feedCount < feedMin || feedCount > feedMax2) {
+      log(
+        `✗ listActivityFeed polling off-schedule: ${feedCount} calls in ${elapsed}ms ` +
+          `(expected ${feedMin}–${feedMax2} at ${feedPoll}ms)`,
+      );
+      failures.push("feed-poll-schedule");
+    } else {
+      log(
+        `✓ listActivityFeed polled ${feedCount}× in ${elapsed}ms ` +
+          `(expected ${feedMin}–${feedMax2} at ${feedPoll}ms)`,
+      );
+    }
+
+    // Presence polls far slower (plus realtime invalidation may add one), so
+    // assert only the ceiling: it must not be polling on the feed's cadence.
+    const presenceMaxCalls = Math.ceil(elapsed / presencePoll) + 1;
+    if (presenceCount > presenceMaxCalls) {
+      log(
+        `✗ listAdminPresence over-polling: ${presenceCount} calls in ${elapsed}ms ` +
+          `(max ${presenceMaxCalls} at ${presencePoll}ms)`,
+      );
+      failures.push("presence-poll-schedule");
+    } else {
+      log(
+        `✓ listAdminPresence polled ${presenceCount}× in ${elapsed}ms ` +
+          `(max ${presenceMaxCalls} at ${presencePoll}ms)`,
+      );
+    }
+
+    // Gap regularity: consecutive feed polls should sit near the interval.
+    const feedStamps = stamps.feed.slice(feedBase);
+    const gaps = feedStamps.slice(1).map((t, i) => t - feedStamps[i]);
+    if (gaps.length) {
+      const tooTight = gaps.filter((g) => g < feedPoll * 0.5);
+      if (tooTight.length) {
+        log(`✗ listActivityFeed fired too rapidly: gaps ${tooTight.join(", ")}ms`);
+        failures.push("feed-poll-burst");
+      } else {
+        const avg = gaps.reduce((a, b) => a + b, 0) / gaps.length;
+        log(`✓ listActivityFeed average gap ${avg.toFixed(0)}ms (interval ${feedPoll}ms)`);
+      }
+    }
+
     // 4) Realtime lag: count current feed rows, insert a fresh audit log,
     //    measure how long until the feed grows.
     const beforeRows = await page.locator('[data-testid="activity-feed-list"] > li').count();
