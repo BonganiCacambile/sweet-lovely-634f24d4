@@ -303,10 +303,15 @@ async function run() {
       await page.clock.pauseAt(new Date(now + 2_000));
       await page.waitForTimeout(1_000);
       const before = await readPageStamps();
-      await page.clock.runFor(windowMs);
-      // Let the requests triggered by the advanced timers actually leave the
-      // page (real time, not virtual) before we sample.
-      await page.waitForTimeout(1_500);
+      // Advance in small virtual steps, yielding real time between each so the
+      // in-flight fetch can settle and react-query can schedule its next tick.
+      // (A single big jump would only ever fire one refetch.)
+      const STEP_MS = 500;
+      for (let advanced = 0; advanced < windowMs; advanced += STEP_MS) {
+        await page.clock.runFor(Math.min(STEP_MS, windowMs - advanced));
+        await page.waitForTimeout(120);
+      }
+      await page.waitForTimeout(1_000);
       const after = await readPageStamps();
       feedStamps = after.feed.slice(before.feed.length);
       presenceStamps = after.presence.slice(before.presence.length);
