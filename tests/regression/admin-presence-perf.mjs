@@ -124,6 +124,9 @@ async function run() {
   // base64url JSON in the /_serverFn/<id> path segment, so the export name is
   // never a plain substring of the URL — decode it before matching.
   const timings = { presence: [], feed: [] };
+  // Wall-clock timestamps of each observed call, used to assert the polling
+  // schedule (see step 3b).
+  const stamps = { presence: [], feed: [] };
   const serverFnExport = (url) => {
     const m = /\/_serverFn\/([^/?#]+)/.exec(url);
     if (!m) return null;
@@ -142,8 +145,13 @@ async function run() {
       const timing = req.timing();
       const dur = timing.responseEnd >= 0 ? timing.responseEnd : 0;
       const name = serverFnExport(url);
-      if (name === "listAdminPresence") timings.presence.push(dur);
-      else if (name === "listActivityFeed") timings.feed.push(dur);
+      if (name === "listAdminPresence") {
+        timings.presence.push(dur);
+        stamps.presence.push(Date.now());
+      } else if (name === "listActivityFeed") {
+        timings.feed.push(dur);
+        stamps.feed.push(Date.now());
+      }
     } catch {}
   });
 
