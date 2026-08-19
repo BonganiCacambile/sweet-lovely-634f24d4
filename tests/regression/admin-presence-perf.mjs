@@ -47,6 +47,10 @@ const {
   FEED_POLL_MS = "3000",
   PRESENCE_POLL_MS = "30000",
   POLL_WINDOW_MS = "12000",
+  // Steady-state polling budgets (enforced in CI).
+  POLL_FN_P95_MS = "900",
+  POLL_FN_MAX_MS = "1500",
+  POLL_MAX_REQ_PER_MIN = "30",
 } = process.env;
 
 function need(name, val) {
