@@ -47,6 +47,10 @@ const {
   FEED_POLL_MS = "3000",
   PRESENCE_POLL_MS = "30000",
   POLL_WINDOW_MS = "12000",
+  // Steady-state polling budgets (enforced in CI).
+  POLL_FN_P95_MS = "900",
+  POLL_FN_MAX_MS = "1500",
+  POLL_MAX_REQ_PER_MIN = "30",
 } = process.env;
 
 function need(name, val) {
@@ -132,6 +136,9 @@ async function run() {
   // Wall-clock timestamps of each observed call, used to assert the polling
   // schedule (see step 3b).
   const stamps = { presence: [], feed: [] };
+  // Per-call latency paired with the timestamp, so steady-state (polling
+  // window) latency can be budgeted separately from cold-load latency.
+  const samples = { presence: [], feed: [] };
   const serverFnExport = (url) => {
     const m = /\/_serverFn\/([^/?#]+)/.exec(url);
     if (!m) return null;
@@ -153,9 +160,11 @@ async function run() {
       if (name === "listAdminPresence") {
         timings.presence.push(dur);
         stamps.presence.push(Date.now());
+        samples.presence.push({ at: Date.now(), ms: dur });
       } else if (name === "listActivityFeed") {
         timings.feed.push(dur);
         stamps.feed.push(Date.now());
+        samples.feed.push({ at: Date.now(), ms: dur });
       }
     } catch {}
   });
@@ -301,6 +310,68 @@ async function run() {
         const avg = gaps.reduce((a, b) => a + b, 0) / gaps.length;
         log(`✓ listActivityFeed average gap ${avg.toFixed(0)}ms (interval ${feedPoll}ms)`);
       }
+    }
+
+    // 3c) Explicit steady-state performance budgets for both polled server
+    //     fns. These are hard CI gates: a slow query, a missing index, or a
+    //     runaway payload will fail the build instead of quietly degrading
+    //     the admin panel.
+    const p95Budget = Number(POLL_FN_P95_MS);
+    const maxBudget = Number(POLL_FN_MAX_MS);
+    const reqPerMinBudget = Number(POLL_MAX_REQ_PER_MIN);
+    const percentile = (values, p) => {
+      if (!values.length) return 0;
+      const sorted = [...values].sort((a, b) => a - b);
+      const idx = Math.min(sorted.length - 1, Math.ceil((p / 100) * sorted.length) - 1);
+      return sorted[idx];
+    };
+
+    for (const [label, key] of [
+      ["listAdminPresence", "presence"],
+      ["listActivityFeed", "feed"],
+    ]) {
+      const inWindow = samples[key]
+        .filter((s) => s.at >= windowStart)
+        .map((s) => s.ms);
+      if (!inWindow.length) {
+        // Presence legitimately may not poll inside a short window; only the
+        // feed is required to produce steady-state samples.
+        if (key === "feed") {
+          log(`✗ ${label}: no steady-state samples to budget`);
+          failures.push("feed-budget-missing");
+        } else {
+          log(`· ${label}: no steady-state samples in window (30s cadence) — skipped`);
+        }
+        continue;
+      }
+      const p95 = percentile(inWindow, 95);
+      const worst = Math.max(...inWindow);
+      if (p95 > p95Budget) {
+        log(`✗ ${label} steady-state p95 ${p95.toFixed(0)}ms > ${p95Budget}ms`);
+        failures.push(`${key}-p95`);
+      } else {
+        log(`✓ ${label} steady-state p95 ${p95.toFixed(0)}ms (budget ${p95Budget}ms)`);
+      }
+      if (worst > maxBudget) {
+        log(`✗ ${label} steady-state max ${worst.toFixed(0)}ms > ${maxBudget}ms`);
+        failures.push(`${key}-max`);
+      } else {
+        log(`✓ ${label} steady-state max ${worst.toFixed(0)}ms (budget ${maxBudget}ms)`);
+      }
+    }
+
+    // Combined request-rate budget: how much polling traffic the open admin
+    // page generates per minute across both fns.
+    const reqPerMin = ((feedCount + presenceCount) / elapsed) * 60_000;
+    if (reqPerMin > reqPerMinBudget) {
+      log(
+        `✗ Polling traffic ${reqPerMin.toFixed(1)} req/min > budget ${reqPerMinBudget} req/min`,
+      );
+      failures.push("poll-traffic-budget");
+    } else {
+      log(
+        `✓ Polling traffic ${reqPerMin.toFixed(1)} req/min (budget ${reqPerMinBudget} req/min)`,
+      );
     }
 
     // 4) Realtime lag: count current feed rows, insert a fresh audit log,
