@@ -42,6 +42,11 @@ const {
   PAGE_BUDGET_MS = "4000",
   SERVER_FN_BUDGET_MS = "1500",
   REALTIME_BUDGET_MS = "5000",
+  // Expected polling schedule of the Employee Activity page — keep in sync
+  // with the refetchInterval values in admin.employee-activity.tsx.
+  FEED_POLL_MS = "3000",
+  PRESENCE_POLL_MS = "30000",
+  POLL_WINDOW_MS = "12000",
 } = process.env;
 
 function need(name, val) {
