@@ -199,9 +199,6 @@ async function run() {
     // 3) Server-fn budgets. Both calls MUST happen — a missing request means
     //    the page silently stopped fetching (or the fn was renamed), which is
     //    a regression, not a warning.
-    await page
-      .waitForFunction(() => true, undefined, { timeout: 1 })
-      .catch(() => {});
     const deadline = Date.now() + 10_000;
     while (
       (timings.presence.length === 0 || timings.feed.length === 0) &&
