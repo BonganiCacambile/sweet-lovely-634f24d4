@@ -215,6 +215,60 @@ export type Database = {
         }
         Relationships: []
       }
+      data_export_logs: {
+        Row: {
+          actor_email: string | null
+          actor_id: string | null
+          created_at: string
+          entity: string
+          fields: string[]
+          filters: Json
+          format: string
+          id: string
+          row_count: number
+          zone_id: string | null
+        }
+        Insert: {
+          actor_email?: string | null
+          actor_id?: string | null
+          created_at?: string
+          entity: string
+          fields?: string[]
+          filters?: Json
+          format?: string
+          id?: string
+          row_count?: number
+          zone_id?: string | null
+        }
+        Update: {
+          actor_email?: string | null
+          actor_id?: string | null
+          created_at?: string
+          entity?: string
+          fields?: string[]
+          filters?: Json
+          format?: string
+          id?: string
+          row_count?: number
+          zone_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "data_export_logs_zone_id_fkey"
+            columns: ["zone_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_zones"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "data_export_logs_zone_id_fkey"
+            columns: ["zone_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_zones_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       delivery_zones: {
         Row: {
           collection_address: string | null
@@ -329,6 +383,48 @@ export type Database = {
           target_slug?: string
           target_type?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      employee_security: {
+        Row: {
+          created_at: string
+          disabled_at: string | null
+          disabled_by: string | null
+          disabled_reason: string | null
+          is_disabled: boolean
+          mfa_exempt: boolean
+          mfa_exempt_reason: string | null
+          mfa_required: boolean
+          sessions_revoked_at: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          disabled_at?: string | null
+          disabled_by?: string | null
+          disabled_reason?: string | null
+          is_disabled?: boolean
+          mfa_exempt?: boolean
+          mfa_exempt_reason?: string | null
+          mfa_required?: boolean
+          sessions_revoked_at?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          disabled_at?: string | null
+          disabled_by?: string | null
+          disabled_reason?: string | null
+          is_disabled?: boolean
+          mfa_exempt?: boolean
+          mfa_exempt_reason?: string | null
+          mfa_required?: boolean
+          sessions_revoked_at?: string | null
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -1553,6 +1649,66 @@ export type Database = {
         }
         Relationships: []
       }
+      security_alerts: {
+        Row: {
+          acknowledged_at: string | null
+          acknowledged_by: string | null
+          actor_email: string | null
+          actor_id: string | null
+          created_at: string
+          id: string
+          message: string
+          metadata: Json
+          severity: string
+          status: string
+          type: string
+          zone_id: string | null
+        }
+        Insert: {
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          actor_email?: string | null
+          actor_id?: string | null
+          created_at?: string
+          id?: string
+          message: string
+          metadata?: Json
+          severity?: string
+          status?: string
+          type: string
+          zone_id?: string | null
+        }
+        Update: {
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          actor_email?: string | null
+          actor_id?: string | null
+          created_at?: string
+          id?: string
+          message?: string
+          metadata?: Json
+          severity?: string
+          status?: string
+          type?: string
+          zone_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "security_alerts_zone_id_fkey"
+            columns: ["zone_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_zones"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "security_alerts_zone_id_fkey"
+            columns: ["zone_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_zones_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       store_hours: {
         Row: {
           closes_at: string | null
@@ -1742,6 +1898,54 @@ export type Database = {
           {
             foreignKeyName: "user_roles_assigned_zone_id_fkey"
             columns: ["assigned_zone_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_zones_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      zone_access_hours: {
+        Row: {
+          closes_at: string
+          created_at: string
+          day_of_week: number
+          id: string
+          is_blocked: boolean
+          opens_at: string
+          updated_at: string
+          zone_id: string
+        }
+        Insert: {
+          closes_at?: string
+          created_at?: string
+          day_of_week: number
+          id?: string
+          is_blocked?: boolean
+          opens_at?: string
+          updated_at?: string
+          zone_id: string
+        }
+        Update: {
+          closes_at?: string
+          created_at?: string
+          day_of_week?: number
+          id?: string
+          is_blocked?: boolean
+          opens_at?: string
+          updated_at?: string
+          zone_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "zone_access_hours_zone_id_fkey"
+            columns: ["zone_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_zones"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "zone_access_hours_zone_id_fkey"
+            columns: ["zone_id"]
             isOneToOne: false
             referencedRelation: "delivery_zones_public"
             referencedColumns: ["id"]
