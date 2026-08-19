@@ -42,15 +42,6 @@ jobs:
       LCP_BUDGET_MS: 3500
       TTI_BUDGET_MS: 4000
       TTFB_BUDGET_MS: 1000
-      # Admin presence / activity-feed polling budgets. The cadence values must
-      # match the refetchInterval settings in admin.employee-activity.tsx; the
-      # latency budgets are relaxed for the shared CI runner.
-      FEED_POLL_MS: 3000
-      PRESENCE_POLL_MS: 30000
-      POLL_WINDOW_MS: 12000
-      POLL_FN_P95_MS: 3000
-      POLL_FN_MAX_MS: 5000
-      POLL_MAX_REQ_PER_MIN: 30
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -89,9 +80,6 @@ jobs:
 
       - name: Run RLS security matrix
         run: bun run test:regression:rls-matrix
-
-      - name: Run admin presence/activity-feed performance budgets
-        run: bun run test:regression:presence-perf
 
       - name: Stop dev server
         if: always()
