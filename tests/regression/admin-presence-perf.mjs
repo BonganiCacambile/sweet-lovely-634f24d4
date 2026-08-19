@@ -136,6 +136,9 @@ async function run() {
   // Wall-clock timestamps of each observed call, used to assert the polling
   // schedule (see step 3b).
   const stamps = { presence: [], feed: [] };
+  // Per-call latency paired with the timestamp, so steady-state (polling
+  // window) latency can be budgeted separately from cold-load latency.
+  const samples = { presence: [], feed: [] };
   const serverFnExport = (url) => {
     const m = /\/_serverFn\/([^/?#]+)/.exec(url);
     if (!m) return null;
@@ -157,9 +160,11 @@ async function run() {
       if (name === "listAdminPresence") {
         timings.presence.push(dur);
         stamps.presence.push(Date.now());
+        samples.presence.push({ at: Date.now(), ms: dur });
       } else if (name === "listActivityFeed") {
         timings.feed.push(dur);
         stamps.feed.push(Date.now());
+        samples.feed.push({ at: Date.now(), ms: dur });
       }
     } catch {}
   });
