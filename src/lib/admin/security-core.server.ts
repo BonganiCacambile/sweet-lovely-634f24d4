@@ -12,7 +12,7 @@ export type AdminClaims = Record<string, unknown> & {
   iat?: number;
   aal?: string;
   session_id?: string;
-  amr?: Array<{ method?: string; timestamp?: number }>;
+  amr?: unknown;
 };
 
 export type SecurityConfig = {
@@ -214,8 +214,10 @@ export async function assertWithinWorkingHours(zoneId: string | null, userId: st
 /** Recent-authentication requirement for highly sensitive operations. */
 export async function requireRecentAuth(userId: string, claims?: AdminClaims, action = "sensitive_action") {
   const cfg = await loadSecurityConfig();
-  const amr = Array.isArray(claims?.amr) ? claims!.amr! : [];
-  const stamps = amr.map((a) => Number(a?.timestamp ?? 0)).filter((n) => n > 0);
+  const amr: unknown[] = Array.isArray(claims?.amr) ? (claims!.amr as unknown[]) : [];
+  const stamps = amr
+    .map((a) => Number((a as { timestamp?: unknown } | null)?.timestamp ?? 0))
+    .filter((n) => Number.isFinite(n) && n > 0);
   const latest = stamps.length ? Math.max(...stamps) : Number(claims?.iat ?? 0);
   const ageMinutes = latest ? (Date.now() / 1000 - latest) / 60 : Number.POSITIVE_INFINITY;
   if (ageMinutes > cfg.reauthWindowMinutes) {
