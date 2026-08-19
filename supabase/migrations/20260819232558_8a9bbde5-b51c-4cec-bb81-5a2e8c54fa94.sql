@@ -1,0 +1,1 @@
+REVOKE ALL ON FUNCTION public.user_roles_block_self_modify() FROM PUBLIC, anon, authenticated;

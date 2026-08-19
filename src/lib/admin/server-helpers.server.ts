@@ -1,7 +1,15 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
+import {
+  assertAccountUsable,
+  assertWithinWorkingHours,
+  recordSecurityEvent,
+  evaluateSuspiciousActivity,
+  type AdminClaims,
+} from "./security-core.server";
 
 export async function requireAdmin(supabase: SupabaseClient<Database>, userId: string) {
+  await assertAccountUsable(userId);
   const { data, error } = await supabase
     .from("user_roles")
     .select("role")
@@ -9,7 +17,14 @@ export async function requireAdmin(supabase: SupabaseClient<Database>, userId: s
     .eq("role", "admin")
     .maybeSingle();
   if (error) throw new Error(error.message);
-  if (!data) throw new Error("Forbidden: admin role required");
+  if (!data) {
+    await recordSecurityEvent({
+      userId, type: "access_denied_not_admin", severity: "medium",
+      message: "Non-admin attempted a main-admin operation",
+    });
+    void evaluateSuspiciousActivity(userId);
+    throw new Error("Forbidden: admin role required");
+  }
 }
 
 /**
@@ -20,7 +35,9 @@ export async function requireAdmin(supabase: SupabaseClient<Database>, userId: s
 export async function requireAdminScope(
   supabase: SupabaseClient<Database>,
   userId: string,
+  claims?: AdminClaims,
 ): Promise<{ isMain: boolean; zoneId: string | null }> {
+  await assertAccountUsable(userId, claims);
   const { data, error } = await supabase
     .from("user_roles")
     .select("role, assigned_zone_id")
@@ -30,17 +47,57 @@ export async function requireAdminScope(
   const isMain = rows.some((r) => r.role === "admin");
   const zoneRow = rows.find((r) => r.assigned_zone_id);
   const zoneId = (zoneRow?.assigned_zone_id as string | null) ?? null;
-  if (!isMain && !zoneId) throw new Error("Forbidden: admin role required");
+  if (!isMain && !zoneId) {
+    await recordSecurityEvent({
+      userId, email: claims?.email, type: "access_denied_no_admin_scope", severity: "medium",
+      message: "Account without admin scope attempted an admin operation",
+    });
+    void evaluateSuspiciousActivity(userId, claims?.email);
+    throw new Error("Forbidden: admin role required");
+  }
+  if (!isMain) await assertWithinWorkingHours(zoneId, userId, claims);
   return { isMain, zoneId };
 }
 
 export async function requireMainAdmin(
   supabase: SupabaseClient<Database>,
   userId: string,
+  claims?: AdminClaims,
 ) {
-  const scope = await requireAdminScope(supabase, userId);
-  if (!scope.isMain) throw new Error("Forbidden: main admin required");
+  const scope = await requireAdminScope(supabase, userId, claims);
+  if (!scope.isMain) {
+    await recordSecurityEvent({
+      userId, email: claims?.email, zoneId: scope.zoneId, type: "access_denied_main_admin_only", severity: "high",
+      message: "Zone admin attempted a main-admin-only operation",
+    });
+    void evaluateSuspiciousActivity(userId, claims?.email);
+    throw new Error("Forbidden: main admin required");
+  }
   return scope;
+}
+
+/**
+ * Server-side zone isolation check. Any admin operation that targets a
+ * specific delivery zone must pass through here; cross-zone attempts are
+ * denied and recorded as security events.
+ */
+export async function assertZoneAccess(
+  scope: { isMain: boolean; zoneId: string | null },
+  targetZoneId: string | null | undefined,
+  ctx: { userId: string; claims?: AdminClaims },
+  entity = "record",
+) {
+  if (scope.isMain) return;
+  if (!targetZoneId || targetZoneId !== scope.zoneId) {
+    await recordSecurityEvent({
+      userId: ctx.userId, email: ctx.claims?.email, zoneId: scope.zoneId,
+      type: "cross_zone_access_denied", severity: "high",
+      message: `Zone admin attempted to access ${entity} outside their assigned zone`,
+      metadata: { entity, target_zone_id: targetZoneId ?? null },
+    });
+    void evaluateSuspiciousActivity(ctx.userId, ctx.claims?.email);
+    throw new Error("Forbidden: this record belongs to another delivery zone");
+  }
 }
 
 export interface AuditContext {
