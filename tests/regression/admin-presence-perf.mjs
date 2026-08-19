@@ -296,9 +296,13 @@ async function run() {
     let presenceStamps;
     if (clockInstalled) {
       log(`Advancing virtual clock ${windowMs}ms (deterministic idle window)…`);
-      const before = await readPageStamps();
+      // pauseAt cannot target the past, so aim slightly ahead of the page's
+      // current virtual time; the baseline is sampled after pausing so any
+      // timers that fire while catching up are excluded from the window.
       const now = await page.evaluate(() => Date.now());
-      await page.clock.pauseAt(new Date(now));
+      await page.clock.pauseAt(new Date(now + 2_000));
+      await page.waitForTimeout(1_000);
+      const before = await readPageStamps();
       await page.clock.runFor(windowMs);
       // Let the requests triggered by the advanced timers actually leave the
       // page (real time, not virtual) before we sample.
