@@ -1,7 +1,15 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { requireAdmin, requireAdminScope, logAudit } from "./server-helpers.server";
+import { requireAdmin, requireAdminScope, assertZoneAccess, logAudit } from "./server-helpers.server";
+import { recordSecurityEvent, requireRecentAuth } from "./security-core.server";
+
+/** Columns a zone admin is allowed to receive. Payment references, customer
+ *  email and internal identifiers are never sent to employee browsers. */
+const ZONE_ADMIN_ORDER_COLUMNS =
+  "id, order_number, status, customer_name, customer_phone, address, total_zar, created_at, delivery_zone_id, delivery_zone_name, fulfillment_method, estimated_minutes";
+const MAIN_ADMIN_ORDER_COLUMNS =
+  "id, order_number, status, customer_name, customer_email, total_zar, subtotal_zar, delivery_zar, created_at, user_id, paystack_reference, delivery_zone_id, delivery_zone_name";
 
 const ORDER_STATUSES = [
   "pending",
@@ -31,16 +39,21 @@ export const listOrders = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => listInput.parse(d))
   .handler(async ({ data, context }) => {
-    const scope = await requireAdminScope(context.supabase, context.userId);
+    const scope = await requireAdminScope(context.supabase, context.userId, context.claims);
     const { search, status, fromDate, toDate, sortBy, sortDir, page, pageSize } = data;
     // Zone admins are locked to their own zone; ignore any client-supplied zoneId.
+    if (!scope.isMain && data.zoneId && data.zoneId !== scope.zoneId) {
+      await recordSecurityEvent({
+        userId: context.userId, email: context.claims?.email as string | undefined,
+        zoneId: scope.zoneId, type: "cross_zone_access_denied", severity: "high",
+        message: "Zone admin requested orders for another delivery zone",
+        metadata: { requested_zone_id: data.zoneId },
+      });
+    }
     const zoneId = scope.isMain ? data.zoneId : scope.zoneId ?? "";
     let q = context.supabase
       .from("orders")
-      .select(
-        "id, order_number, status, customer_name, customer_email, total_zar, subtotal_zar, delivery_zar, created_at, user_id, paystack_reference, delivery_zone_id, delivery_zone_name",
-        { count: "exact" },
-      );
+      .select(scope.isMain ? MAIN_ADMIN_ORDER_COLUMNS : ZONE_ADMIN_ORDER_COLUMNS, { count: "exact" });
     if (status) q = q.eq("status", status as never);
     if (zoneId) q = q.eq("delivery_zone_id", zoneId);
     if (fromDate) q = q.gte("created_at", fromDate);
@@ -60,16 +73,27 @@ export const getOrder = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
-    await requireAdminScope(context.supabase, context.userId);
+    const scope = await requireAdminScope(context.supabase, context.userId, context.claims);
+    const itemCols =
+      "order_items(id, product_slug, title_snapshot, quantity, unit_price_zar, line_total_zar, extras, extras_total_zar)";
     const { data: order, error } = await context.supabase
       .from("orders")
       .select(
-        "*, order_items(id, product_slug, title_snapshot, quantity, unit_price_zar, line_total_zar, extras, extras_total_zar)",
+        scope.isMain
+          ? `*, ${itemCols}`
+          : `${ZONE_ADMIN_ORDER_COLUMNS}, notes, collection_location, subtotal_zar, delivery_zar, ${itemCols}`,
       )
       .eq("id", data.id)
       .maybeSingle();
     if (error) throw new Error(error.message);
     if (!order) throw new Error("Order not found");
+    await assertZoneAccess(
+      scope,
+      (order as { delivery_zone_id?: string | null }).delivery_zone_id ?? null,
+      { userId: context.userId, claims: context.claims },
+      "order",
+    );
+    await logAudit(context, "data.customer_read", "order", data.id, { scope: scope.isMain ? "main" : "zone" });
     return order;
   });
 
@@ -79,12 +103,22 @@ export const updateOrderStatus = createServerFn({ method: "POST" })
     z.object({ id: z.string().uuid(), status: z.enum(ORDER_STATUSES) }).parse(d),
   )
   .handler(async ({ data, context }) => {
-    await requireAdminScope(context.supabase, context.userId);
+    const scope = await requireAdminScope(context.supabase, context.userId, context.claims);
     const { data: prev } = await context.supabase
       .from("orders")
-      .select("user_id, order_number, status")
+      .select("user_id, order_number, status, delivery_zone_id")
       .eq("id", data.id)
       .maybeSingle();
+    await assertZoneAccess(
+      scope,
+      (prev as { delivery_zone_id?: string | null } | null)?.delivery_zone_id ?? null,
+      { userId: context.userId, claims: context.claims },
+      "order",
+    );
+    // Refunds and cancellations are sensitive: require a recent sign-in.
+    if (data.status === "refunded" || data.status === "cancelled") {
+      await requireRecentAuth(context.userId, context.claims, `order.${data.status}`);
+    }
     const { error } = await context.supabase
       .from("orders")
       .update({ status: data.status })
