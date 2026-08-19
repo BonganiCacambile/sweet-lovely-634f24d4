@@ -120,15 +120,30 @@ async function run() {
   const ctx = await browser.newContext({ viewport: { width: 1400, height: 1000 } });
   const page = await ctx.newPage();
 
-  // Track server-fn timings by URL pattern.
+  // Track server-fn timings. TanStack Start encodes the server-fn identity as
+  // base64url JSON in the /_serverFn/<id> path segment, so the export name is
+  // never a plain substring of the URL — decode it before matching.
   const timings = { presence: [], feed: [] };
+  const serverFnExport = (url) => {
+    const m = /\/_serverFn\/([^/?#]+)/.exec(url);
+    if (!m) return null;
+    try {
+      const b64 = m[1].replace(/-/g, "+").replace(/_/g, "/");
+      const json = Buffer.from(b64, "base64").toString("utf8");
+      const parsed = JSON.parse(json.slice(0, json.lastIndexOf("}") + 1));
+      return String(parsed.export || "").replace(/_createServerFn_handler$/, "");
+    } catch {
+      return null;
+    }
+  };
   page.on("requestfinished", async (req) => {
     try {
       const url = req.url();
       const timing = req.timing();
       const dur = timing.responseEnd >= 0 ? timing.responseEnd : 0;
-      if (url.includes("listAdminPresence")) timings.presence.push(dur);
-      else if (url.includes("listActivityFeed")) timings.feed.push(dur);
+      const name = serverFnExport(url);
+      if (name === "listAdminPresence") timings.presence.push(dur);
+      else if (name === "listActivityFeed") timings.feed.push(dur);
     } catch {}
   });
 
@@ -181,18 +196,33 @@ async function run() {
     // Give a beat for in-flight server-fn requests to finish.
     await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
 
-    // 3) Server-fn budgets.
+    // 3) Server-fn budgets. Both calls MUST happen — a missing request means
+    //    the page silently stopped fetching (or the fn was renamed), which is
+    //    a regression, not a warning.
+    const deadline = Date.now() + 10_000;
+    while (
+      (timings.presence.length === 0 || timings.feed.length === 0) &&
+      Date.now() < deadline
+    ) {
+      await page.waitForTimeout(250);
+    }
     const presenceMax = Math.max(0, ...timings.presence);
     const feedMax = Math.max(0, ...timings.feed);
     if (timings.presence.length === 0) {
-      log("⚠ no listAdminPresence request observed");
+      log("✗ no listAdminPresence server-fn request observed");
+      failures.push("presence-fn-missing");
     } else if (!within("listAdminPresence (max)", presenceMax, fnBudget)) {
       failures.push("presence-fn");
+    } else {
+      log(`✓ listAdminPresence requests observed: ${timings.presence.length}`);
     }
     if (timings.feed.length === 0) {
-      log("⚠ no listActivityFeed request observed");
+      log("✗ no listActivityFeed server-fn request observed");
+      failures.push("feed-fn-missing");
     } else if (!within("listActivityFeed (max)", feedMax, fnBudget)) {
       failures.push("feed-fn");
+    } else {
+      log(`✓ listActivityFeed requests observed: ${timings.feed.length}`);
     }
 
     // 4) Realtime lag: count current feed rows, insert a fresh audit log,
