@@ -4,12 +4,17 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { requireAdmin, requireAdminScope, assertZoneAccess, logAudit } from "./server-helpers.server";
 import { recordSecurityEvent, requireRecentAuth } from "./security-core.server";
 
-/** Columns a zone admin is allowed to receive. Payment references, customer
- *  email and internal identifiers are never sent to employee browsers. */
-const ZONE_ADMIN_ORDER_COLUMNS =
-  "id, order_number, status, customer_name, customer_phone, address, total_zar, created_at, delivery_zone_id, delivery_zone_name, fulfillment_method, estimated_minutes";
-const MAIN_ADMIN_ORDER_COLUMNS =
-  "id, order_number, status, customer_name, customer_email, total_zar, subtotal_zar, delivery_zar, created_at, user_id, paystack_reference, delivery_zone_id, delivery_zone_name";
+/** Fields never sent to a zone admin's browser (payment + identity data). */
+const ZONE_ADMIN_REDACTED_FIELDS = ["customer_email", "paystack_reference", "user_id"] as const;
+
+function redactForZoneAdmin<T extends Record<string, unknown>>(row: T, isMain: boolean): T {
+  if (isMain) return row;
+  const out = { ...row };
+  for (const f of ZONE_ADMIN_REDACTED_FIELDS) {
+    if (f in out) (out as Record<string, unknown>)[f] = null;
+  }
+  return out;
+}
 
 const ORDER_STATUSES = [
   "pending",
@@ -53,7 +58,10 @@ export const listOrders = createServerFn({ method: "POST" })
     const zoneId = scope.isMain ? data.zoneId : scope.zoneId ?? "";
     let q = context.supabase
       .from("orders")
-      .select(scope.isMain ? MAIN_ADMIN_ORDER_COLUMNS : ZONE_ADMIN_ORDER_COLUMNS, { count: "exact" });
+      .select(
+        "id, order_number, status, customer_name, customer_email, total_zar, subtotal_zar, delivery_zar, created_at, user_id, paystack_reference, delivery_zone_id, delivery_zone_name",
+        { count: "exact" },
+      );
     if (status) q = q.eq("status", status as never);
     if (zoneId) q = q.eq("delivery_zone_id", zoneId);
     if (fromDate) q = q.gte("created_at", fromDate);
@@ -66,7 +74,8 @@ export const listOrders = createServerFn({ method: "POST" })
     q = q.order(sortBy, { ascending: sortDir === "asc" }).range(from, from + pageSize - 1);
     const { data: rows, count, error } = await q;
     if (error) throw new Error(error.message);
-    return { rows: rows ?? [], total: count ?? 0, page, pageSize };
+    const safeRows = (rows ?? []).map((r) => redactForZoneAdmin(r as Record<string, unknown>, scope.isMain));
+    return { rows: safeRows as unknown as NonNullable<typeof rows>, total: count ?? 0, page, pageSize };
   });
 
 export const getOrder = createServerFn({ method: "POST" })
@@ -74,14 +83,10 @@ export const getOrder = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const scope = await requireAdminScope(context.supabase, context.userId, context.claims);
-    const itemCols =
-      "order_items(id, product_slug, title_snapshot, quantity, unit_price_zar, line_total_zar, extras, extras_total_zar)";
     const { data: order, error } = await context.supabase
       .from("orders")
       .select(
-        scope.isMain
-          ? `*, ${itemCols}`
-          : `${ZONE_ADMIN_ORDER_COLUMNS}, notes, collection_location, subtotal_zar, delivery_zar, ${itemCols}`,
+        "*, order_items(id, product_slug, title_snapshot, quantity, unit_price_zar, line_total_zar, extras, extras_total_zar)",
       )
       .eq("id", data.id)
       .maybeSingle();
@@ -94,7 +99,7 @@ export const getOrder = createServerFn({ method: "POST" })
       "order",
     );
     await logAudit(context, "data.customer_read", "order", data.id, { scope: scope.isMain ? "main" : "zone" });
-    return order;
+    return redactForZoneAdmin(order as Record<string, unknown>, scope.isMain) as typeof order;
   });
 
 export const updateOrderStatus = createServerFn({ method: "POST" })
