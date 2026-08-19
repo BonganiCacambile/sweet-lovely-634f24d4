@@ -129,8 +129,9 @@ async function run() {
   // base64url JSON in the /_serverFn/<id> path segment, so the export name is
   // never a plain substring of the URL — decode it before matching.
   const timings = { presence: [], feed: [] };
-  // Wall-clock timestamps of each observed call, used to assert the polling
-  // schedule (see step 3b).
+  // Wall-clock timestamps of each observed call (fallback path only). The
+  // schedule assertions in step 3b prefer in-page *virtual* clock stamps
+  // recorded by the init script below, so a loaded CI runner cannot skew them.
   const stamps = { presence: [], feed: [] };
   const serverFnExport = (url) => {
     const m = /\/_serverFn\/([^/?#]+)/.exec(url);
@@ -164,6 +165,37 @@ async function run() {
   const failures = [];
 
   try {
+    // Deterministic scheduler: install Playwright's fake clock BEFORE any
+    // navigation and immediately resume it so the app behaves normally during
+    // load. For the polling window we pause and advance virtual time by an
+    // exact amount, which makes the 3s/30s cadence assertions independent of
+    // machine load, GC pauses, or slow network.
+    let clockInstalled = false;
+    try {
+      await page.clock.install({ time: new Date() });
+      await page.clock.resume();
+      clockInstalled = true;
+    } catch (e) {
+      log(`⚠ clock API unavailable (${e.message}) — falling back to wall clock`);
+    }
+
+    // Record every server-fn call against the page's own (possibly virtual)
+    // clock so gaps are measured in scheduler time, not wall time.
+    await page.addInitScript(() => {
+      window.__pollStamps = [];
+      const origFetch = window.fetch;
+      window.fetch = function (...args) {
+        try {
+          const input = args[0];
+          const url = typeof input === "string" ? input : (input && input.url) || "";
+          if (url.includes("/_serverFn/")) {
+            window.__pollStamps.push({ url, t: Date.now() });
+          }
+        } catch {}
+        return origFetch.apply(this, args);
+      };
+    });
+
     // Seed session before the SPA boots.
     await page.goto(`${APP_URL}/`, { waitUntil: "domcontentloaded" });
     await page.evaluate(
@@ -246,14 +278,48 @@ async function run() {
     const feedPoll = Number(FEED_POLL_MS);
     const presencePoll = Number(PRESENCE_POLL_MS);
     const windowMs = Number(POLL_WINDOW_MS);
-    log(`Observing polling schedule for ${windowMs}ms (idle page)…`);
-    const feedBase = stamps.feed.length;
-    const presenceBase = stamps.presence.length;
-    const windowStart = Date.now();
-    await page.waitForTimeout(windowMs);
-    const elapsed = Date.now() - windowStart;
-    const feedCount = stamps.feed.length - feedBase;
-    const presenceCount = stamps.presence.length - presenceBase;
+    const readPageStamps = async () => {
+      const raw = await page
+        .evaluate(() => (window.__pollStamps || []).slice())
+        .catch(() => []);
+      const out = { presence: [], feed: [] };
+      for (const s of raw) {
+        const name = serverFnExport(s.url);
+        if (name === "listAdminPresence") out.presence.push(s.t);
+        else if (name === "listActivityFeed") out.feed.push(s.t);
+      }
+      return out;
+    };
+
+    let elapsed;
+    let feedStamps;
+    let presenceStamps;
+    if (clockInstalled) {
+      log(`Advancing virtual clock ${windowMs}ms (deterministic idle window)…`);
+      const before = await readPageStamps();
+      const now = await page.evaluate(() => Date.now());
+      await page.clock.pauseAt(new Date(now));
+      await page.clock.runFor(windowMs);
+      // Let the requests triggered by the advanced timers actually leave the
+      // page (real time, not virtual) before we sample.
+      await page.waitForTimeout(1_500);
+      const after = await readPageStamps();
+      feedStamps = after.feed.slice(before.feed.length);
+      presenceStamps = after.presence.slice(before.presence.length);
+      elapsed = windowMs;
+      await page.clock.resume();
+    } else {
+      log(`Observing polling schedule for ${windowMs}ms (idle page)…`);
+      const feedBase = stamps.feed.length;
+      const presenceBase = stamps.presence.length;
+      const windowStart = Date.now();
+      await page.waitForTimeout(windowMs);
+      elapsed = Date.now() - windowStart;
+      feedStamps = stamps.feed.slice(feedBase);
+      presenceStamps = stamps.presence.slice(presenceBase);
+    }
+    const feedCount = feedStamps.length;
+    const presenceCount = presenceStamps.length;
 
     // Expected = elapsed / interval, ±1 to absorb scheduler jitter at the
     // window edges. Anything above that is extra, unintended traffic.
@@ -290,7 +356,6 @@ async function run() {
     }
 
     // Gap regularity: consecutive feed polls should sit near the interval.
-    const feedStamps = stamps.feed.slice(feedBase);
     const gaps = feedStamps.slice(1).map((t, i) => t - feedStamps[i]);
     if (gaps.length) {
       const tooTight = gaps.filter((g) => g < feedPoll * 0.5);
