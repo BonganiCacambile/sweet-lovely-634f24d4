@@ -193,7 +193,11 @@ async function loadScoped(context: { supabase: never } | { supabase: ReturnType<
     .maybeSingle();
   if (error) throw new Error(error.message);
   if (!data) throw new Error("Support request not found");
-  return data as Record<string, unknown>;
+  return data as {
+    id: string; reference: string; status: string; priority: string;
+    delivery_zone_id: string | null; assigned_to: string | null;
+    user_id: string | null; email: string | null; name: string | null;
+  };
 }
 
 async function recordEvent(
@@ -223,10 +227,12 @@ export const updateSupportRequestStatus = createServerFn({ method: "POST" })
     const row = await loadScoped(context, data.id);
     await assertZoneAccess(scope, row.delivery_zone_id as string | null, context, "support request");
 
-    const patch: Record<string, unknown> = { status: data.status };
+    const patch: { status: string; resolution?: string; resolved_at: string | null } = {
+      status: data.status,
+      resolved_at: null,
+    };
     if (data.resolution) patch.resolution = data.resolution;
     if (data.status === "resolved" || data.status === "closed") patch.resolved_at = new Date().toISOString();
-    else patch.resolved_at = null;
 
     const { error } = await context.supabase.from("support_requests").update(patch).eq("id", data.id);
     if (error) throw new Error(error.message);
