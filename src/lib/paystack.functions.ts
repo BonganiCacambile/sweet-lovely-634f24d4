@@ -370,7 +370,6 @@ export const verifyAndCreateOrder = createServerFn({ method: "POST" })
     // server derive tax/shipping independently, so ±a few cents is normal),
     // and for a larger shortfall we still persist the order but flag it for
     // manual review rather than losing the payment.
-    const AMOUNT_TOLERANCE_MINOR = 100; // R1.00
     let underpaidNote: string | null = null;
     if (paystackData && paystackData.amount < expectedAmount - AMOUNT_TOLERANCE_MINOR) {
       underpaidNote = `UNDERPAID — captured R${(paystackData.amount / 100).toFixed(2)} vs expected R${serverTotal.toFixed(2)} (needs review)`;
