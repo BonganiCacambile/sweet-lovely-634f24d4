@@ -15,6 +15,11 @@ import {
   setSupportReplyTemplateActive,
   upsertSupportReplyTemplate,
 } from "@/lib/admin/support-reply-templates.functions";
+import {
+  TEMPLATE_VARIABLES,
+  renderTemplateBody,
+  unknownTemplateTokens,
+} from "@/lib/admin/support-reply-templates";
 
 export const Route = createFileRoute("/_authenticated/admin/support-reply-templates")({
   beforeLoad: requireMainAdminGuard,
@@ -51,6 +56,7 @@ function TemplatesPage() {
   const reorderFn = useServerFn(reorderSupportReplyTemplates);
 
   const [draft, setDraft] = useState({ ...EMPTY });
+  const unknownTokens = unknownTemplateTokens(draft.body);
   const [order, setOrder] = useState<string[]>([]);
 
   const { data, isLoading } = useQuery({

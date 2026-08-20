@@ -15,6 +15,7 @@ import { formatRelative } from "@/lib/admin/format";
 import {
   SUPPORT_REPLY_TEMPLATES,
   renderSupportTemplate,
+  TEMPLATE_VARIABLES,
 } from "@/lib/admin/support-reply-templates";
 import { listSupportReplyTemplates } from "@/lib/admin/support-reply-templates.functions";
 import {
@@ -270,6 +271,7 @@ function ReplyPanel({ request }: { request: SupportRow }) {
   const qc = useQueryClient();
   const [body, setBody] = useState("");
   const [markResolved, setMarkResolved] = useState(false);
+  const [previewId, setPreviewId] = useState<string | null>(null);
 
   const listRepliesFn = useServerFn(listSupportRequestReplies);
   const sendReplyFn = useServerFn(sendSupportRequestReply);
@@ -289,6 +291,9 @@ function ReplyPanel({ request }: { request: SupportRow }) {
           body: t.body,
         }))
       : SUPPORT_REPLY_TEMPLATES;
+
+  const templateVars = { name: request.name, email: request.email, reference: request.id };
+  const previewTemplate = templates.find((t) => t.id === previewId) ?? null;
 
   const { data: replies, isLoading } = useQuery({
     queryKey: ["admin", "support-requests", "replies", request.id],
@@ -340,12 +345,11 @@ function ReplyPanel({ request }: { request: SupportRow }) {
               type="button"
               title={t.description}
               data-testid={`support-reply-template-${t.id}`}
+              onMouseEnter={() => setPreviewId(t.id)}
+              onFocus={() => setPreviewId(t.id)}
               onClick={() => {
-                const text = renderSupportTemplate(t, {
-                  name: request.name,
-                  email: request.email,
-                  reference: request.id,
-                });
+                setPreviewId(t.id);
+                const text = renderSupportTemplate(t, templateVars);
                 setBody((prev) => (prev.trim() ? `${prev.trimEnd()}\n\n${text}` : text));
               }}
               className="rounded-full border border-neutral-200 px-3 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50"
@@ -364,6 +368,23 @@ function ReplyPanel({ request }: { request: SupportRow }) {
             </button>
           ) : null}
         </div>
+
+        {previewTemplate ? (
+          <div
+            className="mt-2 rounded-2xl border border-dashed border-neutral-200 bg-neutral-50 p-3"
+            data-testid="support-reply-template-preview"
+          >
+            <p className="text-[11px] uppercase tracking-wider text-neutral-500">
+              Preview · {previewTemplate.label}
+            </p>
+            <p className="mt-1.5 whitespace-pre-wrap text-sm text-neutral-800">
+              {renderSupportTemplate(previewTemplate, templateVars)}
+            </p>
+            <p className="mt-2 text-[11px] text-neutral-500">
+              Variables filled from this request: {TEMPLATE_VARIABLES.map((v) => v.token).join(", ")}
+            </p>
+          </div>
+        ) : null}
       </div>
 
       <textarea
