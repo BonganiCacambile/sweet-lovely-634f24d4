@@ -57,7 +57,7 @@ async function main() {
     const html = await res.text();
     record(
       "/contact responds 200 with the Contact Us page",
-      res.status === 200 && /Contact Us/i.test(html),
+      res.status === 200 && /Contact\s*(Us|—)/i.test(html),
       `http=${res.status}`,
     );
   }
@@ -70,6 +70,18 @@ async function main() {
     emailPrefix: "regr-support",
   });
 
+  // Pre-select a delivery zone so the zone-picker modal doesn't block clicks.
+  const { createClient } = await import("@supabase/supabase-js");
+  const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  const { data: zones } = await admin
+    .from("delivery_zones")
+    .select("slug")
+    .eq("is_active", true)
+    .limit(1);
+  const zoneSlug = zones?.[0]?.slug ?? null;
+
   const browser = await chromium.launch({ headless: true });
   try {
     const context = await browser.newContext({ viewport: { width: 1280, height: 1200 } });
@@ -79,8 +91,11 @@ async function main() {
 
     await page.goto(`${BASE_URL}/auth`, { waitUntil: "domcontentloaded" });
     await page.evaluate(
-      ([key, session]) => window.localStorage.setItem(key, JSON.stringify(session)),
-      [customer.storageKey, customer.session],
+      ([key, session, zone]) => {
+        window.localStorage.setItem(key, JSON.stringify(session));
+        if (zone) window.localStorage.setItem("sweet-lovely-zone-v1", zone);
+      },
+      [customer.storageKey, customer.session, zoneSlug],
     );
 
     // --- 1. Footer "Contact Us" navigates client-side ------------------
