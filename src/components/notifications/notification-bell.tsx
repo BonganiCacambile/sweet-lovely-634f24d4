@@ -40,7 +40,7 @@ export function NotificationBell({ className }: { className?: string }) {
   if (!user) return null;
 
   return (
-    <div ref={ref} className="pointer-events-auto relative">
+    <div ref={ref} className={"pointer-events-auto relative " + (className ?? "")}>
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
