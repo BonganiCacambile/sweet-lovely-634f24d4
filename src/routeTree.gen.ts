@@ -34,6 +34,7 @@ import { Route as ApiPublicPaystackWebhookRouteImport } from './routes/api/publi
 import { Route as AuthenticatedAdminZoneAssignmentsRouteImport } from './routes/_authenticated/admin.zone-assignments'
 import { Route as AuthenticatedAdminUsersRouteImport } from './routes/_authenticated/admin.users'
 import { Route as AuthenticatedAdminToppingsRouteImport } from './routes/_authenticated/admin.toppings'
+import { Route as AuthenticatedAdminSupportRequestsRouteImport } from './routes/_authenticated/admin.support-requests'
 import { Route as AuthenticatedAdminSettingsRouteImport } from './routes/_authenticated/admin.settings'
 import { Route as AuthenticatedAdminSecurityRouteImport } from './routes/_authenticated/admin.security'
 import { Route as AuthenticatedAdminRolesRouteImport } from './routes/_authenticated/admin.roles'
@@ -187,6 +188,12 @@ const AuthenticatedAdminToppingsRoute =
   AuthenticatedAdminToppingsRouteImport.update({
     id: '/toppings',
     path: '/toppings',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminSupportRequestsRoute =
+  AuthenticatedAdminSupportRequestsRouteImport.update({
+    id: '/support-requests',
+    path: '/support-requests',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
 const AuthenticatedAdminSettingsRoute =
@@ -382,6 +389,7 @@ export interface FileRoutesByFullPath {
   '/admin/roles': typeof AuthenticatedAdminRolesRoute
   '/admin/security': typeof AuthenticatedAdminSecurityRoute
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
+  '/admin/support-requests': typeof AuthenticatedAdminSupportRequestsRoute
   '/admin/toppings': typeof AuthenticatedAdminToppingsRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/admin/zone-assignments': typeof AuthenticatedAdminZoneAssignmentsRoute
@@ -432,6 +440,7 @@ export interface FileRoutesByTo {
   '/admin/roles': typeof AuthenticatedAdminRolesRoute
   '/admin/security': typeof AuthenticatedAdminSecurityRoute
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
+  '/admin/support-requests': typeof AuthenticatedAdminSupportRequestsRoute
   '/admin/toppings': typeof AuthenticatedAdminToppingsRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/admin/zone-assignments': typeof AuthenticatedAdminZoneAssignmentsRoute
@@ -485,6 +494,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/roles': typeof AuthenticatedAdminRolesRoute
   '/_authenticated/admin/security': typeof AuthenticatedAdminSecurityRoute
   '/_authenticated/admin/settings': typeof AuthenticatedAdminSettingsRoute
+  '/_authenticated/admin/support-requests': typeof AuthenticatedAdminSupportRequestsRoute
   '/_authenticated/admin/toppings': typeof AuthenticatedAdminToppingsRoute
   '/_authenticated/admin/users': typeof AuthenticatedAdminUsersRoute
   '/_authenticated/admin/zone-assignments': typeof AuthenticatedAdminZoneAssignmentsRoute
@@ -538,6 +548,7 @@ export interface FileRouteTypes {
     | '/admin/roles'
     | '/admin/security'
     | '/admin/settings'
+    | '/admin/support-requests'
     | '/admin/toppings'
     | '/admin/users'
     | '/admin/zone-assignments'
@@ -588,6 +599,7 @@ export interface FileRouteTypes {
     | '/admin/roles'
     | '/admin/security'
     | '/admin/settings'
+    | '/admin/support-requests'
     | '/admin/toppings'
     | '/admin/users'
     | '/admin/zone-assignments'
@@ -640,6 +652,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/roles'
     | '/_authenticated/admin/security'
     | '/_authenticated/admin/settings'
+    | '/_authenticated/admin/support-requests'
     | '/_authenticated/admin/toppings'
     | '/_authenticated/admin/users'
     | '/_authenticated/admin/zone-assignments'
@@ -843,6 +856,13 @@ declare module '@tanstack/react-router' {
       path: '/toppings'
       fullPath: '/admin/toppings'
       preLoaderRoute: typeof AuthenticatedAdminToppingsRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/support-requests': {
+      id: '/_authenticated/admin/support-requests'
+      path: '/support-requests'
+      fullPath: '/admin/support-requests'
+      preLoaderRoute: typeof AuthenticatedAdminSupportRequestsRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
     '/_authenticated/admin/settings': {
@@ -1077,6 +1097,7 @@ interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminRolesRoute: typeof AuthenticatedAdminRolesRoute
   AuthenticatedAdminSecurityRoute: typeof AuthenticatedAdminSecurityRoute
   AuthenticatedAdminSettingsRoute: typeof AuthenticatedAdminSettingsRoute
+  AuthenticatedAdminSupportRequestsRoute: typeof AuthenticatedAdminSupportRequestsRoute
   AuthenticatedAdminToppingsRoute: typeof AuthenticatedAdminToppingsRoute
   AuthenticatedAdminUsersRoute: typeof AuthenticatedAdminUsersRoute
   AuthenticatedAdminZoneAssignmentsRoute: typeof AuthenticatedAdminZoneAssignmentsRoute
@@ -1103,6 +1124,8 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminRolesRoute: AuthenticatedAdminRolesRoute,
   AuthenticatedAdminSecurityRoute: AuthenticatedAdminSecurityRoute,
   AuthenticatedAdminSettingsRoute: AuthenticatedAdminSettingsRoute,
+  AuthenticatedAdminSupportRequestsRoute:
+    AuthenticatedAdminSupportRequestsRoute,
   AuthenticatedAdminToppingsRoute: AuthenticatedAdminToppingsRoute,
   AuthenticatedAdminUsersRoute: AuthenticatedAdminUsersRoute,
   AuthenticatedAdminZoneAssignmentsRoute:
