@@ -498,9 +498,14 @@ export const verifyAndCreateOrder = createServerFn({ method: "POST" })
       success: true as const,
       orderNumber: order.order_number,
       reference: data.reference,
-      ...(paystackData
-        ? {}
-        : {
+      ...(underpaidNote
+        ? {
+            warning:
+              "Your order was placed, but the amount paid didn't match our total. Our team will review it and contact you.",
+          }
+        : paystackData
+          ? {}
+          : {
             warning:
               "We couldn't verify your payment immediately due to a network issue. Your order has been placed and will be reviewed shortly.",
           }),
