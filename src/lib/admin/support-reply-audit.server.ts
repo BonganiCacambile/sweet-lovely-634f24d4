@@ -18,7 +18,7 @@ export type ReplyAuditRow = {
   template_id: string | null;
   template_label: string | null;
   body: string | null;
-  metadata: Record<string, unknown>;
+  metadata_json: string;
 };
 
 export type ReplyAuditQuery = {
@@ -150,7 +150,7 @@ export async function fetchReplyAudit(
       template_label:
         typeof meta["template_label"] === "string" ? (meta["template_label"] as string) : null,
       body: replyId ? (bodyMap.get(replyId) ?? previewBody) : previewBody,
-      metadata: meta,
+      metadata_json: JSON.stringify(meta),
     };
   });
 

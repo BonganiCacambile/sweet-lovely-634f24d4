@@ -148,10 +148,10 @@ function ReplyAuditPage() {
             className="min-w-[200px] rounded-full border border-neutral-200 px-3 py-1.5 text-sm outline-none focus:border-neutral-400"
           />
           <datalist id="reply-audit-template-options">
-            {(templateData?.rows ?? []).map((t) => (
+            {(templateData?.rows ?? []).map((t: { id: string; label: string }) => (
               <option key={t.id} value={t.label} />
             ))}
-            {(templateData?.rows ?? []).map((t) => (
+            {(templateData?.rows ?? []).map((t: { id: string; label: string }) => (
               <option key={`${t.id}-id`} value={t.id} />
             ))}
           </datalist>
@@ -336,7 +336,7 @@ function AuditDetailDialog({ row, onClose }: { row: ReplyAuditRow; onClose: () =
         <section className="mt-3">
           <p className="text-[11px] uppercase tracking-wider text-neutral-500">Raw audit metadata</p>
           <pre className="mt-1 max-h-48 overflow-auto rounded-2xl bg-neutral-900 p-3 text-[11px] leading-relaxed text-neutral-100">
-            {JSON.stringify(row.metadata, null, 2)}
+            {JSON.stringify(JSON.parse(row.metadata_json || "{}"), null, 2)}
           </pre>
         </section>
       </div>

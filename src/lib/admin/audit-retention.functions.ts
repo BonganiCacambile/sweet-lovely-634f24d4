@@ -11,6 +11,7 @@ export type { AuditRetentionSettings } from "./audit-retention.server";
 
 export const getAuditRetentionSettings = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({}).parse(d ?? {}))
   .handler(async ({ context }) => {
     await requireAdmin(context.supabase, context.userId);
     const { data, error } = await context.supabase
