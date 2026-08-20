@@ -154,3 +154,72 @@ export const sendSupportRequestReply = createServerFn({ method: "POST" })
 
     return { reply, status: nextStatus, deliveredInApp: Boolean(req.user_id), email: req.email };
   });
+
+/**
+ * Test mode: deliver a draft reply to an admin-specified address so template
+ * rendering can be verified before it reaches the customer. Nothing is written
+ * to support_request_replies and the request status is untouched. If the target
+ * email belongs to a registered account, the draft arrives as an in-app
+ * notification; otherwise the caller gets a mailto handoff.
+ */
+export const sendTestSupportReply = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        requestId: z.string().uuid(),
+        body: z.string().trim().min(1, "Draft cannot be empty").max(5000),
+        testEmail: z.string().trim().email("Enter a valid email address").max(200),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    await requireAdmin(context.supabase, context.userId);
+
+    const { data: req, error: reqErr } = await context.supabase
+      .from("support_requests")
+      .select("id, name, email")
+      .eq("id", data.requestId)
+      .maybeSingle();
+    if (reqErr) throw new Error(reqErr.message);
+    if (!req) throw new Error("Support request not found");
+
+    const email = data.testEmail.toLowerCase();
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    // Resolve the target account (if any) without exposing other user data.
+    let targetUserId: string | null = null;
+    const { data: users } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 200 });
+    for (const u of users?.users ?? []) {
+      if ((u.email ?? "").toLowerCase() === email) {
+        targetUserId = u.id;
+        break;
+      }
+    }
+
+    if (targetUserId) {
+      const { error: notifyErr } = await supabaseAdmin.from("notifications").insert({
+        user_id: targetUserId,
+        title: "[TEST] Support reply preview",
+        body: data.body.slice(0, 500),
+        category: "account",
+        data: { support_request_id: data.requestId, test: true, url: "/contact" },
+        dedupe_key: `support_reply_test:${data.requestId}:${Date.now()}`,
+      });
+      if (notifyErr) throw new Error(notifyErr.message);
+    }
+
+    await logAudit(context, "support_request.reply_test", "support_request", data.requestId, {
+      test_email: email,
+      delivered_in_app: Boolean(targetUserId),
+      length: data.body.length,
+    });
+
+    return {
+      deliveredInApp: Boolean(targetUserId),
+      email,
+      mailto: `mailto:${encodeURIComponent(email)}?subject=${encodeURIComponent(
+        `[TEST] Support reply preview (ref ${req.id.slice(0, 8)})`,
+      )}&body=${encodeURIComponent(data.body)}`,
+    };
+  });
