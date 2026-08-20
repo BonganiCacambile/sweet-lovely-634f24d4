@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { ArrowDown, ArrowUp, MessageSquareText, Plus, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { requireMainAdminGuard } from "@/lib/admin/route-guards";
 import { MainAdminGuard } from "@/components/admin/main-admin-guard";
@@ -122,10 +122,9 @@ function TemplatesPage() {
       <PageHeader
         title="Support Reply Templates"
         description="Create, edit, disable and reorder the quick replies admins can insert when answering support requests."
-        icon={MessageSquareText}
       />
 
-      <Card>
+      <Card className="p-4">
         <h2 className="text-sm font-semibold text-neutral-900">
           {draft.id ? "Edit template" : "New template"}
         </h2>
@@ -187,12 +186,12 @@ function TemplatesPage() {
         </div>
       </Card>
 
-      <Card>
+      <Card className="p-4">
         <h2 className="text-sm font-semibold text-neutral-900">Templates</h2>
         {isLoading ? (
           <LoadingRows />
         ) : ordered.length === 0 ? (
-          <EmptyState title="No templates yet" description="Create your first reply template above." />
+          <EmptyState title="No templates yet" hint="Create your first reply template above." />
         ) : (
           <ul className="mt-3 space-y-2">
             {ordered.map((t, i) => (
