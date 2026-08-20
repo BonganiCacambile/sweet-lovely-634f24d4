@@ -34,7 +34,9 @@ function SupportHistoryPage() {
     queryKey: ["account", "support-requests"],
     queryFn: () => listFn(),
   });
-  useRealtimeInvalidate?.("support_requests", [["account", "support-requests"]]);
+  useRealtimeInvalidate(["support_requests", "support_request_replies"], [
+    ["account", "support-requests"],
+  ]);
   const [openId, setOpenId] = useState<string | null>(null);
 
   return (
