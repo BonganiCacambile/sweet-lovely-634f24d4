@@ -113,6 +113,20 @@ export const sendSupportRequestReply = createServerFn({ method: "POST" })
     if (reqErr) throw new Error(reqErr.message);
     if (!req) throw new Error("Support request not found");
 
+    // Older rows (and guest submissions later matched to an account) may have
+    // no user_id; resolve it from the email so replies can land in-app.
+    let recipientId = req.user_id as string | null;
+    if (!recipientId && req.email) {
+      const { findUserIdByEmail } = await import("@/lib/admin/user-lookup.server");
+      recipientId = await findUserIdByEmail(req.email);
+      if (recipientId) {
+        await context.supabase
+          .from("support_requests")
+          .update({ user_id: recipientId })
+          .eq("id", data.requestId);
+      }
+    }
+
     const { data: reply, error } = await context.supabase
       .from("support_request_replies")
       .insert({
@@ -120,17 +134,17 @@ export const sendSupportRequestReply = createServerFn({ method: "POST" })
         author_id: context.userId,
         author_email: context.claims?.email ?? null,
         body: data.body,
-        channel: req.user_id ? "in_app" : "email",
+        channel: recipientId ? "in_app" : "email",
       })
       .select(REPLY_SELECT)
       .single();
     if (error) throw new Error(error.message);
 
     // Deliver in-app when the requester has an account.
-    if (req.user_id) {
+    if (recipientId) {
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
       await supabaseAdmin.from("notifications").insert({
-        user_id: req.user_id,
+        user_id: recipientId,
         title: "Reply from Sweet 'n Lovely support",
         body: data.body.slice(0, 500),
         category: "account",
@@ -157,7 +171,7 @@ export const sendSupportRequestReply = createServerFn({ method: "POST" })
       length: data.body.length,
     });
 
-    return { reply, status: nextStatus, deliveredInApp: Boolean(req.user_id), email: req.email };
+    return { reply, status: nextStatus, deliveredInApp: Boolean(recipientId), email: req.email };
   });
 
 /**
@@ -193,16 +207,10 @@ export const sendTestSupportReply = createServerFn({ method: "POST" })
 
     const email = data.testEmail.toLowerCase();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { findUserIdByEmail } = await import("@/lib/admin/user-lookup.server");
 
     // Resolve the target account (if any) without exposing other user data.
-    let targetUserId: string | null = null;
-    const { data: users } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 200 });
-    for (const u of users?.users ?? []) {
-      if ((u.email ?? "").toLowerCase() === email) {
-        targetUserId = u.id;
-        break;
-      }
-    }
+    const targetUserId = await findUserIdByEmail(email);
 
     if (targetUserId) {
       const { error: notifyErr } = await supabaseAdmin.from("notifications").insert({
