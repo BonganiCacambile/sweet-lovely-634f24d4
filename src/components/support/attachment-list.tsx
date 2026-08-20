@@ -1,4 +1,7 @@
-import { Download, FileText, ImageIcon, Loader2, Paperclip, ShieldAlert, ShieldCheck, ShieldQuestion } from "lucide-react";
+import { useState } from "react";
+import { Download, FileArchive, FileText, ImageIcon, Loader2, Paperclip, ShieldAlert, ShieldCheck, ShieldQuestion } from "lucide-react";
+import { zipSync } from "fflate";
+import { toast } from "sonner";
 
 export type SupportAttachment = {
   id: string;
