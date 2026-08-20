@@ -23,3 +23,22 @@ export async function findUserIdByEmail(email: string): Promise<string | null> {
   }
   return null;
 }
+
+/** Resolve emails for a set of auth user ids (bounded paging). */
+export async function findEmailsByUserIds(ids: string[]): Promise<Record<string, string>> {
+  const wanted = new Set(ids.filter(Boolean));
+  const out: Record<string, string> = {};
+  if (wanted.size === 0) return out;
+  const perPage = 200;
+  for (let page = 1; page <= 25; page++) {
+    const { data, error } = await supabaseAdmin.auth.admin.listUsers({ page, perPage });
+    if (error) {
+      console.error("[user-lookup] listUsers failed", error.message);
+      break;
+    }
+    const users = data?.users ?? [];
+    for (const u of users) if (wanted.has(u.id) && u.email) out[u.id] = u.email;
+    if (users.length < perPage || Object.keys(out).length === wanted.size) break;
+  }
+  return out;
+}

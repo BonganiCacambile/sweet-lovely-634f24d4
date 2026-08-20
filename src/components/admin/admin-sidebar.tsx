@@ -32,7 +32,7 @@ const SECTIONS: Array<{ heading: string; items: Item[] }> = [
       { to: "/admin/delivery-zones", label: "Delivery Zones", icon: MapPin },
       { to: "/admin/zone-assignments", label: "Zone Assignments", icon: Users2, mainOnly: true },
       { to: "/admin/reviews", label: "Reviews", icon: Star, mainOnly: true },
-      { to: "/admin/support-requests", label: "Support Requests", icon: LifeBuoy, mainOnly: true },
+      { to: "/admin/support-requests", label: "Support Requests", icon: LifeBuoy },
       { to: "/admin/support-reply-templates", label: "Reply Templates", icon: LifeBuoy, mainOnly: true },
       { to: "/admin/support-reply-audit", label: "Reply Audit", icon: LifeBuoy, mainOnly: true },
       { to: "/admin/audit-retention", label: "Audit Retention", icon: LifeBuoy, mainOnly: true },

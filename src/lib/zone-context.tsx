@@ -2,6 +2,8 @@ import * as React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { listActiveZones, type PublicZone } from "@/lib/zones.functions";
+import { setMySelectedZone, getMySelectedZone } from "@/lib/zone-selection.functions";
+import { supabase } from "@/integrations/supabase/client";
 
 const STORAGE_KEY = "sweet-lovely-zone-v1";
 
@@ -43,6 +45,28 @@ export function ZoneProvider({ children }: { children: React.ReactNode }) {
       if (selectedSlug) localStorage.setItem(STORAGE_KEY, selectedSlug);
       else localStorage.removeItem(STORAGE_KEY);
     } catch { /* ignore */ }
+  }, [selectedSlug, hydrated]);
+
+  // Mirror the selection onto the signed-in customer's profile so the server
+  // (support requests, complaints routing) has an authoritative zone that the
+  // browser cannot forge.
+  React.useEffect(() => {
+    if (!hydrated) return;
+    let cancelled = false;
+    void (async () => {
+      const { data } = await supabase.auth.getUser();
+      if (cancelled || !data.user) return;
+      if (selectedSlug) {
+        await setMySelectedZone({ data: { slug: selectedSlug } }).catch(() => undefined);
+      } else {
+        // No local selection yet — adopt the one stored on the profile.
+        const remote = await getMySelectedZone().catch(() => null);
+        if (!cancelled && remote) setSlug(remote.slug);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [selectedSlug, hydrated]);
 
   // If the saved slug is no longer active, clear it.

@@ -1,5 +1,9 @@
 const STYLES: Record<string, string> = {
   pending: "bg-neutral-100 text-neutral-700",
+  open: "bg-amber-50 text-amber-700",
+  in_progress: "bg-sky-50 text-sky-700",
+  waiting_customer: "bg-violet-50 text-violet-700",
+  closed: "bg-neutral-100 text-neutral-600",
   preparing: "bg-amber-50 text-amber-700",
   processing: "bg-sky-50 text-sky-700",
   out_for_delivery: "bg-sky-50 text-sky-700",
@@ -15,6 +19,8 @@ const STYLES: Record<string, string> = {
 
 const LABELS: Record<string, string> = {
   out_for_delivery: "Out for delivery",
+  in_progress: "In progress",
+  waiting_customer: "Waiting for customer",
 };
 
 export function StatusBadge({ status }: { status: string }) {
