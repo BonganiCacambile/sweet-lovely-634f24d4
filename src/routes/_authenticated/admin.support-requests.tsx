@@ -4,7 +4,7 @@ import { requireMainAdminGuard } from "@/lib/admin/route-guards";
 import { MainAdminGuard } from "@/components/admin/main-admin-guard";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { LifeBuoy, Mail, Phone, Search, X } from "lucide-react";
+import { LifeBuoy, Mail, Phone, Search, Send, X } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/admin/page-header";
 import { StatusBadge } from "@/components/admin/status-badge";
