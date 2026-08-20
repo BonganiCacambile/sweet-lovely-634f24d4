@@ -770,11 +770,19 @@ function ReplyPanel({ request }: { request: SupportRow }) {
 }
 
 
-function AdminAttachments({ requestId }: { requestId: string }) {
+function AdminAttachments({ requestId, reference }: { requestId: string; reference?: string }) {
   const fn = useServerFn(listSupportRequestAttachments);
   const { data, isLoading } = useQuery({
     queryKey: ["admin", "support-attachments", requestId],
     queryFn: () => fn({ data: { requestId } }),
   });
-  return <AttachmentList rows={data?.rows ?? []} loading={isLoading} title="Customer attachments" />;
+  return (
+    <AttachmentList
+      rows={data?.rows ?? []}
+      loading={isLoading}
+      title="Customer attachments"
+      allowBulkDownload
+      zipName={`support-${reference ?? requestId}-attachments`}
+    />
+  );
 }
