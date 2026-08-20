@@ -1736,6 +1736,44 @@ export type Database = {
         }
         Relationships: []
       }
+      support_request_replies: {
+        Row: {
+          author_email: string | null
+          author_id: string | null
+          body: string
+          channel: string
+          created_at: string
+          id: string
+          request_id: string
+        }
+        Insert: {
+          author_email?: string | null
+          author_id?: string | null
+          body: string
+          channel?: string
+          created_at?: string
+          id?: string
+          request_id: string
+        }
+        Update: {
+          author_email?: string | null
+          author_id?: string | null
+          body?: string
+          channel?: string
+          created_at?: string
+          id?: string
+          request_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_request_replies_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "support_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       support_requests: {
         Row: {
           created_at: string
