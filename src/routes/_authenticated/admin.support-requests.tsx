@@ -275,6 +275,7 @@ function ReplyPanel({ request }: { request: SupportRow }) {
   const [previewId, setPreviewId] = useState<string | null>(null);
   const [testMode, setTestMode] = useState(false);
   const [testEmail, setTestEmail] = useState("");
+  const [usedTemplate, setUsedTemplate] = useState<{ id: string; label: string } | null>(null);
 
   const listRepliesFn = useServerFn(listSupportRequestReplies);
   const sendReplyFn = useServerFn(sendSupportRequestReply);
@@ -305,10 +306,20 @@ function ReplyPanel({ request }: { request: SupportRow }) {
   });
 
   const send = useMutation({
-    mutationFn: () => sendReplyFn({ data: { requestId: request.id, body, markResolved } }),
+    mutationFn: () =>
+      sendReplyFn({
+        data: {
+          requestId: request.id,
+          body,
+          markResolved,
+          templateId: usedTemplate?.id ?? "",
+          templateLabel: usedTemplate?.label ?? "",
+        },
+      }),
     onSuccess: (r) => {
       setBody("");
       setMarkResolved(false);
+      setUsedTemplate(null);
       toast.success(
         r.deliveredInApp
           ? "Reply sent to the customer's notifications"
@@ -320,7 +331,16 @@ function ReplyPanel({ request }: { request: SupportRow }) {
   });
 
   const sendTest = useMutation({
-    mutationFn: () => sendTestFn({ data: { requestId: request.id, body, testEmail } }),
+    mutationFn: () =>
+      sendTestFn({
+        data: {
+          requestId: request.id,
+          body,
+          testEmail,
+          templateId: usedTemplate?.id ?? "",
+          templateLabel: usedTemplate?.label ?? "",
+        },
+      }),
     onSuccess: (r) => {
       if (r.deliveredInApp) {
         toast.success(`Test reply sent to ${r.email} in-app`);
@@ -366,6 +386,7 @@ function ReplyPanel({ request }: { request: SupportRow }) {
               onFocus={() => setPreviewId(t.id)}
               onClick={() => {
                 setPreviewId(t.id);
+                setUsedTemplate({ id: t.id, label: t.label });
                 const text = renderSupportTemplate(t, templateVars);
                 setBody((prev) => (prev.trim() ? `${prev.trimEnd()}\n\n${text}` : text));
               }}
@@ -378,7 +399,10 @@ function ReplyPanel({ request }: { request: SupportRow }) {
             <button
               type="button"
               data-testid="support-reply-clear"
-              onClick={() => setBody("")}
+              onClick={() => {
+                setBody("");
+                setUsedTemplate(null);
+              }}
               className="rounded-full px-3 py-1.5 text-xs font-medium text-neutral-500 hover:text-neutral-800"
             >
               Clear
