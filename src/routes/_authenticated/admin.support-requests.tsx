@@ -512,6 +512,7 @@ function ReplyPanel({ request }: { request: SupportRow }) {
   const qc = useQueryClient();
   const [body, setBody] = useState("");
   const [markResolved, setMarkResolved] = useState(false);
+  const [internal, setInternal] = useState(false);
   const [previewId, setPreviewId] = useState<string | null>(null);
   const [testMode, setTestMode] = useState(false);
   const [testEmail, setTestEmail] = useState("");
@@ -551,16 +552,19 @@ function ReplyPanel({ request }: { request: SupportRow }) {
         data: {
           requestId: request.id,
           body,
+          internal,
           markResolved,
           templateId: usedTemplate?.id ?? "",
           templateLabel: usedTemplate?.label ?? "",
         },
       }),
     onSuccess: (r) => {
+      if (internal) toast.success("Internal note saved (not visible to the customer)");
       setBody("");
       setMarkResolved(false);
+      setInternal(false);
       setUsedTemplate(null);
-      toast.success(
+      if (!internal) toast.success(
         r.deliveredInApp
           ? "Reply sent to the customer's notifications"
           : "Reply saved — no account linked, use the email link to send it",
@@ -603,9 +607,14 @@ function ReplyPanel({ request }: { request: SupportRow }) {
           <p className="text-xs text-neutral-500">No replies yet.</p>
         ) : (
           replies!.rows.map((r) => (
-            <div key={r.id} className="rounded-2xl bg-neutral-50 p-3" data-testid="support-reply-item">
+            <div
+              key={r.id}
+              className={`rounded-2xl p-3 ${r.is_internal ? "border border-dashed border-amber-300 bg-amber-50/60" : "bg-neutral-50"}`}
+              data-testid="support-reply-item"
+            >
               <p className="text-[11px] text-neutral-500">
-                {r.author_email ?? "Admin"} · {formatRelative(r.created_at)} · {r.channel === "in_app" ? "in-app" : "email"}
+                {r.author_email ?? "Admin"} · {formatRelative(r.created_at)} ·{" "}
+                {r.is_internal ? "internal note" : r.channel === "in_app" ? "in-app" : "email"}
               </p>
               <p className="mt-1 whitespace-pre-wrap text-sm text-neutral-800">{r.body}</p>
             </div>
