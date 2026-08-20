@@ -96,6 +96,11 @@ export function NotificationBell({ className }: { className?: string }) {
                       type="button"
                       onClick={() => {
                         if (!n.read) void markOneRead(n.id);
+                        const to = safePath(n.data);
+                        if (to) {
+                          setOpen(false);
+                          void navigate({ to });
+                        }
                       }}
                       className={
                         "flex w-full items-start gap-3 px-4 py-3 text-left transition hover:bg-neutral-50 " +
