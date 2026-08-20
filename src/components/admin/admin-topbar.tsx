@@ -52,14 +52,7 @@ export function AdminTopbar({
       </button>
 
       <div className="ml-auto flex items-center gap-2">
-        <button
-          type="button"
-          aria-label="Notifications"
-          className="relative inline-flex h-10 w-10 items-center justify-center rounded-2xl text-neutral-600 hover:bg-neutral-100"
-        >
-          <Bell className="h-5 w-5" />
-          <span className="absolute right-2.5 top-2.5 h-2 w-2 rounded-full bg-[#ff003c]" />
-        </button>
+        <NotificationBell />
         <div className="flex items-center gap-2 rounded-2xl border border-neutral-200 bg-white/70 py-1 pl-1 pr-3">
           <div
             className="flex h-8 w-8 items-center justify-center rounded-xl text-xs font-semibold text-white"
