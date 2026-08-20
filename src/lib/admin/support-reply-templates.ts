@@ -44,9 +44,32 @@ export const SUPPORT_REPLY_TEMPLATES: SupportReplyTemplate[] = [
   },
 ];
 
+export type TemplateVars = { name?: string | null; email?: string | null; reference?: string | null };
+
+/** Variables admins can use inside a template body, with help text for the editor. */
+export const TEMPLATE_VARIABLES: { token: string; label: string; help: string; sample: string }[] = [
+  { token: "{{name}}", label: "Customer name", help: "Falls back to \"there\" when unknown", sample: "Thandi" },
+  { token: "{{email}}", label: "Customer email", help: "The address on the support request", sample: "thandi@example.com" },
+  { token: "{{reference}}", label: "Request reference", help: "First 8 characters of the request ID", sample: "a1b2c3d4" },
+];
+
+export function renderTemplateBody(body: string, vars: TemplateVars): string {
+  return body
+    .replaceAll("{{name}}", (vars.name ?? "there").trim() || "there")
+    .replaceAll("{{email}}", vars.email ?? "your email address")
+    .replaceAll("{{reference}}", (vars.reference ?? "").slice(0, 8) || "n/a");
+}
+
+/** Tokens used in a body that are not recognised, so the editor can warn. */
+export function unknownTemplateTokens(body: string): string[] {
+  const known = new Set(TEMPLATE_VARIABLES.map((v) => v.token));
+  const found = body.match(/\{\{[^}]*\}\}/g) ?? [];
+  return [...new Set(found.filter((t) => !known.has(t)))];
+}
+
 export function renderSupportTemplate(
   template: SupportReplyTemplate,
-  vars: { name?: string | null; email?: string | null; reference?: string | null },
+  vars: TemplateVars,
 ): string {
   return template.body
     .replaceAll("{{name}}", (vars.name ?? "there").trim() || "there")
