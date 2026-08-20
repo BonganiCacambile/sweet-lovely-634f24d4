@@ -2,6 +2,8 @@ import { useState } from "react";
 import { z } from "zod";
 import { toast } from "sonner";
 import { Loader2, Send } from "lucide-react";
+import { useServerFn } from "@tanstack/react-start";
+import { submitSupportRequest } from "@/lib/support.functions";
 
 const schema = z.object({
   name: z.string().trim().min(1, "Please enter your name").max(100),
@@ -16,6 +18,7 @@ export function ContactForm() {
   const [values, setValues] = useState({ name: "", email: "", phone: "", message: "" });
   const [errors, setErrors] = useState<FieldErrors>({});
   const [submitting, setSubmitting] = useState(false);
+  const submitRequest = useServerFn(submitSupportRequest);
 
   const update = (key: keyof typeof values) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setValues((v) => ({ ...v, [key]: e.target.value }));
@@ -36,9 +39,15 @@ export function ContactForm() {
     }
     setSubmitting(true);
     try {
-      await new Promise((r) => setTimeout(r, 700));
+      const res = await submitRequest({ data: result.data });
+      if (!res.ok) {
+        toast.error(res.error ?? "Could not send your message. Please try again.");
+        return;
+      }
       toast.success("Message sent — we'll get back to you soon!");
       setValues({ name: "", email: "", phone: "", message: "" });
+    } catch {
+      toast.error("Could not send your message. Please try again.");
     } finally {
       setSubmitting(false);
     }
