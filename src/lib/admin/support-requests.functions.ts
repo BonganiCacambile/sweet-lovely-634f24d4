@@ -24,13 +24,42 @@ const PRIORITY_VALUES = SUPPORT_PRIORITIES.map((p) => p.value) as [string, ...st
 const SELECT =
   "id, reference, user_id, delivery_zone_id, name, email, phone, subject, category, order_number, message, status, priority, source, assigned_to, assigned_email, resolution, resolved_at, created_at, updated_at, delivery_zones(id, name, color)";
 
-type Row = Record<string, unknown> & { delivery_zones?: { id: string; name: string; color: string | null } | null };
+type ZoneRef = { id: string; name: string; color: string | null } | null;
+type Row = {
+  id: string;
+  reference: string;
+  user_id: string | null;
+  delivery_zone_id: string | null;
+  name: string;
+  email: string;
+  phone: string | null;
+  subject: string;
+  category: string;
+  order_number: string | null;
+  message: string;
+  status: string;
+  priority: string;
+  source: string;
+  assigned_to: string | null;
+  assigned_email: string | null;
+  resolution: string | null;
+  resolved_at: string | null;
+  created_at: string;
+  updated_at: string;
+  delivery_zones?: ZoneRef;
+};
 
-function shape(r: Row) {
+export type SupportRequestDto = Omit<Row, "delivery_zones"> & {
+  zone_name: string | null;
+  zone_color: string | null;
+};
+
+function shape(r: Row): SupportRequestDto {
   const zone = r.delivery_zones ?? null;
   const { delivery_zones: _drop, ...rest } = r;
-  return { ...rest, zone_name: zone?.name ?? null, zone_color: zone?.color ?? null } as Record<string, unknown>;
+  return { ...rest, zone_name: zone?.name ?? null, zone_color: zone?.color ?? null };
 }
+
 
 export const listSupportRequests = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
