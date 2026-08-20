@@ -97,6 +97,8 @@ export const sendSupportRequestReply = createServerFn({ method: "POST" })
         requestId: z.string().uuid(),
         body: z.string().trim().min(1, "Reply cannot be empty").max(5000),
         markResolved: z.boolean().optional().default(false),
+        templateId: z.string().trim().max(120).optional().default(""),
+        templateLabel: z.string().trim().max(120).optional().default(""),
       })
       .parse(d),
   )
@@ -150,6 +152,9 @@ export const sendSupportRequestReply = createServerFn({ method: "POST" })
       reply_id: reply.id,
       channel: reply.channel,
       status: nextStatus,
+      template_id: data.templateId || null,
+      template_label: data.templateLabel || null,
+      length: data.body.length,
     });
 
     return { reply, status: nextStatus, deliveredInApp: Boolean(req.user_id), email: req.email };
@@ -170,6 +175,8 @@ export const sendTestSupportReply = createServerFn({ method: "POST" })
         requestId: z.string().uuid(),
         body: z.string().trim().min(1, "Draft cannot be empty").max(5000),
         testEmail: z.string().trim().email("Enter a valid email address").max(200),
+        templateId: z.string().trim().max(120).optional().default(""),
+        templateLabel: z.string().trim().max(120).optional().default(""),
       })
       .parse(d),
   )
@@ -213,6 +220,9 @@ export const sendTestSupportReply = createServerFn({ method: "POST" })
       test_email: email,
       delivered_in_app: Boolean(targetUserId),
       length: data.body.length,
+      template_id: data.templateId || null,
+      template_label: data.templateLabel || null,
+      preview_body: data.body.slice(0, 5000),
     });
 
     return {
