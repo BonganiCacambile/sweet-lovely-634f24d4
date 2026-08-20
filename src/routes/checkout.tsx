@@ -1134,12 +1134,13 @@ function StepPayment({
                   >
                     <RefreshCw className="h-3.5 w-3.5" /> Try again
                   </button>
-                  <a
-                    href="mailto:support@sweetandlovely.co.za"
+                  <Link
+                    to="/contact"
+                    data-testid="payment-contact-support"
                     className="inline-flex items-center rounded-full border border-neutral-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-neutral-700 hover:bg-neutral-50"
                   >
                     Contact support
-                  </a>
+                  </Link>
                 </div>
               </div>
             </div>
