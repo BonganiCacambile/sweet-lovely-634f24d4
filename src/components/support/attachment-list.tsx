@@ -1,4 +1,4 @@
-import { Download, FileText, ImageIcon, Loader2, Paperclip } from "lucide-react";
+import { Download, FileText, ImageIcon, Loader2, Paperclip, ShieldAlert, ShieldCheck, ShieldQuestion } from "lucide-react";
 
 export type SupportAttachment = {
   id: string;
@@ -7,6 +7,16 @@ export type SupportAttachment = {
   size_bytes: number;
   created_at: string;
   url: string | null;
+  scan_status?: string;
+  scan_result?: string | null;
+};
+
+const SCAN_LABELS: Record<string, { text: string; className: string; Icon: typeof ShieldCheck }> = {
+  clean: { text: "Virus scan passed", className: "text-emerald-600", Icon: ShieldCheck },
+  pending: { text: "Scanning for viruses…", className: "text-amber-600", Icon: ShieldQuestion },
+  scanning: { text: "Scanning for viruses…", className: "text-amber-600", Icon: ShieldQuestion },
+  infected: { text: "Blocked — malware detected", className: "text-red-600", Icon: ShieldAlert },
+  error: { text: "Blocked — scan failed", className: "text-red-600", Icon: ShieldAlert },
 };
 
 export function formatBytes(bytes: number) {
@@ -40,7 +50,10 @@ export function AttachmentList({
       </h3>
       <ul className="mt-2 space-y-2">
         {rows.map((a) => {
-          const isImage = a.mime_type.startsWith("image/");
+          const status = a.scan_status ?? "clean";
+          const scan = SCAN_LABELS[status] ?? SCAN_LABELS["pending"]!;
+          const blocked = status !== "clean";
+          const isImage = a.mime_type.startsWith("image/") && !blocked;
           return (
             <li
               key={a.id}
@@ -64,8 +77,20 @@ export function AttachmentList({
                 <p className="text-[11px] text-neutral-500">
                   {formatBytes(a.size_bytes)} · {new Date(a.created_at).toLocaleString()}
                 </p>
+                <p
+                  data-testid="support-attachment-scan"
+                  data-scan-status={status}
+                  className={`mt-0.5 flex items-center gap-1 text-[11px] font-medium ${scan.className}`}
+                  title={a.scan_result ?? undefined}
+                >
+                  <scan.Icon className="h-3 w-3" /> {scan.text}
+                </p>
               </div>
-              {a.url ? (
+              {blocked ? (
+                <span className="text-[11px] font-medium text-neutral-400">
+                  {status === "infected" || status === "error" ? "Unavailable" : "Pending scan"}
+                </span>
+              ) : a.url ? (
                 <a
                   href={a.url}
                   target="_blank"
