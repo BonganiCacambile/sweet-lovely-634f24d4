@@ -747,11 +747,3 @@ function ReplyPanel({ request }: { request: SupportRow }) {
   );
 }
 
-function StatBlock({ label, value }: { label: string; value: number | string }) {
-  return (
-    <div className="rounded-2xl border border-neutral-200/70 bg-white/80 p-4">
-      <p className="text-[11px] uppercase tracking-wider text-neutral-500">{label}</p>
-      <p className="mt-1 text-xl font-semibold text-neutral-900">{value}</p>
-    </div>
-  );
-}
