@@ -185,7 +185,8 @@ export const supportRequestStats = createServerFn({ method: "GET" })
     };
   });
 
-async function loadScoped(context: { supabase: never } | { supabase: ReturnType<typeof Object> } | any, id: string) {
+/* eslint-disable @typescript-eslint/no-explicit-any */
+async function loadScoped(context: any, id: string) {
   const { data, error } = await context.supabase
     .from("support_requests")
     .select("id, reference, status, priority, delivery_zone_id, assigned_to, user_id, email, name")
