@@ -16,6 +16,7 @@ import {
   SUPPORT_REPLY_TEMPLATES,
   renderSupportTemplate,
 } from "@/lib/admin/support-reply-templates";
+import { listSupportReplyTemplates } from "@/lib/admin/support-reply-templates.functions";
 import {
   listSupportRequests,
   listSupportRequestReplies,
@@ -272,6 +273,22 @@ function ReplyPanel({ request }: { request: SupportRow }) {
 
   const listRepliesFn = useServerFn(listSupportRequestReplies);
   const sendReplyFn = useServerFn(sendSupportRequestReply);
+  const listTemplatesFn = useServerFn(listSupportReplyTemplates);
+
+  const { data: templateData } = useQuery({
+    queryKey: ["admin", "support-reply-templates", "active"],
+    queryFn: () => listTemplatesFn({ data: { includeDisabled: false } }),
+    staleTime: 60_000,
+  });
+  const templates =
+    (templateData?.rows.length ?? 0) > 0
+      ? templateData!.rows.map((t) => ({
+          id: t.id,
+          label: t.label,
+          description: t.description ?? "",
+          body: t.body,
+        }))
+      : SUPPORT_REPLY_TEMPLATES;
 
   const { data: replies, isLoading } = useQuery({
     queryKey: ["admin", "support-requests", "replies", request.id],
@@ -317,7 +334,7 @@ function ReplyPanel({ request }: { request: SupportRow }) {
       <div className="mt-3" data-testid="support-reply-templates">
         <p className="text-[11px] uppercase tracking-wider text-neutral-500">Quick replies</p>
         <div className="mt-1.5 flex flex-wrap gap-2">
-          {SUPPORT_REPLY_TEMPLATES.map((t) => (
+          {templates.map((t) => (
             <button
               key={t.id}
               type="button"
