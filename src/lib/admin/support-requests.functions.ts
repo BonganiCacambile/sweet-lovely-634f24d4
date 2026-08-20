@@ -560,7 +560,7 @@ export const listSupportRequestAttachments = createServerFn({ method: "POST" })
 
     const { data: rows, error } = await context.supabase
       .from("support_request_attachments")
-      .select("id, storage_path, file_name, mime_type, size_bytes, created_at")
+      .select("id, storage_path, file_name, mime_type, size_bytes, created_at, scan_status, scan_result")
       .eq("request_id", data.requestId)
       .order("created_at", { ascending: true });
     if (error) throw new Error(error.message);
@@ -568,19 +568,28 @@ export const listSupportRequestAttachments = createServerFn({ method: "POST" })
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const out: Array<{
-      id: string; file_name: string; mime_type: string; size_bytes: number; created_at: string; url: string | null;
+      id: string; file_name: string; mime_type: string; size_bytes: number; created_at: string;
+      url: string | null; scan_status: string; scan_result: string | null;
     }> = [];
     for (const r of rows ?? []) {
-      const { data: signed } = await supabaseAdmin.storage
-        .from("support-attachments")
-        .createSignedUrl(r.storage_path as string, 60 * 10);
+      // Never hand out a URL for a file that has not passed the malware scan.
+      const status = (r.scan_status as string | null) ?? "pending";
+      let url: string | null = null;
+      if (status === "clean") {
+        const { data: signed } = await supabaseAdmin.storage
+          .from("support-attachments")
+          .createSignedUrl(r.storage_path as string, 60 * 10);
+        url = signed?.signedUrl ?? null;
+      }
       out.push({
         id: r.id as string,
         file_name: r.file_name as string,
         mime_type: r.mime_type as string,
         size_bytes: Number(r.size_bytes ?? 0),
         created_at: r.created_at as string,
-        url: signed?.signedUrl ?? null,
+        url,
+        scan_status: status,
+        scan_result: (r.scan_result as string | null) ?? null,
       });
     }
     return { rows: out };
