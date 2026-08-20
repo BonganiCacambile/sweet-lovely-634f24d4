@@ -44,3 +44,27 @@ export async function requireMainAdminGuard() {
   }
   throw redirect({ to: "/account", replace: true });
 }
+/**
+ * Guard for admin routes that zone admins may also use (scoped server-side
+ * by RLS + `requireAdminScope`). Allows main admins and zone admins.
+ */
+export async function requireAdminGuard() {
+  const { data: userData } = await supabase.auth.getUser();
+  const user = userData.user;
+  if (!user) throw redirect({ to: "/auth/admin" });
+
+  const { data: roleRows } = await supabase
+    .from("user_roles")
+    .select("role, assigned_zone_id")
+    .eq("user_id", user.id);
+
+  const rows = (roleRows ?? []) as Array<{ role: string; assigned_zone_id: string | null }>;
+  if (rows.some((r) => r.role === "admin" || r.assigned_zone_id)) return;
+
+  if (typeof window !== "undefined") {
+    toast.error("Admin access required", {
+      description: "Your account doesn't have permission to access the admin area.",
+    });
+  }
+  throw redirect({ to: "/account", replace: true });
+}
