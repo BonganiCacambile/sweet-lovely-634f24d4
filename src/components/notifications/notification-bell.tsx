@@ -15,7 +15,15 @@ function timeAgo(iso: string): string {
   return `${d}d ago`;
 }
 
-export function NotificationBell() {
+/** Only same-origin paths are ever followed from notification payloads. */
+function safePath(data: Record<string, unknown> | null | undefined): string | null {
+  const url = typeof data?.url === "string" ? data.url : null;
+  if (!url) return null;
+  return /^\/[A-Za-z0-9\-._~/?#[\]@!$&'()*+,;=%]*$/.test(url) ? url : null;
+}
+
+export function NotificationBell({ className }: { className?: string }) {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { unread, recent, rtStatus, markAllRead, markOneRead } = useNotifications();
   const [open, setOpen] = useState(false);
