@@ -57,6 +57,7 @@ import { Route as AuthenticatedAdminCategoriesRouteImport } from './routes/_auth
 import { Route as AuthenticatedAdminAuditRetentionRouteImport } from './routes/_authenticated/admin.audit-retention'
 import { Route as AuthenticatedAdminAuditRouteImport } from './routes/_authenticated/admin.audit'
 import { Route as AuthenticatedAdminAnalyticsRouteImport } from './routes/_authenticated/admin.analytics'
+import { Route as AuthenticatedAccountSupportRouteImport } from './routes/_authenticated/account.support'
 import { Route as AuthenticatedAccountSecurityRouteImport } from './routes/_authenticated/account.security'
 import { Route as AuthenticatedAccountPreferencesRouteImport } from './routes/_authenticated/account.preferences'
 import { Route as AuthenticatedAccountOrdersRouteImport } from './routes/_authenticated/account.orders'
@@ -330,6 +331,12 @@ const AuthenticatedAdminAnalyticsRoute =
     path: '/analytics',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const AuthenticatedAccountSupportRoute =
+  AuthenticatedAccountSupportRouteImport.update({
+    id: '/support',
+    path: '/support',
+    getParentRoute: () => AuthenticatedAccountRoute,
+  } as any)
 const AuthenticatedAccountSecurityRoute =
   AuthenticatedAccountSecurityRouteImport.update({
     id: '/security',
@@ -399,6 +406,7 @@ export interface FileRoutesByFullPath {
   '/account/orders': typeof AuthenticatedAccountOrdersRouteWithChildren
   '/account/preferences': typeof AuthenticatedAccountPreferencesRoute
   '/account/security': typeof AuthenticatedAccountSecurityRoute
+  '/account/support': typeof AuthenticatedAccountSupportRoute
   '/admin/analytics': typeof AuthenticatedAdminAnalyticsRoute
   '/admin/audit': typeof AuthenticatedAdminAuditRoute
   '/admin/audit-retention': typeof AuthenticatedAdminAuditRetentionRoute
@@ -454,6 +462,7 @@ export interface FileRoutesByTo {
   '/account/orders': typeof AuthenticatedAccountOrdersRouteWithChildren
   '/account/preferences': typeof AuthenticatedAccountPreferencesRoute
   '/account/security': typeof AuthenticatedAccountSecurityRoute
+  '/account/support': typeof AuthenticatedAccountSupportRoute
   '/admin/analytics': typeof AuthenticatedAdminAnalyticsRoute
   '/admin/audit': typeof AuthenticatedAdminAuditRoute
   '/admin/audit-retention': typeof AuthenticatedAdminAuditRetentionRoute
@@ -512,6 +521,7 @@ export interface FileRoutesById {
   '/_authenticated/account/orders': typeof AuthenticatedAccountOrdersRouteWithChildren
   '/_authenticated/account/preferences': typeof AuthenticatedAccountPreferencesRoute
   '/_authenticated/account/security': typeof AuthenticatedAccountSecurityRoute
+  '/_authenticated/account/support': typeof AuthenticatedAccountSupportRoute
   '/_authenticated/admin/analytics': typeof AuthenticatedAdminAnalyticsRoute
   '/_authenticated/admin/audit': typeof AuthenticatedAdminAuditRoute
   '/_authenticated/admin/audit-retention': typeof AuthenticatedAdminAuditRetentionRoute
@@ -570,6 +580,7 @@ export interface FileRouteTypes {
     | '/account/orders'
     | '/account/preferences'
     | '/account/security'
+    | '/account/support'
     | '/admin/analytics'
     | '/admin/audit'
     | '/admin/audit-retention'
@@ -625,6 +636,7 @@ export interface FileRouteTypes {
     | '/account/orders'
     | '/account/preferences'
     | '/account/security'
+    | '/account/support'
     | '/admin/analytics'
     | '/admin/audit'
     | '/admin/audit-retention'
@@ -682,6 +694,7 @@ export interface FileRouteTypes {
     | '/_authenticated/account/orders'
     | '/_authenticated/account/preferences'
     | '/_authenticated/account/security'
+    | '/_authenticated/account/support'
     | '/_authenticated/admin/analytics'
     | '/_authenticated/admin/audit'
     | '/_authenticated/admin/audit-retention'
@@ -1072,6 +1085,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminAnalyticsRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/account/support': {
+      id: '/_authenticated/account/support'
+      path: '/support'
+      fullPath: '/account/support'
+      preLoaderRoute: typeof AuthenticatedAccountSupportRouteImport
+      parentRoute: typeof AuthenticatedAccountRoute
+    }
     '/_authenticated/account/security': {
       id: '/_authenticated/account/security'
       path: '/security'
@@ -1145,6 +1165,7 @@ interface AuthenticatedAccountRouteChildren {
   AuthenticatedAccountOrdersRoute: typeof AuthenticatedAccountOrdersRouteWithChildren
   AuthenticatedAccountPreferencesRoute: typeof AuthenticatedAccountPreferencesRoute
   AuthenticatedAccountSecurityRoute: typeof AuthenticatedAccountSecurityRoute
+  AuthenticatedAccountSupportRoute: typeof AuthenticatedAccountSupportRoute
 }
 
 const AuthenticatedAccountRouteChildren: AuthenticatedAccountRouteChildren = {
@@ -1154,6 +1175,7 @@ const AuthenticatedAccountRouteChildren: AuthenticatedAccountRouteChildren = {
   AuthenticatedAccountOrdersRoute: AuthenticatedAccountOrdersRouteWithChildren,
   AuthenticatedAccountPreferencesRoute: AuthenticatedAccountPreferencesRoute,
   AuthenticatedAccountSecurityRoute: AuthenticatedAccountSecurityRoute,
+  AuthenticatedAccountSupportRoute: AuthenticatedAccountSupportRoute,
 }
 
 const AuthenticatedAccountRouteWithChildren =
