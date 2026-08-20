@@ -1462,6 +1462,7 @@ export type Database = {
           marketing_opt_in: boolean
           notification_prefs: Json
           phone: string | null
+          selected_zone_id: string | null
           theme: string
           updated_at: string
         }
@@ -1474,6 +1475,7 @@ export type Database = {
           marketing_opt_in?: boolean
           notification_prefs?: Json
           phone?: string | null
+          selected_zone_id?: string | null
           theme?: string
           updated_at?: string
         }
@@ -1486,10 +1488,26 @@ export type Database = {
           marketing_opt_in?: boolean
           notification_prefs?: Json
           phone?: string | null
+          selected_zone_id?: string | null
           theme?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_selected_zone_id_fkey"
+            columns: ["selected_zone_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_zones"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_selected_zone_id_fkey"
+            columns: ["selected_zone_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_zones_public"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       promotions: {
         Row: {
@@ -1772,6 +1790,47 @@ export type Database = {
         }
         Relationships: []
       }
+      support_request_events: {
+        Row: {
+          actor_email: string | null
+          actor_id: string | null
+          created_at: string
+          field: string
+          from_value: string | null
+          id: string
+          request_id: string
+          to_value: string | null
+        }
+        Insert: {
+          actor_email?: string | null
+          actor_id?: string | null
+          created_at?: string
+          field: string
+          from_value?: string | null
+          id?: string
+          request_id: string
+          to_value?: string | null
+        }
+        Update: {
+          actor_email?: string | null
+          actor_id?: string | null
+          created_at?: string
+          field?: string
+          from_value?: string | null
+          id?: string
+          request_id?: string
+          to_value?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_request_events_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "support_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       support_request_replies: {
         Row: {
           author_email: string | null
@@ -1780,6 +1839,7 @@ export type Database = {
           channel: string
           created_at: string
           id: string
+          is_internal: boolean
           request_id: string
         }
         Insert: {
@@ -1789,6 +1849,7 @@ export type Database = {
           channel?: string
           created_at?: string
           id?: string
+          is_internal?: boolean
           request_id: string
         }
         Update: {
@@ -1798,6 +1859,7 @@ export type Database = {
           channel?: string
           created_at?: string
           id?: string
+          is_internal?: boolean
           request_id?: string
         }
         Relationships: [
@@ -1812,42 +1874,87 @@ export type Database = {
       }
       support_requests: {
         Row: {
+          assigned_email: string | null
+          assigned_to: string | null
+          category: string
           created_at: string
+          delivery_zone_id: string | null
           email: string
           id: string
           message: string
           name: string
+          order_number: string | null
           phone: string | null
+          priority: string
+          reference: string
+          resolution: string | null
+          resolved_at: string | null
           source: string
           status: string
+          subject: string
           updated_at: string
           user_id: string | null
         }
         Insert: {
+          assigned_email?: string | null
+          assigned_to?: string | null
+          category?: string
           created_at?: string
+          delivery_zone_id?: string | null
           email: string
           id?: string
           message: string
           name: string
+          order_number?: string | null
           phone?: string | null
+          priority?: string
+          reference?: string
+          resolution?: string | null
+          resolved_at?: string | null
           source?: string
           status?: string
+          subject?: string
           updated_at?: string
           user_id?: string | null
         }
         Update: {
+          assigned_email?: string | null
+          assigned_to?: string | null
+          category?: string
           created_at?: string
+          delivery_zone_id?: string | null
           email?: string
           id?: string
           message?: string
           name?: string
+          order_number?: string | null
           phone?: string | null
+          priority?: string
+          reference?: string
+          resolution?: string | null
+          resolved_at?: string | null
           source?: string
           status?: string
+          subject?: string
           updated_at?: string
           user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "support_requests_delivery_zone_id_fkey"
+            columns: ["delivery_zone_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_zones"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "support_requests_delivery_zone_id_fkey"
+            columns: ["delivery_zone_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_zones_public"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       system_settings: {
         Row: {
