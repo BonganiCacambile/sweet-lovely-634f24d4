@@ -567,6 +567,43 @@ export const listSupportRequestAttachments = createServerFn({ method: "POST" })
     if ((rows ?? []).length === 0) return { rows: [] };
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    // Self-heal: scan anything still unscanned before the admin views it.
+    const unscanned = (rows ?? []).filter(
+      (r) => ((r.scan_status as string | null) ?? "pending") === "pending",
+    );
+    if (unscanned.length > 0) {
+      const { scanAttachmentBytes } = await import("@/lib/support/malware-scan.server");
+      for (const r of unscanned) {
+        const path = r.storage_path as string;
+        let status = "error";
+        let detail = "Scan could not be completed.";
+        try {
+          const { data: blob } = await supabaseAdmin.storage.from("support-attachments").download(path);
+          if (blob) {
+            const verdict = await scanAttachmentBytes(
+              new Uint8Array(await blob.arrayBuffer()),
+              r.file_name as string,
+              r.mime_type as string,
+            );
+            status = verdict.status;
+            detail = `${verdict.engine}: ${verdict.detail}`;
+            if (verdict.status === "infected") {
+              await supabaseAdmin.storage.from("support-attachments").remove([path]);
+            }
+          }
+        } catch (err) {
+          console.error("[support] admin rescan failed", path, err);
+        }
+        await supabaseAdmin
+          .from("support_request_attachments")
+          .update({ scan_status: status, scan_result: detail, scanned_at: new Date().toISOString() })
+          .eq("id", r.id as string);
+        (r as { scan_status: string; scan_result: string }).scan_status = status;
+        (r as { scan_status: string; scan_result: string }).scan_result = detail;
+      }
+    }
+
     const out: Array<{
       id: string; file_name: string; mime_type: string; size_bytes: number; created_at: string;
       url: string | null; scan_status: string; scan_result: string | null;
