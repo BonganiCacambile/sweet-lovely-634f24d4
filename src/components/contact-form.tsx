@@ -1,12 +1,23 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { z } from "zod";
 import { toast } from "sonner";
-import { CheckCircle2, Loader2, MapPin, Send } from "lucide-react";
+import { CheckCircle2, Loader2, MapPin, Paperclip, Send, X } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { submitSupportRequest, SUPPORT_CATEGORIES } from "@/lib/support.functions";
+import {
+  submitSupportRequest,
+  registerSupportAttachments,
+  SUPPORT_CATEGORIES,
+  SUPPORT_ATTACHMENT_ACCEPT,
+  SUPPORT_ATTACHMENT_BUCKET,
+  SUPPORT_ATTACHMENT_MAX_BYTES,
+  SUPPORT_ATTACHMENT_MAX_FILES,
+} from "@/lib/support.functions";
+import { supabase } from "@/integrations/supabase/client";
+import { formatBytes } from "@/components/support/attachment-list";
 import { useZone } from "@/lib/zone-context";
 import { useAuth } from "@/lib/auth-context";
+
 
 const schema = z.object({
   subject: z.string().trim().min(1, "Please add a subject").max(140),
