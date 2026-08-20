@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { createHmac, timingSafeEqual } from "node:crypto";
+import { AMOUNT_TOLERANCE_MINOR } from "@/lib/payment-tolerance";
 
 /**
  * Paystack webhook endpoint.
@@ -104,13 +105,16 @@ export const Route = createFileRoute("/api/public/paystack-webhook")({
           }
 
           // Optional amount cross-check (Paystack sends smallest unit).
+          // Allow the same small rounding tolerance as verifyAndCreateOrder so
+          // a few cents of drift never blocks an already-captured payment.
           if (typeof payload.data?.amount === "number") {
             const expectedMinor = Math.round(Number(order.total_zar) * 100);
-            if (payload.data.amount < expectedMinor) {
+            if (payload.data.amount < expectedMinor - AMOUNT_TOLERANCE_MINOR) {
               console.error("[paystack-webhook] amount mismatch", {
                 reference,
                 expectedMinor,
                 got: payload.data.amount,
+                toleranceMinor: AMOUNT_TOLERANCE_MINOR,
               });
               // Don't advance status on mismatch; ack so Paystack stops retrying.
               return new Response("ok", { status: 200 });

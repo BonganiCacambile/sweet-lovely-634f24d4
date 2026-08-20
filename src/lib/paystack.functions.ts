@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { PIZZA_SIZE_FALLBACK, splitVariantId } from "./cart-id";
+import { AMOUNT_TOLERANCE_MINOR } from "./payment-tolerance";
 
 /** Returns the Paystack public key for client-side inline checkout. */
 export const getPaystackConfig = createServerFn({ method: "GET" }).handler(async () => {
@@ -369,7 +370,6 @@ export const verifyAndCreateOrder = createServerFn({ method: "POST" })
     // server derive tax/shipping independently, so ±a few cents is normal),
     // and for a larger shortfall we still persist the order but flag it for
     // manual review rather than losing the payment.
-    const AMOUNT_TOLERANCE_MINOR = 100; // R1.00
     let underpaidNote: string | null = null;
     if (paystackData && paystackData.amount < expectedAmount - AMOUNT_TOLERANCE_MINOR) {
       underpaidNote = `UNDERPAID — captured R${(paystackData.amount / 100).toFixed(2)} vs expected R${serverTotal.toFixed(2)} (needs review)`;
