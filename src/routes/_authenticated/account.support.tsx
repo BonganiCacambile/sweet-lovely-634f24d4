@@ -4,7 +4,12 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { LifeBuoy, MapPin, MessageSquare, Loader2 } from "lucide-react";
 import { AccountShell, Card } from "@/components/auth/account-shell";
-import { getMySupportRequests, getMySupportRequestReplies } from "@/lib/support.functions";
+import {
+  getMySupportRequests,
+  getMySupportRequestReplies,
+  getMySupportRequestAttachments,
+} from "@/lib/support.functions";
+import { AttachmentList } from "@/components/support/attachment-list";
 import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
 
 export const Route = createFileRoute("/_authenticated/account/support")({
@@ -108,7 +113,12 @@ function SupportHistoryPage() {
                   <MessageSquare className="h-3.5 w-3.5" />
                   {openId === r.id ? "Hide responses" : "View responses"}
                 </button>
-                {openId === r.id && <Replies requestId={r.id} />}
+                {openId === r.id && (
+                  <>
+                    <Attachments requestId={r.id} />
+                    <Replies requestId={r.id} />
+                  </>
+                )}
               </div>
             ))
           )}
@@ -139,4 +149,13 @@ function Replies({ requestId }: { requestId: string }) {
       ))}
     </div>
   );
+}
+
+function Attachments({ requestId }: { requestId: string }) {
+  const fn = useServerFn(getMySupportRequestAttachments);
+  const { data, isLoading } = useQuery({
+    queryKey: ["account", "support-attachments", requestId],
+    queryFn: () => fn({ data: { requestId } }),
+  });
+  return <AttachmentList rows={data?.rows ?? []} loading={isLoading} title="Your attachments" />;
 }

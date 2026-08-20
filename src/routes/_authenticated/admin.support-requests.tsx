@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { AttachmentList } from "@/components/support/attachment-list";
 import { createFileRoute } from "@tanstack/react-router";
 import { requireAdminGuard } from "@/lib/admin/route-guards";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -25,6 +26,7 @@ import {
   assignSupportRequest,
   listAssignableEmployees,
   listSupportRequestEvents,
+  listSupportRequestAttachments,
   listSupportRequests,
   listSupportRequestReplies,
   sendSupportRequestReply,
@@ -411,6 +413,7 @@ function SupportRequestsPage() {
               </p>
             ) : null}
 
+            <AdminAttachments requestId={selected.id} />
             <AssignPanel request={selected} isMain={isMain} />
             <ReplyPanel request={selected} />
             <HistoryPanel requestId={selected.id} />
@@ -766,3 +769,12 @@ function ReplyPanel({ request }: { request: SupportRow }) {
   );
 }
 
+
+function AdminAttachments({ requestId }: { requestId: string }) {
+  const fn = useServerFn(listSupportRequestAttachments);
+  const { data, isLoading } = useQuery({
+    queryKey: ["admin", "support-attachments", requestId],
+    queryFn: () => fn({ data: { requestId } }),
+  });
+  return <AttachmentList rows={data?.rows ?? []} loading={isLoading} title="Customer attachments" />;
+}
