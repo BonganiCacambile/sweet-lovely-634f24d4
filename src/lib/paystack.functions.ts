@@ -361,12 +361,23 @@ export const verifyAndCreateOrder = createServerFn({ method: "POST" })
         : zoneFee;
     const serverTotal = Number((serverSubtotal + shipping + tax).toFixed(2));
     const expectedAmount = Math.round(serverTotal * 100);
-    if (paystackData && paystackData.amount < expectedAmount) {
+    // Compare the captured amount against our recomputed total.
+    //
+    // The money has ALREADY been captured at this point, so refusing to save
+    // the order is the worst possible outcome: the customer is charged and
+    // sees an error. Instead we allow a small rounding tolerance (client and
+    // server derive tax/shipping independently, so ±a few cents is normal),
+    // and for a larger shortfall we still persist the order but flag it for
+    // manual review rather than losing the payment.
+    const AMOUNT_TOLERANCE_MINOR = 100; // R1.00
+    let underpaidNote: string | null = null;
+    if (paystackData && paystackData.amount < expectedAmount - AMOUNT_TOLERANCE_MINOR) {
+      underpaidNote = `UNDERPAID — captured R${(paystackData.amount / 100).toFixed(2)} vs expected R${serverTotal.toFixed(2)} (needs review)`;
       console.error("Amount mismatch:", {
         expected: expectedAmount,
         got: paystackData.amount,
+        reference: data.reference,
       });
-      return { success: false as const, error: "Payment amount does not match order" };
     }
 
     const estimatedMinutes = isCollection
@@ -380,14 +391,16 @@ export const verifyAndCreateOrder = createServerFn({ method: "POST" })
       .from("orders")
       .insert({
         user_id: data.userId ?? null,
-        status: paystackData ? "preparing" : "pending",
+        status: paystackData && !underpaidNote ? "preparing" : "pending",
         customer_name: `${customer.firstName} ${customer.lastName}`.trim(),
         customer_email: customer.email,
         customer_phone: customer.phone,
         address: isCollection ? null : fullAddress,
-        notes: paystackData
-          ? `Paystack ref: ${data.reference}`
-          : `Paystack ref: ${data.reference} (verification deferred due to network error — please verify manually)`,
+        notes: underpaidNote
+          ? `Paystack ref: ${data.reference} — ${underpaidNote}`
+          : paystackData
+            ? `Paystack ref: ${data.reference}`
+            : `Paystack ref: ${data.reference} (verification deferred due to network error — please verify manually)`,
         subtotal_zar: serverSubtotal,
         delivery_zar: shipping,
         total_zar: serverTotal,
