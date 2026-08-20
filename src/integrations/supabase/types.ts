@@ -1797,6 +1797,9 @@ export type Database = {
           id: string
           mime_type: string
           request_id: string
+          scan_result: string | null
+          scan_status: string
+          scanned_at: string | null
           size_bytes: number
           storage_path: string
           user_id: string | null
@@ -1807,6 +1810,9 @@ export type Database = {
           id?: string
           mime_type?: string
           request_id: string
+          scan_result?: string | null
+          scan_status?: string
+          scanned_at?: string | null
           size_bytes?: number
           storage_path: string
           user_id?: string | null
@@ -1817,6 +1823,9 @@ export type Database = {
           id?: string
           mime_type?: string
           request_id?: string
+          scan_result?: string | null
+          scan_status?: string
+          scanned_at?: string | null
           size_bytes?: number
           storage_path?: string
           user_id?: string | null
