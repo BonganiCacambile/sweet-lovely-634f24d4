@@ -314,7 +314,54 @@ export function ContactForm() {
         </div>
       </div>
 
+      <div data-testid="support-attach">
+        <input
+          ref={fileInputRef}
+          id="cf-attachments"
+          type="file"
+          multiple
+          accept={SUPPORT_ATTACHMENT_ACCEPT}
+          onChange={onPickFiles}
+          className="sr-only"
+          data-testid="support-attach-input"
+        />
+        <label
+          htmlFor="cf-attachments"
+          className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-neutral-200 bg-neutral-50 px-4 py-2 text-xs font-semibold text-neutral-700 hover:bg-white"
+        >
+          <Paperclip className="h-3.5 w-3.5" />
+          Attach photos or documents
+        </label>
+        <p className="mt-1 pl-1 text-[11px] text-neutral-400">
+          Up to {SUPPORT_ATTACHMENT_MAX_FILES} files, {formatBytes(SUPPORT_ATTACHMENT_MAX_BYTES)} each. Images, PDF or text.
+        </p>
+        {files.length > 0 ? (
+          <ul className="mt-3 space-y-2">
+            {files.map((f, i) => (
+              <li
+                key={`${f.name}-${f.size}-${i}`}
+                data-testid="support-attach-item"
+                className="flex items-center gap-3 rounded-2xl border border-neutral-200 bg-white px-3 py-2"
+              >
+                <Paperclip className="h-3.5 w-3.5 flex-none text-neutral-400" />
+                <span className="min-w-0 flex-1 truncate text-xs text-neutral-800">{f.name}</span>
+                <span className="text-[11px] text-neutral-400">{formatBytes(f.size)}</span>
+                <button
+                  type="button"
+                  onClick={() => removeFile(i)}
+                  aria-label={`Remove ${f.name}`}
+                  className="rounded-full p-1 text-neutral-400 hover:bg-neutral-100 hover:text-neutral-700"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+      </div>
+
       <div className="pt-2">
+
         <button
           type="submit"
           data-testid="support-submit"
