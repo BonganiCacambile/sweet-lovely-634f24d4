@@ -413,7 +413,7 @@ function SupportRequestsPage() {
               </p>
             ) : null}
 
-            <AdminAttachments requestId={selected.id} />
+            <AdminAttachments requestId={selected.id} reference={selected.reference} />
             <AssignPanel request={selected} isMain={isMain} />
             <ReplyPanel request={selected} />
             <HistoryPanel requestId={selected.id} />
