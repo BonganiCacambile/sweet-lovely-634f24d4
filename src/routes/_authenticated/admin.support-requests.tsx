@@ -22,6 +22,7 @@ import {
   listSupportRequests,
   listSupportRequestReplies,
   sendSupportRequestReply,
+  sendTestSupportReply,
   supportRequestStats,
   updateSupportRequestStatus,
 } from "@/lib/admin/support-requests.functions";
@@ -272,9 +273,12 @@ function ReplyPanel({ request }: { request: SupportRow }) {
   const [body, setBody] = useState("");
   const [markResolved, setMarkResolved] = useState(false);
   const [previewId, setPreviewId] = useState<string | null>(null);
+  const [testMode, setTestMode] = useState(false);
+  const [testEmail, setTestEmail] = useState("");
 
   const listRepliesFn = useServerFn(listSupportRequestReplies);
   const sendReplyFn = useServerFn(sendSupportRequestReply);
+  const sendTestFn = useServerFn(sendTestSupportReply);
   const listTemplatesFn = useServerFn(listSupportReplyTemplates);
 
   const { data: templateData } = useQuery({
@@ -311,6 +315,19 @@ function ReplyPanel({ request }: { request: SupportRow }) {
           : "Reply saved — no account linked, use the email link to send it",
       );
       qc.invalidateQueries({ queryKey: ["admin", "support-requests"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const sendTest = useMutation({
+    mutationFn: () => sendTestFn({ data: { requestId: request.id, body, testEmail } }),
+    onSuccess: (r) => {
+      if (r.deliveredInApp) {
+        toast.success(`Test reply sent to ${r.email} in-app`);
+      } else {
+        toast.message(`No account for ${r.email} — opening your email client`);
+        if (typeof window !== "undefined") window.location.href = r.mailto;
+      }
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -395,6 +412,42 @@ function ReplyPanel({ request }: { request: SupportRow }) {
         placeholder={`Write a reply to ${request.name}…`}
         className="mt-3 w-full rounded-2xl border border-neutral-200 p-3 text-sm text-neutral-900 outline-none focus:border-neutral-400"
       />
+
+      <div className="mt-3 rounded-2xl border border-neutral-200 p-3" data-testid="support-reply-test-mode">
+        <label className="flex items-center gap-2 text-xs font-medium text-neutral-700">
+          <input
+            type="checkbox"
+            data-testid="support-reply-test-toggle"
+            checked={testMode}
+            onChange={(e) => setTestMode(e.target.checked)}
+          />
+          Test mode — send this draft to my own address first
+        </label>
+        {testMode ? (
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <input
+              type="email"
+              data-testid="support-reply-test-email"
+              value={testEmail}
+              onChange={(e) => setTestEmail(e.target.value)}
+              placeholder="you@sweetnlovely.co.za"
+              className="min-w-[220px] flex-1 rounded-full border border-neutral-200 px-3 py-1.5 text-xs outline-none focus:border-neutral-400"
+            />
+            <button
+              type="button"
+              data-testid="support-reply-test-send"
+              disabled={!body.trim() || !testEmail.trim() || sendTest.isPending}
+              onClick={() => sendTest.mutate()}
+              className="rounded-full border border-neutral-300 px-3 py-1.5 text-xs font-semibold text-neutral-800 hover:bg-neutral-50 disabled:opacity-50"
+            >
+              {sendTest.isPending ? "Sending test…" : "Send test"}
+            </button>
+            <p className="w-full text-[11px] text-neutral-500">
+              Test sends are never stored on the request and never reach the customer.
+            </p>
+          </div>
+        ) : null}
+      </div>
 
       <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
         <label className="flex items-center gap-2 text-xs text-neutral-600">
