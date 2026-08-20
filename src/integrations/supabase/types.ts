@@ -1790,6 +1790,47 @@ export type Database = {
         }
         Relationships: []
       }
+      support_request_attachments: {
+        Row: {
+          created_at: string
+          file_name: string
+          id: string
+          mime_type: string
+          request_id: string
+          size_bytes: number
+          storage_path: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          file_name: string
+          id?: string
+          mime_type?: string
+          request_id: string
+          size_bytes?: number
+          storage_path: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          file_name?: string
+          id?: string
+          mime_type?: string
+          request_id?: string
+          size_bytes?: number
+          storage_path?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_request_attachments_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "support_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       support_request_events: {
         Row: {
           actor_email: string | null
