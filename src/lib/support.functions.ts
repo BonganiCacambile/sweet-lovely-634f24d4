@@ -170,6 +170,7 @@ export const registerSupportAttachments = createServerFn({ method: "POST" })
         file_name: f.fileName,
         mime_type: f.mimeType || "application/octet-stream",
         size_bytes: f.sizeBytes,
+        scan_status: "pending",
       }));
     if (rows.length === 0) return { ok: false as const, error: "No valid attachments." };
     const { error } = await context.supabase.from("support_request_attachments").insert(rows);
@@ -180,32 +181,121 @@ export const registerSupportAttachments = createServerFn({ method: "POST" })
     return { ok: true as const, count: rows.length };
   });
 
-/** Attachments for one of the caller's own requests, with short-lived signed URLs. */
+/**
+ * Virus/malware scan for every not-yet-scanned attachment on one of the
+ * caller's own requests. Files stay unviewable until this marks them clean;
+ * anything flagged is purged from storage immediately.
+ */
+export const scanSupportAttachments = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ requestId: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    // Ownership check under RLS before touching the privileged client.
+    const { data: own } = await context.supabase
+      .from("support_requests")
+      .select("id")
+      .eq("id", data.requestId)
+      .eq("user_id", context.userId)
+      .maybeSingle();
+    if (!own) return { ok: false as const, error: "Support request not found." };
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { scanAttachmentBytes } = await import("@/lib/support/malware-scan.server");
+
+    const { data: rows, error } = await supabaseAdmin
+      .from("support_request_attachments")
+      .select("id, storage_path, file_name, mime_type, scan_status")
+      .eq("request_id", data.requestId)
+      .in("scan_status", ["pending", "scanning"]);
+    if (error) throw new Error(error.message);
+
+    let clean = 0;
+    let infected = 0;
+    let failed = 0;
+
+    for (const r of rows ?? []) {
+      const path = r.storage_path as string;
+      try {
+        const { data: blob, error: dlErr } = await supabaseAdmin.storage
+          .from(SUPPORT_ATTACHMENT_BUCKET)
+          .download(path);
+        if (dlErr || !blob) throw new Error(dlErr?.message ?? "download failed");
+
+        const bytes = new Uint8Array(await blob.arrayBuffer());
+        const verdict = await scanAttachmentBytes(bytes, r.file_name as string, r.mime_type as string);
+
+        if (verdict.status === "infected") {
+          infected += 1;
+          await supabaseAdmin.storage.from(SUPPORT_ATTACHMENT_BUCKET).remove([path]);
+        } else if (verdict.status === "clean") {
+          clean += 1;
+        } else {
+          failed += 1;
+        }
+
+        await supabaseAdmin
+          .from("support_request_attachments")
+          .update({
+            scan_status: verdict.status,
+            scan_result: `${verdict.engine}: ${verdict.detail}`,
+            scanned_at: new Date().toISOString(),
+          })
+          .eq("id", r.id as string);
+      } catch (err) {
+        failed += 1;
+        console.error("[support] attachment scan failed", path, err);
+        await supabaseAdmin
+          .from("support_request_attachments")
+          .update({
+            scan_status: "error",
+            scan_result: "Scan could not be completed.",
+            scanned_at: new Date().toISOString(),
+          })
+          .eq("id", r.id as string);
+      }
+    }
+
+    return { ok: true as const, scanned: (rows ?? []).length, clean, infected, failed };
+  });
+
+/**
+ * Attachments for one of the caller's own requests. Signed URLs are only
+ * minted for files that passed the malware scan.
+ */
 export const getMySupportRequestAttachments = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ requestId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { data: rows, error } = await context.supabase
       .from("support_request_attachments")
-      .select("id, storage_path, file_name, mime_type, size_bytes, created_at")
+      .select("id, storage_path, file_name, mime_type, size_bytes, created_at, scan_status, scan_result")
       .eq("request_id", data.requestId)
       .order("created_at", { ascending: true });
     if (error) throw new Error(error.message);
     const out = [] as Array<{
-      id: string; file_name: string; mime_type: string; size_bytes: number; created_at: string; url: string | null;
+      id: string; file_name: string; mime_type: string; size_bytes: number; created_at: string;
+      url: string | null; scan_status: string; scan_result: string | null;
     }>;
     for (const r of rows ?? []) {
-      const { data: signed } = await context.supabase.storage
-        .from(SUPPORT_ATTACHMENT_BUCKET)
-        .createSignedUrl(r.storage_path as string, 60 * 10);
+      const status = (r.scan_status as string | null) ?? "pending";
+      let url: string | null = null;
+      if (status === "clean") {
+        const { data: signed } = await context.supabase.storage
+          .from(SUPPORT_ATTACHMENT_BUCKET)
+          .createSignedUrl(r.storage_path as string, 60 * 10);
+        url = signed?.signedUrl ?? null;
+      }
       out.push({
         id: r.id as string,
         file_name: r.file_name as string,
         mime_type: r.mime_type as string,
         size_bytes: Number(r.size_bytes ?? 0),
         created_at: r.created_at as string,
-        url: signed?.signedUrl ?? null,
+        url,
+        scan_status: status,
+        scan_result: (r.scan_result as string | null) ?? null,
       });
     }
     return { rows: out };
   });
+
