@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { Bell, CheckCheck } from "lucide-react";
 import { useNotifications } from "@/lib/notifications-context";
 import { useAuth } from "@/lib/auth-context";
@@ -15,7 +15,15 @@ function timeAgo(iso: string): string {
   return `${d}d ago`;
 }
 
-export function NotificationBell() {
+/** Only same-origin paths are ever followed from notification payloads. */
+function safePath(data: Record<string, unknown> | null | undefined): string | null {
+  const url = typeof data?.url === "string" ? data.url : null;
+  if (!url) return null;
+  return /^\/[A-Za-z0-9\-._~/?#[\]@!$&'()*+,;=%]*$/.test(url) ? url : null;
+}
+
+export function NotificationBell({ className }: { className?: string }) {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { unread, recent, rtStatus, markAllRead, markOneRead } = useNotifications();
   const [open, setOpen] = useState(false);
@@ -32,7 +40,7 @@ export function NotificationBell() {
   if (!user) return null;
 
   return (
-    <div ref={ref} className="pointer-events-auto relative">
+    <div ref={ref} className={"pointer-events-auto relative " + (className ?? "")}>
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
@@ -88,6 +96,11 @@ export function NotificationBell() {
                       type="button"
                       onClick={() => {
                         if (!n.read) void markOneRead(n.id);
+                        const to = safePath(n.data);
+                        if (to) {
+                          setOpen(false);
+                          void navigate({ to });
+                        }
                       }}
                       className={
                         "flex w-full items-start gap-3 px-4 py-3 text-left transition hover:bg-neutral-50 " +
