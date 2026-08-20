@@ -34,6 +34,12 @@ type Row = {
   is_active: boolean;
 };
 
+const SAMPLE_VARS = {
+  name: TEMPLATE_VARIABLES[0]!.sample,
+  email: TEMPLATE_VARIABLES[1]!.sample,
+  reference: TEMPLATE_VARIABLES[2]!.sample,
+};
+
 const EMPTY = { id: undefined as string | undefined, label: "", description: "", body: "", is_active: true };
 
 function TemplatesPage() {
@@ -128,9 +134,21 @@ function TemplatesPage() {
         <h2 className="text-sm font-semibold text-neutral-900">
           {draft.id ? "Edit template" : "New template"}
         </h2>
-        <p className="mt-1 text-xs text-neutral-500">
-          Placeholders: {"{{name}}"}, {"{{email}}"}, {"{{reference}}"}
-        </p>
+        <div className="mt-2 flex flex-wrap items-center gap-2" data-testid="template-variable-help">
+          <span className="text-xs text-neutral-500">Insert a variable:</span>
+          {TEMPLATE_VARIABLES.map((v) => (
+            <button
+              key={v.token}
+              type="button"
+              title={`${v.label} — ${v.help}`}
+              data-testid={`template-variable-${v.token.replace(/[^a-z]/g, "")}`}
+              onClick={() => setDraft((d) => ({ ...d, body: `${d.body}${v.token}` }))}
+              className="rounded-full border border-neutral-200 bg-neutral-50 px-2.5 py-1 font-mono text-[11px] text-neutral-700 hover:bg-neutral-100"
+            >
+              {v.token}
+            </button>
+          ))}
+        </div>
         <div className="mt-3 grid gap-3 md:grid-cols-2">
           <input
             data-testid="template-label"
@@ -155,6 +173,22 @@ function TemplatesPage() {
           placeholder="Hi {{name}}, …"
           className="mt-3 w-full rounded-2xl border border-neutral-200 p-3 text-sm outline-none focus:border-neutral-400"
         />
+
+        <div className="mt-3 rounded-2xl border border-dashed border-neutral-200 bg-neutral-50 p-3" data-testid="template-preview">
+          <p className="text-[11px] uppercase tracking-wider text-neutral-500">
+            Live preview (sample customer)
+          </p>
+          <p className="mt-1.5 whitespace-pre-wrap text-sm text-neutral-800" data-testid="template-preview-body">
+            {draft.body.trim()
+              ? renderTemplateBody(draft.body, SAMPLE_VARS)
+              : "Start typing a body to see how the customer will read it."}
+          </p>
+          {unknownTokens.length > 0 ? (
+            <p className="mt-2 text-xs text-amber-600" data-testid="template-preview-warning">
+              Unknown variable{unknownTokens.length > 1 ? "s" : ""}: {unknownTokens.join(", ")} — these will be sent as-is.
+            </p>
+          ) : null}
+        </div>
         <div className="mt-3 flex flex-wrap items-center gap-3">
           <label className="flex items-center gap-2 text-xs text-neutral-600">
             <input
