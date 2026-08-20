@@ -42,8 +42,16 @@ export function ContactForm() {
   });
   const [errors, setErrors] = useState<FieldErrors>({});
   const [submitting, setSubmitting] = useState(false);
-  const [confirmation, setConfirmation] = useState<{ reference: string; zoneName: string } | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [confirmation, setConfirmation] = useState<{
+    reference: string;
+    zoneName: string;
+    attachments: number;
+  } | null>(null);
   const submitRequest = useServerFn(submitSupportRequest);
+  const registerAttachments = useServerFn(registerSupportAttachments);
 
   const update =
     (key: FieldKey) =>
@@ -51,6 +59,64 @@ export function ContactForm() {
       setValues((v) => ({ ...v, [key]: e.target.value }));
       if (errors[key]) setErrors((prev) => ({ ...prev, [key]: undefined }));
     };
+
+  const onPickFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const picked = Array.from(e.target.files ?? []);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+    if (picked.length === 0) return;
+    const next = [...files];
+    for (const f of picked) {
+      if (f.size > SUPPORT_ATTACHMENT_MAX_BYTES) {
+        toast.error(`${f.name} is larger than ${formatBytes(SUPPORT_ATTACHMENT_MAX_BYTES)}.`);
+        continue;
+      }
+      if (next.length >= SUPPORT_ATTACHMENT_MAX_FILES) {
+        toast.error(`You can attach up to ${SUPPORT_ATTACHMENT_MAX_FILES} files.`);
+        break;
+      }
+      if (!next.some((existing) => existing.name === f.name && existing.size === f.size)) next.push(f);
+    }
+    setFiles(next);
+  };
+
+  const removeFile = (index: number) => setFiles((prev) => prev.filter((_, i) => i !== index));
+
+  /** Uploads to the private bucket under the caller's own folder, then records the rows. */
+  const uploadAttachments = async (requestId: string, userId: string) => {
+    if (files.length === 0) return 0;
+    setUploading(true);
+    const uploaded: Array<{ storagePath: string; fileName: string; mimeType: string; sizeBytes: number }> = [];
+    try {
+      for (const file of files) {
+        const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_").slice(-120);
+        const storagePath = `${userId}/${requestId}/${crypto.randomUUID()}-${safeName}`;
+        const { error } = await supabase.storage
+          .from(SUPPORT_ATTACHMENT_BUCKET)
+          .upload(storagePath, file, { contentType: file.type || "application/octet-stream" });
+        if (error) {
+          toast.error(`Could not upload ${file.name}.`);
+          continue;
+        }
+        uploaded.push({
+          storagePath,
+          fileName: file.name.slice(-120),
+          mimeType: file.type || "application/octet-stream",
+          sizeBytes: file.size,
+        });
+      }
+      if (uploaded.length > 0) {
+        const res = await registerAttachments({ data: { requestId, files: uploaded } });
+        if (!res.ok) {
+          toast.error(res.error);
+          return 0;
+        }
+        return res.count;
+      }
+      return 0;
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -78,14 +144,17 @@ export function ContactForm() {
         if (res.code === "no_zone") openPicker();
         return;
       }
-      setConfirmation({ reference: res.reference, zoneName: res.zoneName });
+      const attachments = user ? await uploadAttachments(res.id, user.id) : 0;
+      setConfirmation({ reference: res.reference, zoneName: res.zoneName, attachments });
       setValues({ subject: "", category: "general", orderNumber: "", phone: "", message: "" });
+      setFiles([]);
     } catch {
       toast.error("Could not send your message. Please try again.");
     } finally {
       setSubmitting(false);
     }
   };
+
 
   const fieldBase =
     "w-full rounded-full border border-neutral-200 bg-neutral-50/80 px-5 py-3.5 text-sm text-neutral-900 placeholder:text-neutral-400 transition-all outline-none focus:border-primary focus:bg-white focus:ring-4 focus:ring-primary/15";
