@@ -33,6 +33,7 @@ const SECTIONS: Array<{ heading: string; items: Item[] }> = [
       { to: "/admin/zone-assignments", label: "Zone Assignments", icon: Users2, mainOnly: true },
       { to: "/admin/reviews", label: "Reviews", icon: Star, mainOnly: true },
       { to: "/admin/support-requests", label: "Support Requests", icon: LifeBuoy, mainOnly: true },
+      { to: "/admin/support-reply-templates", label: "Reply Templates", icon: LifeBuoy, mainOnly: true },
       { to: "/admin/notifications", label: "Notifications", icon: Bell, mainOnly: true },
       { to: "/admin/reports", label: "Reports", icon: FileBarChart2, mainOnly: true },
       { to: "/admin/employee-activity", label: "Employee Activity", icon: Activity, mainOnly: true },
