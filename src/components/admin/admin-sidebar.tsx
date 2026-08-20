@@ -35,6 +35,7 @@ const SECTIONS: Array<{ heading: string; items: Item[] }> = [
       { to: "/admin/support-requests", label: "Support Requests", icon: LifeBuoy, mainOnly: true },
       { to: "/admin/support-reply-templates", label: "Reply Templates", icon: LifeBuoy, mainOnly: true },
       { to: "/admin/support-reply-audit", label: "Reply Audit", icon: LifeBuoy, mainOnly: true },
+      { to: "/admin/audit-retention", label: "Audit Retention", icon: LifeBuoy, mainOnly: true },
       { to: "/admin/notifications", label: "Notifications", icon: Bell, mainOnly: true },
       { to: "/admin/reports", label: "Reports", icon: FileBarChart2, mainOnly: true },
       { to: "/admin/employee-activity", label: "Employee Activity", icon: Activity, mainOnly: true },

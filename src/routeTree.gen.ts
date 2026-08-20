@@ -31,6 +31,7 @@ import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } fr
 import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
 import { Route as ApiPublicPaystackWebhookRouteImport } from './routes/api/public/paystack-webhook'
+import { Route as ApiPublicAuditRetentionCleanupRouteImport } from './routes/api/public/audit-retention-cleanup'
 import { Route as AuthenticatedAdminZoneAssignmentsRouteImport } from './routes/_authenticated/admin.zone-assignments'
 import { Route as AuthenticatedAdminUsersRouteImport } from './routes/_authenticated/admin.users'
 import { Route as AuthenticatedAdminToppingsRouteImport } from './routes/_authenticated/admin.toppings'
@@ -53,6 +54,7 @@ import { Route as AuthenticatedAdminEmployeeActivityRouteImport } from './routes
 import { Route as AuthenticatedAdminDeliveryZonesRouteImport } from './routes/_authenticated/admin.delivery-zones'
 import { Route as AuthenticatedAdminContentRouteImport } from './routes/_authenticated/admin.content'
 import { Route as AuthenticatedAdminCategoriesRouteImport } from './routes/_authenticated/admin.categories'
+import { Route as AuthenticatedAdminAuditRetentionRouteImport } from './routes/_authenticated/admin.audit-retention'
 import { Route as AuthenticatedAdminAuditRouteImport } from './routes/_authenticated/admin.audit'
 import { Route as AuthenticatedAdminAnalyticsRouteImport } from './routes/_authenticated/admin.analytics'
 import { Route as AuthenticatedAccountSecurityRouteImport } from './routes/_authenticated/account.security'
@@ -173,6 +175,12 @@ const ApiPublicPaystackWebhookRoute =
   ApiPublicPaystackWebhookRouteImport.update({
     id: '/api/public/paystack-webhook',
     path: '/api/public/paystack-webhook',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicAuditRetentionCleanupRoute =
+  ApiPublicAuditRetentionCleanupRouteImport.update({
+    id: '/api/public/audit-retention-cleanup',
+    path: '/api/public/audit-retention-cleanup',
     getParentRoute: () => rootRouteImport,
   } as any)
 const AuthenticatedAdminZoneAssignmentsRoute =
@@ -305,6 +313,12 @@ const AuthenticatedAdminCategoriesRoute =
     path: '/categories',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const AuthenticatedAdminAuditRetentionRoute =
+  AuthenticatedAdminAuditRetentionRouteImport.update({
+    id: '/audit-retention',
+    path: '/audit-retention',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const AuthenticatedAdminAuditRoute = AuthenticatedAdminAuditRouteImport.update({
   id: '/audit',
   path: '/audit',
@@ -387,6 +401,7 @@ export interface FileRoutesByFullPath {
   '/account/security': typeof AuthenticatedAccountSecurityRoute
   '/admin/analytics': typeof AuthenticatedAdminAnalyticsRoute
   '/admin/audit': typeof AuthenticatedAdminAuditRoute
+  '/admin/audit-retention': typeof AuthenticatedAdminAuditRetentionRoute
   '/admin/categories': typeof AuthenticatedAdminCategoriesRoute
   '/admin/content': typeof AuthenticatedAdminContentRoute
   '/admin/delivery-zones': typeof AuthenticatedAdminDeliveryZonesRoute
@@ -409,6 +424,7 @@ export interface FileRoutesByFullPath {
   '/admin/toppings': typeof AuthenticatedAdminToppingsRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/admin/zone-assignments': typeof AuthenticatedAdminZoneAssignmentsRoute
+  '/api/public/audit-retention-cleanup': typeof ApiPublicAuditRetentionCleanupRoute
   '/api/public/paystack-webhook': typeof ApiPublicPaystackWebhookRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/account/orders/$orderId': typeof AuthenticatedAccountOrdersOrderIdRoute
@@ -440,6 +456,7 @@ export interface FileRoutesByTo {
   '/account/security': typeof AuthenticatedAccountSecurityRoute
   '/admin/analytics': typeof AuthenticatedAdminAnalyticsRoute
   '/admin/audit': typeof AuthenticatedAdminAuditRoute
+  '/admin/audit-retention': typeof AuthenticatedAdminAuditRetentionRoute
   '/admin/categories': typeof AuthenticatedAdminCategoriesRoute
   '/admin/content': typeof AuthenticatedAdminContentRoute
   '/admin/delivery-zones': typeof AuthenticatedAdminDeliveryZonesRoute
@@ -462,6 +479,7 @@ export interface FileRoutesByTo {
   '/admin/toppings': typeof AuthenticatedAdminToppingsRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/admin/zone-assignments': typeof AuthenticatedAdminZoneAssignmentsRoute
+  '/api/public/audit-retention-cleanup': typeof ApiPublicAuditRetentionCleanupRoute
   '/api/public/paystack-webhook': typeof ApiPublicPaystackWebhookRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/account/orders/$orderId': typeof AuthenticatedAccountOrdersOrderIdRoute
@@ -496,6 +514,7 @@ export interface FileRoutesById {
   '/_authenticated/account/security': typeof AuthenticatedAccountSecurityRoute
   '/_authenticated/admin/analytics': typeof AuthenticatedAdminAnalyticsRoute
   '/_authenticated/admin/audit': typeof AuthenticatedAdminAuditRoute
+  '/_authenticated/admin/audit-retention': typeof AuthenticatedAdminAuditRetentionRoute
   '/_authenticated/admin/categories': typeof AuthenticatedAdminCategoriesRoute
   '/_authenticated/admin/content': typeof AuthenticatedAdminContentRoute
   '/_authenticated/admin/delivery-zones': typeof AuthenticatedAdminDeliveryZonesRoute
@@ -518,6 +537,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/toppings': typeof AuthenticatedAdminToppingsRoute
   '/_authenticated/admin/users': typeof AuthenticatedAdminUsersRoute
   '/_authenticated/admin/zone-assignments': typeof AuthenticatedAdminZoneAssignmentsRoute
+  '/api/public/audit-retention-cleanup': typeof ApiPublicAuditRetentionCleanupRoute
   '/api/public/paystack-webhook': typeof ApiPublicPaystackWebhookRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/account/orders/$orderId': typeof AuthenticatedAccountOrdersOrderIdRoute
@@ -552,6 +572,7 @@ export interface FileRouteTypes {
     | '/account/security'
     | '/admin/analytics'
     | '/admin/audit'
+    | '/admin/audit-retention'
     | '/admin/categories'
     | '/admin/content'
     | '/admin/delivery-zones'
@@ -574,6 +595,7 @@ export interface FileRouteTypes {
     | '/admin/toppings'
     | '/admin/users'
     | '/admin/zone-assignments'
+    | '/api/public/audit-retention-cleanup'
     | '/api/public/paystack-webhook'
     | '/admin/'
     | '/account/orders/$orderId'
@@ -605,6 +627,7 @@ export interface FileRouteTypes {
     | '/account/security'
     | '/admin/analytics'
     | '/admin/audit'
+    | '/admin/audit-retention'
     | '/admin/categories'
     | '/admin/content'
     | '/admin/delivery-zones'
@@ -627,6 +650,7 @@ export interface FileRouteTypes {
     | '/admin/toppings'
     | '/admin/users'
     | '/admin/zone-assignments'
+    | '/api/public/audit-retention-cleanup'
     | '/api/public/paystack-webhook'
     | '/admin'
     | '/account/orders/$orderId'
@@ -660,6 +684,7 @@ export interface FileRouteTypes {
     | '/_authenticated/account/security'
     | '/_authenticated/admin/analytics'
     | '/_authenticated/admin/audit'
+    | '/_authenticated/admin/audit-retention'
     | '/_authenticated/admin/categories'
     | '/_authenticated/admin/content'
     | '/_authenticated/admin/delivery-zones'
@@ -682,6 +707,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/toppings'
     | '/_authenticated/admin/users'
     | '/_authenticated/admin/zone-assignments'
+    | '/api/public/audit-retention-cleanup'
     | '/api/public/paystack-webhook'
     | '/_authenticated/admin/'
     | '/_authenticated/account/orders/$orderId'
@@ -704,6 +730,7 @@ export interface RootRouteChildren {
   CheckoutSuccessRoute: typeof CheckoutSuccessRoute
   MenuFullMenuRoute: typeof MenuFullMenuRoute
   Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
+  ApiPublicAuditRetentionCleanupRoute: typeof ApiPublicAuditRetentionCleanupRoute
   ApiPublicPaystackWebhookRoute: typeof ApiPublicPaystackWebhookRoute
 }
 
@@ -863,6 +890,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicPaystackWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/audit-retention-cleanup': {
+      id: '/api/public/audit-retention-cleanup'
+      path: '/api/public/audit-retention-cleanup'
+      fullPath: '/api/public/audit-retention-cleanup'
+      preLoaderRoute: typeof ApiPublicAuditRetentionCleanupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/admin/zone-assignments': {
       id: '/_authenticated/admin/zone-assignments'
       path: '/zone-assignments'
@@ -1017,6 +1051,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminCategoriesRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/audit-retention': {
+      id: '/_authenticated/admin/audit-retention'
+      path: '/audit-retention'
+      fullPath: '/admin/audit-retention'
+      preLoaderRoute: typeof AuthenticatedAdminAuditRetentionRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/audit': {
       id: '/_authenticated/admin/audit'
       path: '/audit'
@@ -1121,6 +1162,7 @@ const AuthenticatedAccountRouteWithChildren =
 interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminAnalyticsRoute: typeof AuthenticatedAdminAnalyticsRoute
   AuthenticatedAdminAuditRoute: typeof AuthenticatedAdminAuditRoute
+  AuthenticatedAdminAuditRetentionRoute: typeof AuthenticatedAdminAuditRetentionRoute
   AuthenticatedAdminCategoriesRoute: typeof AuthenticatedAdminCategoriesRoute
   AuthenticatedAdminContentRoute: typeof AuthenticatedAdminContentRoute
   AuthenticatedAdminDeliveryZonesRoute: typeof AuthenticatedAdminDeliveryZonesRoute
@@ -1149,6 +1191,7 @@ interface AuthenticatedAdminRouteChildren {
 const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminAnalyticsRoute: AuthenticatedAdminAnalyticsRoute,
   AuthenticatedAdminAuditRoute: AuthenticatedAdminAuditRoute,
+  AuthenticatedAdminAuditRetentionRoute: AuthenticatedAdminAuditRetentionRoute,
   AuthenticatedAdminCategoriesRoute: AuthenticatedAdminCategoriesRoute,
   AuthenticatedAdminContentRoute: AuthenticatedAdminContentRoute,
   AuthenticatedAdminDeliveryZonesRoute: AuthenticatedAdminDeliveryZonesRoute,
@@ -1227,6 +1270,7 @@ const rootRouteChildren: RootRouteChildren = {
   CheckoutSuccessRoute: CheckoutSuccessRoute,
   MenuFullMenuRoute: MenuFullMenuRoute,
   Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
+  ApiPublicAuditRetentionCleanupRoute: ApiPublicAuditRetentionCleanupRoute,
   ApiPublicPaystackWebhookRoute: ApiPublicPaystackWebhookRoute,
 }
 export const routeTree = rootRouteImport
