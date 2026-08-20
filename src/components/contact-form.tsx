@@ -7,6 +7,7 @@ import { useServerFn } from "@tanstack/react-start";
 import {
   submitSupportRequest,
   registerSupportAttachments,
+  scanSupportAttachments,
   SUPPORT_CATEGORIES,
   SUPPORT_ATTACHMENT_ACCEPT,
   SUPPORT_ATTACHMENT_BUCKET,
@@ -52,6 +53,7 @@ export function ContactForm() {
   } | null>(null);
   const submitRequest = useServerFn(submitSupportRequest);
   const registerAttachments = useServerFn(registerSupportAttachments);
+  const scanAttachments = useServerFn(scanSupportAttachments);
 
   const update =
     (key: FieldKey) =>
@@ -109,6 +111,20 @@ export function ContactForm() {
         if (!res.ok) {
           toast.error(res.error);
           return 0;
+        }
+        // Files stay unviewable until the malware scan clears them.
+        try {
+          const scan = await scanAttachments({ data: { requestId } });
+          if (scan.ok && scan.infected > 0) {
+            toast.error(
+              `${scan.infected} file${scan.infected > 1 ? "s were" : " was"} blocked by our virus scan and removed.`,
+            );
+          }
+          if (scan.ok && scan.failed > 0) {
+            toast.warning("Some files could not be scanned and won't be viewable yet.");
+          }
+        } catch (err) {
+          console.error("[support] attachment scan request failed", err);
         }
         return res.count;
       }
