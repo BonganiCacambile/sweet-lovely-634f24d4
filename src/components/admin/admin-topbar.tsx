@@ -1,5 +1,6 @@
-import { Bell, Menu, Search, PanelLeftClose, PanelLeft } from "lucide-react";
+import { Menu, Search, PanelLeftClose, PanelLeft } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
+import { NotificationBell } from "@/components/notifications/notification-bell";
 
 export function AdminTopbar({
   onOpenMobile,
