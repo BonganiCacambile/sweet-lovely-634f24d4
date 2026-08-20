@@ -539,3 +539,49 @@ export const sendTestSupportReply = createServerFn({ method: "POST" })
       )}&body=${encodeURIComponent(data.body)}`,
     };
   });
+
+/**
+ * Attachments for a support request, scoped to the admin's zone. Signed URLs
+ * are minted server-side with the service role so files stay private.
+ */
+export const listSupportRequestAttachments = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ requestId: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const scope = await requireAdminScope(context.supabase, context.userId, context.claims);
+    const { data: req, error: reqErr } = await context.supabase
+      .from("support_requests")
+      .select("id, delivery_zone_id")
+      .eq("id", data.requestId)
+      .maybeSingle();
+    if (reqErr) throw new Error(reqErr.message);
+    if (!req) throw new Error("Support request not found");
+    await assertZoneAccess(scope, req.delivery_zone_id as string | null, context, "support request");
+
+    const { data: rows, error } = await context.supabase
+      .from("support_request_attachments")
+      .select("id, storage_path, file_name, mime_type, size_bytes, created_at")
+      .eq("request_id", data.requestId)
+      .order("created_at", { ascending: true });
+    if (error) throw new Error(error.message);
+    if ((rows ?? []).length === 0) return { rows: [] };
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const out: Array<{
+      id: string; file_name: string; mime_type: string; size_bytes: number; created_at: string; url: string | null;
+    }> = [];
+    for (const r of rows ?? []) {
+      const { data: signed } = await supabaseAdmin.storage
+        .from("support-attachments")
+        .createSignedUrl(r.storage_path as string, 60 * 10);
+      out.push({
+        id: r.id as string,
+        file_name: r.file_name as string,
+        mime_type: r.mime_type as string,
+        size_bytes: Number(r.size_bytes ?? 0),
+        created_at: r.created_at as string,
+        url: signed?.signedUrl ?? null,
+      });
+    }
+    return { rows: out };
+  });

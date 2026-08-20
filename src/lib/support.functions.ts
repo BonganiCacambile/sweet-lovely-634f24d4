@@ -129,3 +129,83 @@ export const getMySupportRequestReplies = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { rows: (rows ?? []).map((r) => ({ id: r.id as string, body: r.body as string, created_at: r.created_at as string })) };
   });
+
+export const SUPPORT_ATTACHMENT_BUCKET = "support-attachments";
+export const SUPPORT_ATTACHMENT_MAX_BYTES = 10 * 1024 * 1024;
+export const SUPPORT_ATTACHMENT_MAX_FILES = 5;
+export const SUPPORT_ATTACHMENT_ACCEPT =
+  "image/png,image/jpeg,image/webp,image/gif,image/heic,application/pdf,text/plain";
+
+const attachmentSchema = z.object({
+  requestId: z.string().uuid(),
+  files: z
+    .array(
+      z.object({
+        storagePath: z.string().trim().min(1).max(400),
+        fileName: z.string().trim().min(1).max(200),
+        mimeType: z.string().trim().max(150).default("application/octet-stream"),
+        sizeBytes: z.number().int().min(0).max(SUPPORT_ATTACHMENT_MAX_BYTES),
+      }),
+    )
+    .min(1)
+    .max(SUPPORT_ATTACHMENT_MAX_FILES),
+});
+
+/**
+ * Records already-uploaded attachment objects against a support request.
+ * The storage path is forced into the caller's own folder so a forged
+ * payload cannot claim another user's files.
+ */
+export const registerSupportAttachments = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => attachmentSchema.parse(d))
+  .handler(async ({ data, context }) => {
+    const prefix = `${context.userId}/${data.requestId}/`;
+    const rows = data.files
+      .filter((f) => f.storagePath.startsWith(prefix))
+      .map((f) => ({
+        request_id: data.requestId,
+        user_id: context.userId,
+        storage_path: f.storagePath,
+        file_name: f.fileName,
+        mime_type: f.mimeType || "application/octet-stream",
+        size_bytes: f.sizeBytes,
+      }));
+    if (rows.length === 0) return { ok: false as const, error: "No valid attachments." };
+    const { error } = await context.supabase.from("support_request_attachments").insert(rows);
+    if (error) {
+      console.error("[support] attachment register failed", error.message);
+      return { ok: false as const, error: "Could not attach your files." };
+    }
+    return { ok: true as const, count: rows.length };
+  });
+
+/** Attachments for one of the caller's own requests, with short-lived signed URLs. */
+export const getMySupportRequestAttachments = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ requestId: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { data: rows, error } = await context.supabase
+      .from("support_request_attachments")
+      .select("id, storage_path, file_name, mime_type, size_bytes, created_at")
+      .eq("request_id", data.requestId)
+      .order("created_at", { ascending: true });
+    if (error) throw new Error(error.message);
+    const out = [] as Array<{
+      id: string; file_name: string; mime_type: string; size_bytes: number; created_at: string; url: string | null;
+    }>;
+    for (const r of rows ?? []) {
+      const { data: signed } = await context.supabase.storage
+        .from(SUPPORT_ATTACHMENT_BUCKET)
+        .createSignedUrl(r.storage_path as string, 60 * 10);
+      out.push({
+        id: r.id as string,
+        file_name: r.file_name as string,
+        mime_type: r.mime_type as string,
+        size_bytes: Number(r.size_bytes ?? 0),
+        created_at: r.created_at as string,
+        url: signed?.signedUrl ?? null,
+      });
+    }
+    return { rows: out };
+  });
