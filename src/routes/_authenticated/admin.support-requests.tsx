@@ -732,6 +732,16 @@ function ReplyPanel({ request }: { request: SupportRow }) {
           />
           Mark as resolved after sending
         </label>
+        <label className="flex items-center gap-2 text-xs text-neutral-600">
+          <input
+            type="checkbox"
+            data-testid="support-reply-internal"
+            checked={internal}
+            onChange={(e) => setInternal(e.target.checked)}
+          />
+          Internal note (never shown to the customer)
+        </label>
+
         <div className="flex items-center gap-2">
           <a
             href={`mailto:${request.email}?subject=${encodeURIComponent(
