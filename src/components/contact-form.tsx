@@ -173,6 +173,11 @@ export function ContactForm() {
         <p className="mt-3 inline-flex rounded-full bg-white px-4 py-1.5 text-sm font-semibold text-emerald-900">
           Request {confirmation.reference}
         </p>
+        {confirmation.attachments > 0 ? (
+          <p className="mt-2 text-xs text-emerald-800">
+            {confirmation.attachments} attachment{confirmation.attachments === 1 ? "" : "s"} uploaded.
+          </p>
+        ) : null}
         <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
           <Link
             to="/account/support"
@@ -365,13 +370,13 @@ export function ContactForm() {
         <button
           type="submit"
           data-testid="support-submit"
-          disabled={submitting || !selected}
+          disabled={submitting || uploading || !selected}
           className="group inline-flex items-center justify-center gap-2 rounded-full bg-[#ff003c] px-8 py-3.5 text-sm font-semibold text-white shadow-[0_10px_24px_-10px_rgba(255,0,60,0.7)] transition-all hover:-translate-y-0.5 hover:bg-[#e6003a] hover:shadow-[0_14px_30px_-10px_rgba(255,0,60,0.55)] active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-70"
         >
-          {submitting ? (
+          {submitting || uploading ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin" />
-              Sending…
+              {uploading ? "Uploading files…" : "Sending…"}
             </>
           ) : (
             <>
