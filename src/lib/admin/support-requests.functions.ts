@@ -72,3 +72,85 @@ export const updateSupportRequestStatus = createServerFn({ method: "POST" })
     await logAudit(context, "support_request.status", "support_request", data.id, { status: data.status });
     return { ok: true };
   });
+
+const REPLY_SELECT = "id, request_id, author_id, author_email, body, channel, created_at";
+
+export const listSupportRequestReplies = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ requestId: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    await requireAdmin(context.supabase, context.userId);
+    const { data: rows, error } = await context.supabase
+      .from("support_request_replies")
+      .select(REPLY_SELECT)
+      .eq("request_id", data.requestId)
+      .order("created_at", { ascending: true });
+    if (error) throw new Error(error.message);
+    return { rows: rows ?? [] };
+  });
+
+export const sendSupportRequestReply = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        requestId: z.string().uuid(),
+        body: z.string().trim().min(1, "Reply cannot be empty").max(5000),
+        markResolved: z.boolean().optional().default(false),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    await requireAdmin(context.supabase, context.userId);
+
+    const { data: req, error: reqErr } = await context.supabase
+      .from("support_requests")
+      .select("id, user_id, name, email, status")
+      .eq("id", data.requestId)
+      .maybeSingle();
+    if (reqErr) throw new Error(reqErr.message);
+    if (!req) throw new Error("Support request not found");
+
+    const { data: reply, error } = await context.supabase
+      .from("support_request_replies")
+      .insert({
+        request_id: data.requestId,
+        author_id: context.userId,
+        author_email: context.claims?.email ?? null,
+        body: data.body,
+        channel: req.user_id ? "in_app" : "email",
+      })
+      .select(REPLY_SELECT)
+      .single();
+    if (error) throw new Error(error.message);
+
+    // Deliver in-app when the requester has an account.
+    if (req.user_id) {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      await supabaseAdmin.from("notifications").insert({
+        user_id: req.user_id,
+        title: "Reply from Sweet 'n Lovely support",
+        body: data.body.slice(0, 500),
+        category: "account",
+        data: { support_request_id: data.requestId, url: "/contact" },
+        dedupe_key: `support_reply:${reply.id}`,
+      });
+    }
+
+    const nextStatus = data.markResolved ? "resolved" : req.status === "new" ? "in_progress" : req.status;
+    if (nextStatus !== req.status) {
+      const { error: upErr } = await context.supabase
+        .from("support_requests")
+        .update({ status: nextStatus })
+        .eq("id", data.requestId);
+      if (upErr) throw new Error(upErr.message);
+    }
+
+    await logAudit(context, "support_request.reply", "support_request", data.requestId, {
+      reply_id: reply.id,
+      channel: reply.channel,
+      status: nextStatus,
+    });
+
+    return { reply, status: nextStatus, deliveredInApp: Boolean(req.user_id), email: req.email };
+  });

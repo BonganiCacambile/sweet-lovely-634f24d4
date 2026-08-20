@@ -4,7 +4,7 @@ import { requireMainAdminGuard } from "@/lib/admin/route-guards";
 import { MainAdminGuard } from "@/components/admin/main-admin-guard";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { LifeBuoy, Mail, Phone, Search, X } from "lucide-react";
+import { LifeBuoy, Mail, Phone, Search, Send, X } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/admin/page-header";
 import { StatusBadge } from "@/components/admin/status-badge";
@@ -14,6 +14,8 @@ import { useDebounced } from "@/hooks/use-debounced";
 import { formatRelative } from "@/lib/admin/format";
 import {
   listSupportRequests,
+  listSupportRequestReplies,
+  sendSupportRequestReply,
   supportRequestStats,
   updateSupportRequestStatus,
 } from "@/lib/admin/support-requests.functions";
@@ -250,9 +252,103 @@ function SupportRequestsPage() {
                 </button>
               ))}
             </div>
+
+            <ReplyPanel request={selected} />
           </div>
         </div>
       ) : null}
+    </div>
+  );
+}
+
+function ReplyPanel({ request }: { request: SupportRow }) {
+  const qc = useQueryClient();
+  const [body, setBody] = useState("");
+  const [markResolved, setMarkResolved] = useState(false);
+
+  const listRepliesFn = useServerFn(listSupportRequestReplies);
+  const sendReplyFn = useServerFn(sendSupportRequestReply);
+
+  const { data: replies, isLoading } = useQuery({
+    queryKey: ["admin", "support-requests", "replies", request.id],
+    queryFn: () => listRepliesFn({ data: { requestId: request.id } }),
+  });
+
+  const send = useMutation({
+    mutationFn: () => sendReplyFn({ data: { requestId: request.id, body, markResolved } }),
+    onSuccess: (r) => {
+      setBody("");
+      setMarkResolved(false);
+      toast.success(
+        r.deliveredInApp
+          ? "Reply sent to the customer's notifications"
+          : "Reply saved — no account linked, use the email link to send it",
+      );
+      qc.invalidateQueries({ queryKey: ["admin", "support-requests"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  return (
+    <div className="mt-6 border-t border-neutral-200 pt-4" data-testid="support-reply-panel">
+      <h3 className="text-sm font-semibold text-neutral-900">Replies</h3>
+
+      <div className="mt-3 space-y-2">
+        {isLoading ? (
+          <p className="text-xs text-neutral-500">Loading replies…</p>
+        ) : (replies?.rows.length ?? 0) === 0 ? (
+          <p className="text-xs text-neutral-500">No replies yet.</p>
+        ) : (
+          replies!.rows.map((r) => (
+            <div key={r.id} className="rounded-2xl bg-neutral-50 p-3" data-testid="support-reply-item">
+              <p className="text-[11px] text-neutral-500">
+                {r.author_email ?? "Admin"} · {formatRelative(r.created_at)} · {r.channel === "in_app" ? "in-app" : "email"}
+              </p>
+              <p className="mt-1 whitespace-pre-wrap text-sm text-neutral-800">{r.body}</p>
+            </div>
+          ))
+        )}
+      </div>
+
+      <textarea
+        data-testid="support-reply-body"
+        value={body}
+        onChange={(e) => setBody(e.target.value)}
+        rows={4}
+        placeholder={`Write a reply to ${request.name}…`}
+        className="mt-3 w-full rounded-2xl border border-neutral-200 p-3 text-sm text-neutral-900 outline-none focus:border-neutral-400"
+      />
+
+      <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
+        <label className="flex items-center gap-2 text-xs text-neutral-600">
+          <input
+            type="checkbox"
+            data-testid="support-reply-resolve"
+            checked={markResolved}
+            onChange={(e) => setMarkResolved(e.target.checked)}
+          />
+          Mark as resolved after sending
+        </label>
+        <div className="flex items-center gap-2">
+          <a
+            href={`mailto:${request.email}?subject=${encodeURIComponent(
+              "Re: your Sweet 'n Lovely support request",
+            )}&body=${encodeURIComponent(body)}`}
+            className="rounded-full border border-neutral-200 px-3 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50"
+          >
+            Open in email
+          </a>
+          <button
+            type="button"
+            data-testid="support-reply-send"
+            disabled={!body.trim() || send.isPending}
+            onClick={() => send.mutate()}
+            className="inline-flex items-center gap-2 rounded-full bg-neutral-900 px-4 py-1.5 text-xs font-semibold text-white hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <Send className="h-3.5 w-3.5" /> {send.isPending ? "Sending…" : "Send reply"}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
