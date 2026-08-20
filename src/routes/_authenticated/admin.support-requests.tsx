@@ -13,6 +13,10 @@ import { ExportMenu } from "@/components/admin/export-menu";
 import { useDebounced } from "@/hooks/use-debounced";
 import { formatRelative } from "@/lib/admin/format";
 import {
+  SUPPORT_REPLY_TEMPLATES,
+  renderSupportTemplate,
+} from "@/lib/admin/support-reply-templates";
+import {
   listSupportRequests,
   listSupportRequestReplies,
   sendSupportRequestReply,
@@ -308,6 +312,41 @@ function ReplyPanel({ request }: { request: SupportRow }) {
             </div>
           ))
         )}
+      </div>
+
+      <div className="mt-3" data-testid="support-reply-templates">
+        <p className="text-[11px] uppercase tracking-wider text-neutral-500">Quick replies</p>
+        <div className="mt-1.5 flex flex-wrap gap-2">
+          {SUPPORT_REPLY_TEMPLATES.map((t) => (
+            <button
+              key={t.id}
+              type="button"
+              title={t.description}
+              data-testid={`support-reply-template-${t.id}`}
+              onClick={() => {
+                const text = renderSupportTemplate(t, {
+                  name: request.name,
+                  email: request.email,
+                  reference: request.id,
+                });
+                setBody((prev) => (prev.trim() ? `${prev.trimEnd()}\n\n${text}` : text));
+              }}
+              className="rounded-full border border-neutral-200 px-3 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50"
+            >
+              {t.label}
+            </button>
+          ))}
+          {body.trim() ? (
+            <button
+              type="button"
+              data-testid="support-reply-clear"
+              onClick={() => setBody("")}
+              className="rounded-full px-3 py-1.5 text-xs font-medium text-neutral-500 hover:text-neutral-800"
+            >
+              Clear
+            </button>
+          ) : null}
+        </div>
       </div>
 
       <textarea
