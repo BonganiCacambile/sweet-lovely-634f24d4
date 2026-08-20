@@ -12,7 +12,12 @@ export const submitSupportRequest = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => supportSchema.parse(data))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { findUserIdByEmail } = await import("@/lib/admin/user-lookup.server");
+    // Link the request to an existing account (when the email belongs to one)
+    // so admin replies can be delivered in-app instead of dead-ending.
+    const userId = await findUserIdByEmail(data.email);
     const { error } = await supabaseAdmin.from("support_requests").insert({
+      user_id: userId,
       name: data.name,
       email: data.email,
       phone: data.phone ? data.phone : null,
