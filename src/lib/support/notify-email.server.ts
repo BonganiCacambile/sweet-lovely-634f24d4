@@ -1,5 +1,4 @@
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { findEmailsByUserIds } from "@/lib/admin/user-lookup.server";
+import { resolveSupportRecipients } from "./email-recipients.server";
 
 const GATEWAY_URL = "https://connector-gateway.lovable.dev/resend";
 
@@ -22,24 +21,6 @@ function escapeHtml(value: string) {
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
-}
-
-/** Admin user ids that should be alerted: main admins + the zone's admins. */
-async function resolveRecipientIds(zoneId: string | null): Promise<string[]> {
-  const { data, error } = await supabaseAdmin
-    .from("user_roles")
-    .select("user_id, role, assigned_zone_id");
-  if (error) {
-    console.error("[support-email] role lookup failed", error.message);
-    return [];
-  }
-  const ids = new Set<string>();
-  for (const r of data ?? []) {
-    const isMain = r.role === "admin";
-    const isZoneAdmin = Boolean(zoneId) && r.assigned_zone_id === zoneId;
-    if (isMain || isZoneAdmin) ids.add(r.user_id as string);
-  }
-  return Array.from(ids);
 }
 
 function buildHtml(p: SupportEmailPayload) {
@@ -82,12 +63,9 @@ export async function sendSupportRequestEmail(
     return { sent: 0, skipped: "resend_not_configured" };
   }
 
-  const ids = await resolveRecipientIds(p.zoneId);
-  if (!ids.length) return { sent: 0, skipped: "no_admin_recipients" };
-
-  const emailMap = await findEmailsByUserIds(ids);
-  const to = Array.from(new Set(Object.values(emailMap).filter(Boolean)));
-  if (!to.length) return { sent: 0, skipped: "no_admin_emails" };
+  // Recipients are configured per delivery zone in Admin -> Support Email Alerts.
+  const to = await resolveSupportRecipients(p.zoneId);
+  if (!to.length) return { sent: 0, skipped: "no_admin_recipients" };
 
   const from =
     process.env["SUPPORT_FROM_EMAIL"] || "Sweet 'n Lovely <onboarding@resend.dev>";

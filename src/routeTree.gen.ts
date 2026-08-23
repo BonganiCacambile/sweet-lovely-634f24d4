@@ -38,6 +38,7 @@ import { Route as AuthenticatedAdminToppingsRouteImport } from './routes/_authen
 import { Route as AuthenticatedAdminSupportRequestsRouteImport } from './routes/_authenticated/admin.support-requests'
 import { Route as AuthenticatedAdminSupportReplyTemplatesRouteImport } from './routes/_authenticated/admin.support-reply-templates'
 import { Route as AuthenticatedAdminSupportReplyAuditRouteImport } from './routes/_authenticated/admin.support-reply-audit'
+import { Route as AuthenticatedAdminSupportEmailSettingsRouteImport } from './routes/_authenticated/admin.support-email-settings'
 import { Route as AuthenticatedAdminSettingsRouteImport } from './routes/_authenticated/admin.settings'
 import { Route as AuthenticatedAdminSecurityRouteImport } from './routes/_authenticated/admin.security'
 import { Route as AuthenticatedAdminRolesRouteImport } from './routes/_authenticated/admin.roles'
@@ -217,6 +218,12 @@ const AuthenticatedAdminSupportReplyAuditRoute =
   AuthenticatedAdminSupportReplyAuditRouteImport.update({
     id: '/support-reply-audit',
     path: '/support-reply-audit',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminSupportEmailSettingsRoute =
+  AuthenticatedAdminSupportEmailSettingsRouteImport.update({
+    id: '/support-email-settings',
+    path: '/support-email-settings',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
 const AuthenticatedAdminSettingsRoute =
@@ -426,6 +433,7 @@ export interface FileRoutesByFullPath {
   '/admin/roles': typeof AuthenticatedAdminRolesRoute
   '/admin/security': typeof AuthenticatedAdminSecurityRoute
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
+  '/admin/support-email-settings': typeof AuthenticatedAdminSupportEmailSettingsRoute
   '/admin/support-reply-audit': typeof AuthenticatedAdminSupportReplyAuditRoute
   '/admin/support-reply-templates': typeof AuthenticatedAdminSupportReplyTemplatesRoute
   '/admin/support-requests': typeof AuthenticatedAdminSupportRequestsRoute
@@ -482,6 +490,7 @@ export interface FileRoutesByTo {
   '/admin/roles': typeof AuthenticatedAdminRolesRoute
   '/admin/security': typeof AuthenticatedAdminSecurityRoute
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
+  '/admin/support-email-settings': typeof AuthenticatedAdminSupportEmailSettingsRoute
   '/admin/support-reply-audit': typeof AuthenticatedAdminSupportReplyAuditRoute
   '/admin/support-reply-templates': typeof AuthenticatedAdminSupportReplyTemplatesRoute
   '/admin/support-requests': typeof AuthenticatedAdminSupportRequestsRoute
@@ -541,6 +550,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/roles': typeof AuthenticatedAdminRolesRoute
   '/_authenticated/admin/security': typeof AuthenticatedAdminSecurityRoute
   '/_authenticated/admin/settings': typeof AuthenticatedAdminSettingsRoute
+  '/_authenticated/admin/support-email-settings': typeof AuthenticatedAdminSupportEmailSettingsRoute
   '/_authenticated/admin/support-reply-audit': typeof AuthenticatedAdminSupportReplyAuditRoute
   '/_authenticated/admin/support-reply-templates': typeof AuthenticatedAdminSupportReplyTemplatesRoute
   '/_authenticated/admin/support-requests': typeof AuthenticatedAdminSupportRequestsRoute
@@ -600,6 +610,7 @@ export interface FileRouteTypes {
     | '/admin/roles'
     | '/admin/security'
     | '/admin/settings'
+    | '/admin/support-email-settings'
     | '/admin/support-reply-audit'
     | '/admin/support-reply-templates'
     | '/admin/support-requests'
@@ -656,6 +667,7 @@ export interface FileRouteTypes {
     | '/admin/roles'
     | '/admin/security'
     | '/admin/settings'
+    | '/admin/support-email-settings'
     | '/admin/support-reply-audit'
     | '/admin/support-reply-templates'
     | '/admin/support-requests'
@@ -714,6 +726,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/roles'
     | '/_authenticated/admin/security'
     | '/_authenticated/admin/settings'
+    | '/_authenticated/admin/support-email-settings'
     | '/_authenticated/admin/support-reply-audit'
     | '/_authenticated/admin/support-reply-templates'
     | '/_authenticated/admin/support-requests'
@@ -950,6 +963,13 @@ declare module '@tanstack/react-router' {
       path: '/support-reply-audit'
       fullPath: '/admin/support-reply-audit'
       preLoaderRoute: typeof AuthenticatedAdminSupportReplyAuditRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/support-email-settings': {
+      id: '/_authenticated/admin/support-email-settings'
+      path: '/support-email-settings'
+      fullPath: '/admin/support-email-settings'
+      preLoaderRoute: typeof AuthenticatedAdminSupportEmailSettingsRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
     '/_authenticated/admin/settings': {
@@ -1201,6 +1221,7 @@ interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminRolesRoute: typeof AuthenticatedAdminRolesRoute
   AuthenticatedAdminSecurityRoute: typeof AuthenticatedAdminSecurityRoute
   AuthenticatedAdminSettingsRoute: typeof AuthenticatedAdminSettingsRoute
+  AuthenticatedAdminSupportEmailSettingsRoute: typeof AuthenticatedAdminSupportEmailSettingsRoute
   AuthenticatedAdminSupportReplyAuditRoute: typeof AuthenticatedAdminSupportReplyAuditRoute
   AuthenticatedAdminSupportReplyTemplatesRoute: typeof AuthenticatedAdminSupportReplyTemplatesRoute
   AuthenticatedAdminSupportRequestsRoute: typeof AuthenticatedAdminSupportRequestsRoute
@@ -1231,6 +1252,8 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminRolesRoute: AuthenticatedAdminRolesRoute,
   AuthenticatedAdminSecurityRoute: AuthenticatedAdminSecurityRoute,
   AuthenticatedAdminSettingsRoute: AuthenticatedAdminSettingsRoute,
+  AuthenticatedAdminSupportEmailSettingsRoute:
+    AuthenticatedAdminSupportEmailSettingsRoute,
   AuthenticatedAdminSupportReplyAuditRoute:
     AuthenticatedAdminSupportReplyAuditRoute,
   AuthenticatedAdminSupportReplyTemplatesRoute:
