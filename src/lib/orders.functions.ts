@@ -12,7 +12,10 @@ export const getMyOrders = createServerFn({ method: "GET" })
         "id, order_number, status, subtotal_zar, delivery_zar, total_zar, created_at, address, delivery_zone_name, fulfillment_method, collection_location, estimated_minutes, order_items(id, product_slug, title_snapshot, quantity, unit_price_zar, line_total_zar, extras, extras_total_zar)",
       )
       .eq("user_id", userId)
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false })
+      // Order history page renders the most recent orders; cap the payload so a
+      // long-standing customer never downloads their entire history at once.
+      .limit(50);
     if (error) {
       console.error("getMyOrders error:", error);
       throw new Error("Could not load your orders");
