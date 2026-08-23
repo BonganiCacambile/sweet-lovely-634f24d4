@@ -127,8 +127,9 @@ export function ZonePicker() {
 
 /** Compact chip that shows the current zone and opens the picker. */
 export function ZoneChip({ className }: { className?: string }) {
-  const { selected, openPicker, loading } = useZone();
-  if (loading) return null;
+  // Rendering unconditionally keeps SSR output and the first client render
+  // identical (the zones query resolves at different times on each side).
+  const { selected, openPicker } = useZone();
   return (
     <button
       onClick={openPicker}
