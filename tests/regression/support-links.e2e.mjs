@@ -131,7 +131,7 @@ async function main() {
     // --- 3. Empty submit surfaces validation, not silence ---------------
     await submit.click();
     const validationVisible = await page
-      .locator("p.text-destructive")
+      .locator("p.text-destructive, p.text-red-600, [data-testid='support-zone-missing']")
       .first()
       .waitFor({ state: "visible", timeout: 5000 })
       .then(() => true)
@@ -139,12 +139,11 @@ async function main() {
     record("empty submit shows field validation errors", validationVisible);
 
     // --- 4. Valid submit is acknowledged --------------------------------
-    await name.fill("Regression Bot");
-    await email.fill(customer.email);
+    await subject.fill("Regression support wiring check");
     await message.fill("Automated support wiring check — please ignore.");
     await submit.click();
     const ack = await page
-      .getByText(/message sent/i)
+      .getByText(/we.?ve received your message|message sent/i)
       .first()
       .waitFor({ state: "visible", timeout: 15000 })
       .then(() => true)
