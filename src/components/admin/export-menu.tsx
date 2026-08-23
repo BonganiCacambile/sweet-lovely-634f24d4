@@ -53,9 +53,9 @@ export function ExportMenu<T>({ rows, columns, filename, title, entity }: { rows
       </button>
       {open && (
         <div className="absolute right-0 z-30 mt-2 w-48 overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-lg">
-          <MenuItem icon={<FileSpreadsheet className="h-3.5 w-3.5" />} label="CSV" onClick={() => void runExport("csv", () => exportCsv(rows, columns, filename))} />
-          <MenuItem icon={<FileType className="h-3.5 w-3.5" />} label="Excel (.xlsx)" onClick={() => void runExport("xlsx", () => exportXlsx(rows, columns, filename))} />
-          <MenuItem icon={<FileText className="h-3.5 w-3.5" />} label="PDF" onClick={() => void runExport("pdf", () => exportPdf(rows, columns, filename, title))} />
+          <MenuItem icon={<FileSpreadsheet className="h-3.5 w-3.5" />} label="CSV" onClick={() => void runExport("csv", (m) => m.exportCsv(rows, columns, filename))} />
+          <MenuItem icon={<FileType className="h-3.5 w-3.5" />} label="Excel (.xlsx)" onClick={() => void runExport("xlsx", (m) => m.exportXlsx(rows, columns, filename))} />
+          <MenuItem icon={<FileText className="h-3.5 w-3.5" />} label="PDF" onClick={() => void runExport("pdf", (m) => m.exportPdf(rows, columns, filename, title))} />
         </div>
       )}
     </div>
