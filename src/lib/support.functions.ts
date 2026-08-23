@@ -77,6 +77,27 @@ export const submitSupportRequest = createServerFn({ method: "POST" })
       console.error("[support] failed to store request", error.message);
       return { ok: false as const, code: "failed" as const, error: "Could not save your message. Please try again." };
     }
+    // Email alert to the main admin(s) and the zone's admins. Failures are
+    // logged inside the helper and never block the customer's submission.
+    try {
+      const { sendSupportRequestEmail } = await import("@/lib/support/notify-email.server");
+      const result = await sendSupportRequestEmail({
+        requestId: row.id as string,
+        reference: row.reference as string,
+        subject: data.subject,
+        message: data.message,
+        category: data.category,
+        orderNumber: data.orderNumber || null,
+        customerName: (profile?.full_name as string | null) || email.split("@")[0] || "Customer",
+        customerEmail: email,
+        zoneId: zone.id as string,
+        zoneName: zone.name as string,
+      });
+      if (result.error) console.error("[support] admin email alert failed", result.error);
+    } catch (err) {
+      console.error("[support] admin email alert threw", err);
+    }
+
     return {
       ok: true as const,
       id: row.id as string,
