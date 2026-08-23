@@ -102,6 +102,60 @@ export const Route = createFileRoute("/")({
   component: Index,
 });
 
+type HomeContent = NonNullable<Awaited<ReturnType<typeof getHomeContent>>>;
+
+function mapPopular(rows: HomeContent["popular"]): Product[] {
+  return rows.map((p) => {
+    const linked = (p as unknown as { product?: { price_medium_zar: number | null; price_large_zar: number | null } | null }).product;
+    const sizes = (p as unknown as { sizes?: Product["sizes"] }).sizes ?? [];
+    // Use the product slug as the cart id root when linked, so `${slug}--sz-${sizeId}`
+    // parses correctly server-side for stock + authoritative pricing.
+    const slug = (p as unknown as { product_slug?: string | null }).product_slug ?? null;
+    return {
+      id: slug ?? p.id,
+      title: p.title,
+      price: p.price ?? "",
+      image: p.image_url ?? undefined,
+      content: p.description ?? undefined,
+      nutrition: "from",
+      priceMedium: linked?.price_medium_zar != null ? Number(linked.price_medium_zar) : undefined,
+      priceLarge: linked?.price_large_zar != null ? Number(linked.price_large_zar) : undefined,
+      sizes: sizes && sizes.length > 0 ? sizes : undefined,
+    } satisfies Product;
+  });
+}
+
+function mapDesserts(rows: HomeContent["desserts"]): Product[] {
+  return rows.map((d) => ({
+    id: d.id,
+    title: d.title,
+    price: d.price ?? "",
+    image: d.image_url ?? undefined,
+    content: d.description ?? undefined,
+    nutrition: "from",
+  }));
+}
+
+function mapFeatured(rows: HomeContent["featured"]): Product[] {
+  return rows
+    .map((f) => {
+      const p = (f as unknown as {
+        products?: { slug: string; title: string; image: string | null; price_zar: number | null; description: string | null } | null;
+      }).products;
+      if (!p) return null;
+      const item: Product = {
+        id: p.slug,
+        title: p.title,
+        price: p.price_zar != null ? `R${Number(p.price_zar).toFixed(0)}` : "",
+        image: p.image ?? undefined,
+        content: p.description ?? undefined,
+        nutrition: "from",
+      };
+      return item;
+    })
+    .filter((p): p is Product => p !== null);
+}
+
 function Index() {
   const { cities } = useActiveZoneCities();
   const fetchContent = useServerFn(getHomeContent);
