@@ -193,11 +193,11 @@ export const getHomeContentFingerprint = createServerFn({ method: "GET" }).handl
   const sb = publicClient();
   const [popular, deals, specials, banners, desserts, featured, visibility, products, sizes, categories] =
     await Promise.all([
-      sb.from("home_popular_items").select("*"),
-      sb.from("home_hot_deals").select("*"),
-      sb.from("home_specials").select("*"),
-      sb.from("home_banners").select("*"),
-      sb.from("home_desserts").select("*"),
+      sb.from("home_popular_items").select(POPULAR_COLS),
+      sb.from("home_hot_deals").select(DEALS_COLS),
+      sb.from("home_specials").select(SPECIALS_COLS),
+      sb.from("home_banners").select(BANNERS_COLS),
+      sb.from("home_desserts").select(DESSERTS_COLS),
       sb
         .from("featured_items")
         .select("id, product_slug, placement, sort_order, is_active, starts_at, ends_at")
