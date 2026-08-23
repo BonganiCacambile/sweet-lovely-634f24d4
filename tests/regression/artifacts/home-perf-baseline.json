@@ -1,8 +1,8 @@
 {
-  "lcp": 2240,
-  "domInteractive": 218,
-  "ttfb": 167.10000000009313,
+  "lcp": 1096,
+  "domInteractive": 1031.7999999998137,
+  "ttfb": 648.3999999999069,
   "appUrl": "http://localhost:8080",
   "mode": "authenticated:dev",
-  "recordedAt": "2026-08-04T21:01:31.325Z"
+  "recordedAt": "2026-08-23T13:22:59.038Z"
 }

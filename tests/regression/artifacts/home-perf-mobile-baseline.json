@@ -1,7 +1,7 @@
 {
-  "lcp": 2104,
-  "domInteractive": 416.3000000002794,
-  "ttfb": 335.5,
+  "lcp": 1032,
+  "domInteractive": 988.5,
+  "ttfb": 666.6000000000931,
   "viewport": {
     "width": 390,
     "height": 664,
@@ -10,5 +10,5 @@
   "device": "iPhone 13",
   "appUrl": "http://localhost:8080",
   "mode": "authenticated:dev",
-  "recordedAt": "2026-08-04T21:02:42.334Z"
+  "recordedAt": "2026-08-23T13:23:06.878Z"
 }
