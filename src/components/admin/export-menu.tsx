@@ -2,7 +2,11 @@ import { useState, useRef, useEffect } from "react";
 import { Download, FileSpreadsheet, FileText, FileType } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { exportCsv, exportXlsx, exportPdf, type ExportColumn } from "@/lib/admin/exports";
+import type { ExportColumn } from "@/lib/admin/exports";
+
+// xlsx + jspdf + html2canvas are ~700 KB. They are only needed once an admin
+// actually clicks an export entry, so the module is loaded on demand.
+const loadExports = () => import("@/lib/admin/exports");
 import { logDataExport } from "@/lib/admin/employee-security.functions";
 
 export function ExportMenu<T>({ rows, columns, filename, title, entity }: { rows: T[]; columns: ExportColumn<T>[]; filename: string; title?: string; entity?: string }) {
