@@ -38,9 +38,9 @@ function FullMenuPage() {
     queryFn: () => fetchMenu(),
     staleTime: 30_000,
   });
-  useRealtimeInvalidate(["products", "categories"], [["public-menu"]]);
-  // product_sizes is broadcast for BBQ-style dynamic sizes
-  useRealtimeInvalidate(["product_sizes"], [["public-menu"]]);
+  // Single realtime channel for all menu tables (product_sizes carries the
+  // BBQ-style dynamic sizes) — avoids opening two sockets per menu visit.
+  useRealtimeInvalidate(["products", "categories", "product_sizes"], [["public-menu"]]);
 
   // Preload category icon images so switching tabs never shows a stale bitmap.
   const preloadCategoryIcons = useMemo(
