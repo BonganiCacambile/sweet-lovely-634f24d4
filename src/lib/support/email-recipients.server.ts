@@ -32,7 +32,9 @@ export function parseZoneConfig(value: unknown): ZoneEmailConfig {
   return {
     enabled: typeof v.enabled === "boolean" ? v.enabled : DEFAULT_ZONE_CONFIG.enabled,
     mode: v.mode === "custom" ? "custom" : "all",
-    userIds: Array.isArray(v.userIds) ? v.userIds.filter((x): x is string => typeof x === "string") : [],
+    userIds: Array.isArray(v.userIds)
+      ? v.userIds.filter((x): x is string => typeof x === "string")
+      : [],
     extraEmails: Array.isArray(v.extraEmails)
       ? v.extraEmails.filter((x): x is string => typeof x === "string")
       : [],
@@ -40,9 +42,9 @@ export function parseZoneConfig(value: unknown): ZoneEmailConfig {
 }
 
 /** Candidate admins for a zone: every main admin plus that zone's zone-admins. */
-export async function listCandidateAdmins(zoneId: string | null): Promise<
-  Array<{ userId: string; email: string; isMain: boolean; isZoneAdmin: boolean }>
-> {
+export async function listCandidateAdmins(
+  zoneId: string | null,
+): Promise<Array<{ userId: string; email: string; isMain: boolean; isZoneAdmin: boolean }>> {
   const { data, error } = await supabaseAdmin
     .from("user_roles")
     .select("user_id, role, assigned_zone_id");
