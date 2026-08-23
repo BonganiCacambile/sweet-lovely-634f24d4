@@ -220,7 +220,9 @@ function SupportEmailSettingsPage() {
               className="rounded-2xl bg-neutral-50 p-3 text-xs text-neutral-600"
               data-testid="support-email-preview"
             >
-              <p className="font-medium text-neutral-800">Currently emailed ({recipients.length})</p>
+              <p className="font-medium text-neutral-800">
+                Currently emailed ({recipients.length})
+              </p>
               <p className="mt-0.5 break-words">
                 {recipients.length ? recipients.join(", ") : "Nobody — no alerts will be sent."}
               </p>

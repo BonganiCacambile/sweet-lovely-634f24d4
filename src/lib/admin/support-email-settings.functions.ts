@@ -45,11 +45,8 @@ export const getSupportEmailSettings = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => zoneInput.parse(d ?? {}))
   .handler(async ({ data, context }) => {
     await requireAdmin(context.supabase, context.userId);
-    const {
-      getZoneEmailConfig,
-      listCandidateAdmins,
-      resolveSupportRecipients,
-    } = await import("@/lib/support/email-recipients.server");
+    const { getZoneEmailConfig, listCandidateAdmins, resolveSupportRecipients } =
+      await import("@/lib/support/email-recipients.server");
     const [config, candidates, recipients] = await Promise.all([
       getZoneEmailConfig(data.zoneId),
       listCandidateAdmins(data.zoneId),
@@ -72,10 +69,9 @@ export const saveSupportEmailSettings = createServerFn({ method: "POST" })
     };
     const { error } = await context.supabase
       .from("system_settings")
-      .upsert(
-        [{ group_key: SUPPORT_EMAIL_GROUP, key: zoneKey(data.zoneId), value }],
-        { onConflict: "group_key,key" },
-      );
+      .upsert([{ group_key: SUPPORT_EMAIL_GROUP, key: zoneKey(data.zoneId), value }], {
+        onConflict: "group_key,key",
+      });
     if (error) throw new Error(error.message);
     await logAudit(context, "support_email.update", "system_setting", zoneKey(data.zoneId), value);
     return { ok: true as const };

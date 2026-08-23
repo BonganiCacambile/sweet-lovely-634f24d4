@@ -67,8 +67,7 @@ export async function sendSupportRequestEmail(
   const to = await resolveSupportRecipients(p.zoneId);
   if (!to.length) return { sent: 0, skipped: "no_admin_recipients" };
 
-  const from =
-    process.env["SUPPORT_FROM_EMAIL"] || "Sweet 'n Lovely <onboarding@resend.dev>";
+  const from = process.env["SUPPORT_FROM_EMAIL"] || "Sweet 'n Lovely <onboarding@resend.dev>";
 
   try {
     const response = await fetch(`${GATEWAY_URL}/emails`, {
