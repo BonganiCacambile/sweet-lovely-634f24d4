@@ -1,22 +1,48 @@
 {
-  "cart": {
-    "lcp": 2208,
-    "domInteractive": 247.6999999997206,
-    "ttfb": 135.89999999990687
-  },
-  "checkout": {
-    "lcp": 1848,
-    "domInteractive": 461.5,
-    "ttfb": 349.89999999990687
-  },
-  "softNavMs": 358,
-  "serverFnTimings": {},
-  "device": "iPhone 13",
-  "viewport": {
-    "width": 390,
-    "height": 664
-  },
-  "appUrl": "http://localhost:8080",
-  "mode": "authenticated:dev",
-  "recordedAt": "2026-08-23T13:23:24.924Z"
+  "modes": {
+    "authenticated:dev": {
+      "cart": {
+        "lcp": 2004,
+        "domInteractive": 225.8000000002794,
+        "ttfb": 133.10000000009313
+      },
+      "checkout": {
+        "lcp": 2020,
+        "domInteractive": 520.3999999999069,
+        "ttfb": 402.29999999981374
+      },
+      "softNavMs": 337,
+      "serverFnTimings": {},
+      "device": "iPhone 13",
+      "viewport": {
+        "width": 390,
+        "height": 664
+      },
+      "appUrl": "http://localhost:8080",
+      "mode": "authenticated:dev",
+      "recordedAt": "2026-08-23T13:33:16.111Z"
+    },
+    "authenticated:prod": {
+      "cart": {
+        "lcp": 868,
+        "domInteractive": 94.09999999962747,
+        "ttfb": 11.5
+      },
+      "checkout": {
+        "lcp": 520,
+        "domInteractive": 31,
+        "ttfb": 14.899999999906868
+      },
+      "softNavMs": 197,
+      "serverFnTimings": {},
+      "device": "iPhone 13",
+      "viewport": {
+        "width": 390,
+        "height": 664
+      },
+      "appUrl": "http://127.0.0.1:4173",
+      "mode": "authenticated:prod",
+      "recordedAt": "2026-08-23T13:32:49.844Z"
+    }
+  }
 }
