@@ -198,10 +198,12 @@ function FloatingZoneChip() {
   );
 }
 
-// The storefront (home, menu, cart, checkout, contact, locations) is public.
-// Only account/admin routes require auth — they live under
-// `src/routes/_authenticated/` and are gated by that layout's `beforeLoad`.
-// This gate only renders transition loading screens during sign-in / sign-out.
+// The storefront (home, menu, locations, contact) is public *content*: it is
+// rendered immediately so first paint never waits on the Supabase session.
+// Ordering still requires an account — unauthenticated visitors are redirected
+// to /auth once the session check resolves, client-side, without blocking paint.
+// Account/admin routes live under `src/routes/_authenticated/` and are gated by
+// that layout's `beforeLoad`.
 function AuthGate({ children }: { children: ReactNode }) {
   const { user, loading, authTransition } = useAuth();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
@@ -216,6 +218,13 @@ function AuthGate({ children }: { children: ReactNode }) {
     pathname === "/sitemap.xml" ||
     pathname === "/mcp";
 
+  // Storefront content routes: paint first, resolve auth afterwards.
+  const isStorefrontPath =
+    pathname === "/" ||
+    pathname.startsWith("/menu") ||
+    pathname.startsWith("/locations") ||
+    pathname.startsWith("/contact");
+
   useEffect(() => {
     if (loading) return;
     if (!user && !isPublicPath) {
@@ -227,8 +236,12 @@ function AuthGate({ children }: { children: ReactNode }) {
   }, [user, loading, isPublicPath, navigate]);
 
   if (authTransition === "signing-out") return <LoadingScreen />;
-  if (authTransition === "signing-in" && !user && !isPublicPath) return <LoadingScreen />;
-  if (loading) return <LoadingScreen />;
-  if (!user && !isPublicPath) return <LoadingScreen />;
+  if (authTransition === "signing-in" && !user && !isPublicPath && !isStorefrontPath)
+    return <LoadingScreen />;
+  // While the session is still resolving, storefront content paints right away
+  // instead of showing the full-screen loader.
+  if (loading) return isStorefrontPath ? <>{children}</> : <LoadingScreen />;
+  if (!user && !isPublicPath && !isStorefrontPath) return <LoadingScreen />;
   return <>{children}</>;
 }
+
