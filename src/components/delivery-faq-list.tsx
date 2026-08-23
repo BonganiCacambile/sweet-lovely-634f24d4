@@ -10,7 +10,6 @@ interface FaqItem {
   body: React.ReactNode;
 }
 
-const ZONES_KEY = ["zones", "active"] as const;
 
 function formatNames(names: string[]): string {
   if (names.length === 0) return "";
