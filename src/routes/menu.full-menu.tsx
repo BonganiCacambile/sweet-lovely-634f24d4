@@ -92,17 +92,20 @@ function FullMenuPage() {
       sizes: productSizes && productSizes.length > 0 ? productSizes : undefined,
     } satisfies MenuItem;
   });
-  const items: MenuItem[] = liveItems.length > 0 ? liveItems : MENU_ITEMS;
-  const liveCategories = (data?.categories ?? []).map((c) => ({
-    id: c.slug as MenuCategory,
-    label: c.label,
-    image: c.image ?? "",
-    intro: c.intro as string | null,
-  }));
-  const categories =
-    liveCategories.length > 0
+    return liveItems.length > 0 ? liveItems : MENU_ITEMS;
+  }, [data?.products, data?.sizes]);
+
+  const categories = useMemo(() => {
+    const liveCategories = (data?.categories ?? []).map((c) => ({
+      id: c.slug as MenuCategory,
+      label: c.label,
+      image: c.image ?? "",
+      intro: c.intro as string | null,
+    }));
+    return liveCategories.length > 0
       ? liveCategories
       : MENU_CATEGORIES.map((c) => ({ ...c, intro: null as string | null }));
+  }, [data?.categories]);
 
   const visibleCategories =
     active === "all" ? categories.map((c) => c.id) : [active];
