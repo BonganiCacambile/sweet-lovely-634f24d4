@@ -21,7 +21,10 @@ export function ExportMenu<T>({ rows, columns, filename, title, entity }: { rows
 
   // Every export is recorded server-side (and row-capped for zone admins)
   // before any file is produced.
-  const runExport = async (format: "csv" | "xlsx" | "pdf", write: () => void) => {
+  const runExport = async (
+    format: "csv" | "xlsx" | "pdf",
+    write: (mod: Awaited<ReturnType<typeof loadExports>>) => void,
+  ) => {
     setOpen(false);
     try {
       await logExport({
