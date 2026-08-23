@@ -2,7 +2,11 @@ import { useState, useRef, useEffect } from "react";
 import { Download, FileSpreadsheet, FileText, FileType } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { exportCsv, exportXlsx, exportPdf, type ExportColumn } from "@/lib/admin/exports";
+import type { ExportColumn } from "@/lib/admin/exports";
+
+// xlsx + jspdf + html2canvas are ~700 KB. They are only needed once an admin
+// actually clicks an export entry, so the module is loaded on demand.
+const loadExports = () => import("@/lib/admin/exports");
 import { logDataExport } from "@/lib/admin/employee-security.functions";
 
 export function ExportMenu<T>({ rows, columns, filename, title, entity }: { rows: T[]; columns: ExportColumn<T>[]; filename: string; title?: string; entity?: string }) {
@@ -17,7 +21,10 @@ export function ExportMenu<T>({ rows, columns, filename, title, entity }: { rows
 
   // Every export is recorded server-side (and row-capped for zone admins)
   // before any file is produced.
-  const runExport = async (format: "csv" | "xlsx" | "pdf", write: () => void) => {
+  const runExport = async (
+    format: "csv" | "xlsx" | "pdf",
+    write: (mod: Awaited<ReturnType<typeof loadExports>>) => void,
+  ) => {
     setOpen(false);
     try {
       await logExport({
@@ -32,7 +39,7 @@ export function ExportMenu<T>({ rows, columns, filename, title, entity }: { rows
       toast.error("Export blocked", { description: e instanceof Error ? e.message : "Not permitted" });
       return;
     }
-    write();
+    write(await loadExports());
   };
   return (
     <div ref={ref} className="relative">
@@ -46,9 +53,9 @@ export function ExportMenu<T>({ rows, columns, filename, title, entity }: { rows
       </button>
       {open && (
         <div className="absolute right-0 z-30 mt-2 w-48 overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-lg">
-          <MenuItem icon={<FileSpreadsheet className="h-3.5 w-3.5" />} label="CSV" onClick={() => void runExport("csv", () => exportCsv(rows, columns, filename))} />
-          <MenuItem icon={<FileType className="h-3.5 w-3.5" />} label="Excel (.xlsx)" onClick={() => void runExport("xlsx", () => exportXlsx(rows, columns, filename))} />
-          <MenuItem icon={<FileText className="h-3.5 w-3.5" />} label="PDF" onClick={() => void runExport("pdf", () => exportPdf(rows, columns, filename, title))} />
+          <MenuItem icon={<FileSpreadsheet className="h-3.5 w-3.5" />} label="CSV" onClick={() => void runExport("csv", (m) => m.exportCsv(rows, columns, filename))} />
+          <MenuItem icon={<FileType className="h-3.5 w-3.5" />} label="Excel (.xlsx)" onClick={() => void runExport("xlsx", (m) => m.exportXlsx(rows, columns, filename))} />
+          <MenuItem icon={<FileText className="h-3.5 w-3.5" />} label="PDF" onClick={() => void runExport("pdf", (m) => m.exportPdf(rows, columns, filename, title))} />
         </div>
       )}
     </div>

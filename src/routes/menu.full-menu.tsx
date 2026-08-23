@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { SiteHeader } from "@/components/site-header";
@@ -43,11 +43,16 @@ function FullMenuPage() {
   useRealtimeInvalidate(["product_sizes"], [["public-menu"]]);
 
   // Preload category icon images so switching tabs never shows a stale bitmap.
-  const preloadCategoryIcons = (data?.categories ?? [])
-    .map((c) => c.image)
-    .filter((src): src is string => Boolean(src));
+  const preloadCategoryIcons = useMemo(
+    () =>
+      (data?.categories ?? []).map((c) => c.image).filter((src): src is string => Boolean(src)),
+    [data?.categories],
+  );
 
-  // Merge live DB rows with rich static metadata (ingredients/allergens/nutrition)
+  // Merge live DB rows with rich static metadata (ingredients/allergens/nutrition).
+  // The merge touches every product and every size row, so it is kept out of the
+  // render path for unrelated state changes such as the category tab.
+  const items: MenuItem[] = useMemo(() => {
   const liveItems: MenuItem[] = (data?.products ?? []).map((p) => {
     const fallback = MENU_ITEMS.find((m) => m.id === p.slug);
     const ingredients = (p as { ingredients?: string[] | null }).ingredients ?? [];
@@ -87,17 +92,20 @@ function FullMenuPage() {
       sizes: productSizes && productSizes.length > 0 ? productSizes : undefined,
     } satisfies MenuItem;
   });
-  const items: MenuItem[] = liveItems.length > 0 ? liveItems : MENU_ITEMS;
-  const liveCategories = (data?.categories ?? []).map((c) => ({
-    id: c.slug as MenuCategory,
-    label: c.label,
-    image: c.image ?? "",
-    intro: c.intro as string | null,
-  }));
-  const categories =
-    liveCategories.length > 0
+    return liveItems.length > 0 ? liveItems : MENU_ITEMS;
+  }, [data?.products, data?.sizes]);
+
+  const categories = useMemo(() => {
+    const liveCategories = (data?.categories ?? []).map((c) => ({
+      id: c.slug as MenuCategory,
+      label: c.label,
+      image: c.image ?? "",
+      intro: c.intro as string | null,
+    }));
+    return liveCategories.length > 0
       ? liveCategories
       : MENU_CATEGORIES.map((c) => ({ ...c, intro: null as string | null }));
+  }, [data?.categories]);
 
   const visibleCategories =
     active === "all" ? categories.map((c) => c.id) : [active];

@@ -1,7 +1,7 @@
 import * as React from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
-import { listActiveZones, type PublicZone } from "@/lib/zones.functions";
+import { zonesQueryOptions } from "@/lib/zones-query";
+import { type PublicZone } from "@/lib/zones.functions";
 import { setMySelectedZone, getMySelectedZone } from "@/lib/zone-selection.functions";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -20,12 +20,7 @@ interface ZoneContextValue {
 const ZoneContext = React.createContext<ZoneContextValue | null>(null);
 
 export function ZoneProvider({ children }: { children: React.ReactNode }) {
-  const fetchZones = useServerFn(listActiveZones);
-  const { data: zones = [], isLoading } = useQuery({
-    queryKey: ["zones", "active"],
-    queryFn: () => fetchZones(),
-    staleTime: 60_000,
-  });
+  const { data: zones = [], isLoading } = useQuery(zonesQueryOptions);
 
   const [selectedSlug, setSlug] = React.useState<string | null>(null);
   const [pickerOpen, setPickerOpen] = React.useState(false);
@@ -80,15 +75,23 @@ export function ZoneProvider({ children }: { children: React.ReactNode }) {
     [zones, selectedSlug],
   );
 
-  const value: ZoneContextValue = {
-    zones,
-    loading: isLoading,
-    selected,
-    setSelectedSlug: setSlug,
-    pickerOpen,
-    openPicker: () => setPickerOpen(true),
-    closePicker: () => setPickerOpen(false),
-  };
+  const openPicker = React.useCallback(() => setPickerOpen(true), []);
+  const closePicker = React.useCallback(() => setPickerOpen(false), []);
+
+  // Context value is consumed by header, chip, picker, cart and checkout, so a
+  // fresh object identity on every provider render re-renders all of them.
+  const value = React.useMemo<ZoneContextValue>(
+    () => ({
+      zones,
+      loading: isLoading,
+      selected,
+      setSelectedSlug: setSlug,
+      pickerOpen,
+      openPicker,
+      closePicker,
+    }),
+    [zones, isLoading, selected, pickerOpen, openPicker, closePicker],
+  );
 
   return <ZoneContext.Provider value={value}>{children}</ZoneContext.Provider>;
 }
