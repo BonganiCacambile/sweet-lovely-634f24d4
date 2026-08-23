@@ -1,7 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { Facebook, Instagram, Twitter, Youtube } from "lucide-react";
-
-const LOGO_URL = "/logo-transparent.png";
+import { LogoImage } from "@/components/logo";
 
 /** Semantic 4-column site footer modeled after the Pepper Framer template. */
 export function SiteFooter() {
@@ -12,12 +11,7 @@ export function SiteFooter() {
           {/* Brand */}
           <div>
             <Link to="/" aria-label="Sweet & Lovely home">
-              <img
-                src={LOGO_URL}
-                alt="Sweet & Lovely"
-                className="block"
-                style={{ height: 58, width: "auto" }}
-              />
+              <LogoImage height={58} className="block" loading="lazy" />
             </Link>
             <address className="mt-5 not-italic text-sm leading-6 text-white/90">
               C357 Sidima Street<br />
