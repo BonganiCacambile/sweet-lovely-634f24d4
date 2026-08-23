@@ -39,7 +39,7 @@ export function ExportMenu<T>({ rows, columns, filename, title, entity }: { rows
       toast.error("Export blocked", { description: e instanceof Error ? e.message : "Not permitted" });
       return;
     }
-    write();
+    write(await loadExports());
   };
   return (
     <div ref={ref} className="relative">
