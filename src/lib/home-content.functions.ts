@@ -58,8 +58,10 @@ export const getHomeContent = createServerFn({ method: "GET" }).handler(async ()
       .from("featured_items")
       .select("id, product_slug, placement, sort_order, is_active, starts_at, ends_at, products:product_slug(slug, title, image, price_zar, description)")
       .eq("placement", "home")
-      .order("sort_order"),
-    sb.from("home_section_visibility").select("section, is_visible, zone_id"),
+      .eq("is_active", true)
+      .order("sort_order")
+      .limit(SECTION_LIMIT),
+    sb.from("home_section_visibility").select("section, is_visible, zone_id").is("zone_id", null),
   ]);
 
   const visiblePopular = activeNow(popular.data);
