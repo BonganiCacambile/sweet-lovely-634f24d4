@@ -88,12 +88,11 @@ export const submitSupportRequest = createServerFn({ method: "POST" })
         message: data.message,
         category: data.category,
         orderNumber: data.orderNumber || null,
-        name: undefined,
         customerName: (profile?.full_name as string | null) || email.split("@")[0] || "Customer",
         customerEmail: email,
         zoneId: zone.id as string,
         zoneName: zone.name as string,
-      } as never);
+      });
       if (result.error) console.error("[support] admin email alert failed", result.error);
     } catch (err) {
       console.error("[support] admin email alert threw", err);
