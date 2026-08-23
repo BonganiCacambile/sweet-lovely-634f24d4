@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
 import { useRealtimeTable } from "@/hooks/use-realtime-table";
-import { listActiveZones, type PublicZone } from "@/lib/zones.functions";
+import { ZONES_KEY, zonesQueryOptions } from "@/lib/zones-query";
+import type { PublicZone } from "@/lib/zones.functions";
 
 interface FaqItem {
   title: string;
@@ -107,11 +107,7 @@ function buildFaqItems(zones: PublicZone[]): FaqItem[] {
 
 export function DeliveryFaqList() {
   const [open, setOpen] = useState<number | null>(0);
-  const fetchZones = useServerFn(listActiveZones);
-  const { data: zones } = useQuery({
-    queryKey: ZONES_KEY,
-    queryFn: () => fetchZones(),
-  });
+  const { data: zones } = useQuery(zonesQueryOptions);
   useRealtimeTable("delivery_zones", [ZONES_KEY]);
   const items = buildFaqItems(zones ?? []);
   return (
