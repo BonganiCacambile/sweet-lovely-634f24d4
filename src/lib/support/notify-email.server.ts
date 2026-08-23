@@ -1,4 +1,3 @@
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { resolveSupportRecipients } from "./email-recipients.server";
 
 const GATEWAY_URL = "https://connector-gateway.lovable.dev/resend";
