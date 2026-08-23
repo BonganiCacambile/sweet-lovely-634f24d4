@@ -31,20 +31,37 @@ function activeNow<T extends TimedHomeRow>(rows: T[] | null | undefined, now = D
   });
 }
 
+/** Customer-visible projections — never `select("*")` on the storefront. */
+const POPULAR_COLS =
+  "id, title, description, image_url, price, product_slug, category, zone_id, position, is_active, starts_at, ends_at";
+const DEALS_COLS =
+  "id, title, description, image_url, product_slug, original_price, discounted_price, discount_pct, label, zone_id, position, is_active, starts_at, ends_at";
+const SPECIALS_COLS =
+  "id, title, description, image_url, price, product_slugs, kind, zone_id, position, is_active, starts_at, ends_at";
+const BANNERS_COLS =
+  "id, title, subtitle, image_url, cta_label, cta_href, zone_id, position, is_active, starts_at, ends_at";
+const DESSERTS_COLS =
+  "id, title, description, image_url, price, product_slug, category, zone_id, position, is_active, starts_at, ends_at";
+
+/** Hard caps — the storefront never renders more than this per section. */
+const SECTION_LIMIT = 48;
+
 export const getHomeContent = createServerFn({ method: "GET" }).handler(async () => {
   const sb = publicClient();
   const [popular, deals, specials, banners, desserts, featured, visibility] = await Promise.all([
-    sb.from("home_popular_items").select("*").order("position").order("created_at"),
-    sb.from("home_hot_deals").select("*").order("position").order("created_at"),
-    sb.from("home_specials").select("*").order("position").order("created_at"),
-    sb.from("home_banners").select("*").order("position").order("created_at"),
-    sb.from("home_desserts").select("*").order("position").order("created_at"),
+    sb.from("home_popular_items").select(POPULAR_COLS).eq("is_active", true).order("position").order("created_at").limit(SECTION_LIMIT),
+    sb.from("home_hot_deals").select(DEALS_COLS).eq("is_active", true).order("position").order("created_at").limit(SECTION_LIMIT),
+    sb.from("home_specials").select(SPECIALS_COLS).eq("is_active", true).order("position").order("created_at").limit(SECTION_LIMIT),
+    sb.from("home_banners").select(BANNERS_COLS).eq("is_active", true).order("position").order("created_at").limit(SECTION_LIMIT),
+    sb.from("home_desserts").select(DESSERTS_COLS).eq("is_active", true).order("position").order("created_at").limit(SECTION_LIMIT),
     sb
       .from("featured_items")
       .select("id, product_slug, placement, sort_order, is_active, starts_at, ends_at, products:product_slug(slug, title, image, price_zar, description)")
       .eq("placement", "home")
-      .order("sort_order"),
-    sb.from("home_section_visibility").select("section, is_visible, zone_id"),
+      .eq("is_active", true)
+      .order("sort_order")
+      .limit(SECTION_LIMIT),
+    sb.from("home_section_visibility").select("section, is_visible, zone_id").is("zone_id", null),
   ]);
 
   const visiblePopular = activeNow(popular.data);
@@ -176,11 +193,11 @@ export const getHomeContentFingerprint = createServerFn({ method: "GET" }).handl
   const sb = publicClient();
   const [popular, deals, specials, banners, desserts, featured, visibility, products, sizes, categories] =
     await Promise.all([
-      sb.from("home_popular_items").select("*"),
-      sb.from("home_hot_deals").select("*"),
-      sb.from("home_specials").select("*"),
-      sb.from("home_banners").select("*"),
-      sb.from("home_desserts").select("*"),
+      sb.from("home_popular_items").select(POPULAR_COLS),
+      sb.from("home_hot_deals").select(DEALS_COLS),
+      sb.from("home_specials").select(SPECIALS_COLS),
+      sb.from("home_banners").select(BANNERS_COLS),
+      sb.from("home_desserts").select(DESSERTS_COLS),
       sb
         .from("featured_items")
         .select("id, product_slug, placement, sort_order, is_active, starts_at, ends_at")
