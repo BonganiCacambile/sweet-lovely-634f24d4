@@ -75,15 +75,23 @@ export function ZoneProvider({ children }: { children: React.ReactNode }) {
     [zones, selectedSlug],
   );
 
-  const value: ZoneContextValue = {
-    zones,
-    loading: isLoading,
-    selected,
-    setSelectedSlug: setSlug,
-    pickerOpen,
-    openPicker: () => setPickerOpen(true),
-    closePicker: () => setPickerOpen(false),
-  };
+  const openPicker = React.useCallback(() => setPickerOpen(true), []);
+  const closePicker = React.useCallback(() => setPickerOpen(false), []);
+
+  // Context value is consumed by header, chip, picker, cart and checkout, so a
+  // fresh object identity on every provider render re-renders all of them.
+  const value = React.useMemo<ZoneContextValue>(
+    () => ({
+      zones,
+      loading: isLoading,
+      selected,
+      setSelectedSlug: setSlug,
+      pickerOpen,
+      openPicker,
+      closePicker,
+    }),
+    [zones, isLoading, selected, pickerOpen, openPicker, closePicker],
+  );
 
   return <ZoneContext.Provider value={value}>{children}</ZoneContext.Provider>;
 }
