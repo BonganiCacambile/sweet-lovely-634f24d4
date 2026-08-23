@@ -1,8 +1,20 @@
 {
-  "lcp": 2240,
-  "domInteractive": 218,
-  "ttfb": 167.10000000009313,
-  "appUrl": "http://localhost:8080",
-  "mode": "authenticated:dev",
-  "recordedAt": "2026-08-04T21:01:31.325Z"
+  "modes": {
+    "authenticated:prod": {
+      "lcp": 1256,
+      "domInteractive": 315.10000000009313,
+      "ttfb": 214.39999999990687,
+      "appUrl": "http://127.0.0.1:4173",
+      "mode": "authenticated:prod",
+      "recordedAt": "2026-08-23T13:32:36.938Z"
+    },
+    "authenticated:dev": {
+      "lcp": 1120,
+      "domInteractive": 998.2000000001863,
+      "ttfb": 705.5,
+      "appUrl": "http://localhost:8080",
+      "mode": "authenticated:dev",
+      "recordedAt": "2026-08-23T13:32:59.205Z"
+    }
+  }
 }

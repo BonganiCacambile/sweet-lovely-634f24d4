@@ -86,18 +86,32 @@ export async function seedAuthenticatedSession(page, appUrl) {
   return { cleanup: sess.cleanup, email: sess.email, userId: sess.userId };
 }
 
-/** Read a baseline only when it was recorded in the same mode. */
-export function readBaseline(path, mode) {
+/**
+ * Baselines are stored per mode in a single file:
+ *   { modes: { "authenticated:dev": {...}, "authenticated:prod": {...} } }
+ * Legacy single-mode files are still readable.
+ */
+function readFile(path) {
   if (!existsSync(path)) return null;
   try {
-    const b = JSON.parse(readFileSync(path, "utf8"));
-    if (b.mode !== mode) return null;
-    return b;
+    return JSON.parse(readFileSync(path, "utf8"));
   } catch {
     return null;
   }
 }
 
-export function writeBaseline(path, payload, mode) {
-  writeFileSync(path, JSON.stringify({ ...payload, mode, recordedAt: new Date().toISOString() }, null, 2));
+/** Read a baseline only when it was recorded in the same mode. */
+export function readBaseline(path, mode) {
+  const raw = readFile(path);
+  if (!raw) return null;
+  if (raw.modes) return raw.modes[mode] ?? null;
+  return raw.mode === mode ? raw : null;
 }
+
+export function writeBaseline(path, payload, mode) {
+  const raw = readFile(path);
+  const modes = raw?.modes ? { ...raw.modes } : raw?.mode ? { [raw.mode]: raw } : {};
+  modes[mode] = { ...payload, mode, recordedAt: new Date().toISOString() };
+  writeFileSync(path, JSON.stringify({ modes }, null, 2));
+}
+

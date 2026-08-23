@@ -1,14 +1,32 @@
 {
-  "lcp": 2104,
-  "domInteractive": 416.3000000002794,
-  "ttfb": 335.5,
-  "viewport": {
-    "width": 390,
-    "height": 664,
-    "dpr": 3
-  },
-  "device": "iPhone 13",
-  "appUrl": "http://localhost:8080",
-  "mode": "authenticated:dev",
-  "recordedAt": "2026-08-04T21:02:42.334Z"
+  "modes": {
+    "authenticated:dev": {
+      "lcp": 944,
+      "domInteractive": 800.8999999999069,
+      "ttfb": 535,
+      "viewport": {
+        "width": 390,
+        "height": 664,
+        "dpr": 3
+      },
+      "device": "iPhone 13",
+      "appUrl": "http://localhost:8080",
+      "mode": "authenticated:dev",
+      "recordedAt": "2026-08-23T13:33:06.209Z"
+    },
+    "authenticated:prod": {
+      "lcp": 1120,
+      "domInteractive": 250.10000000009313,
+      "ttfb": 184.8000000002794,
+      "viewport": {
+        "width": 390,
+        "height": 664,
+        "dpr": 3
+      },
+      "device": "iPhone 13",
+      "appUrl": "http://127.0.0.1:4173",
+      "mode": "authenticated:prod",
+      "recordedAt": "2026-08-23T13:32:42.704Z"
+    }
+  }
 }

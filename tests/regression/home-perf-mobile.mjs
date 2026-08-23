@@ -64,6 +64,10 @@ function within(label, ms, budget) {
 }
 
 function regressionCheck(label, current, baseline) {
+  if (UPDATE_BASELINE === "1") {
+    log(`• ${label}: ${current.toFixed(0)}ms (refreshing baseline — comparison skipped)`);
+    return true;
+  }
   if (baseline == null) {
     log(`• ${label}: ${current.toFixed(0)}ms (no baseline yet)`);
     return true;

@@ -321,3 +321,23 @@ Checked every `useEffect` with subscriptions/timers:
 9. C-1 / H-4 (auth gating and auth waterfall) — product decision required before any change.
 
 No optimisation above has been applied. Nothing in this report was implemented.
+
+---
+
+## 6. Post-fix baseline refresh (2026-08-23, client-side auth gating)
+
+Signed-in customer session; values are LCP / domInteractive / TTFB in ms.
+
+| Suite | Dev (vite :8080) | Prod (built worker) |
+| --- | --- | --- |
+| Home desktop | 1120 / 998 / 706 | 1256 / 315 / 214 |
+| Home mobile (390x664 @3x) | 944 / 801 / 535 | 1120 / 250 / 185 |
+| Cart mobile | 2004 / 226 / 133 | 868 / 94 / 12 |
+| Checkout mobile | 2020 / 520 / 402 | 520 / 31 / 15 |
+| Cart→checkout soft nav | 337 | 197 |
+
+Home desktop LCP dropped from ~3,948 ms (pre-fix dev) to ~1,120 ms; all budgets pass in both modes.
+
+Baseline artifacts now store one entry per mode (`authenticated:dev`, `authenticated:prod`)
+in the same file, so dev and prod runs no longer overwrite each other. Refresh with
+`UPDATE_BASELINE=1`, which skips comparisons and rewrites that mode's entry.
