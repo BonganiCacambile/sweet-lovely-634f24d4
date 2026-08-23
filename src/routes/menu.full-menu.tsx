@@ -43,11 +43,16 @@ function FullMenuPage() {
   useRealtimeInvalidate(["product_sizes"], [["public-menu"]]);
 
   // Preload category icon images so switching tabs never shows a stale bitmap.
-  const preloadCategoryIcons = (data?.categories ?? [])
-    .map((c) => c.image)
-    .filter((src): src is string => Boolean(src));
+  const preloadCategoryIcons = useMemo(
+    () =>
+      (data?.categories ?? []).map((c) => c.image).filter((src): src is string => Boolean(src)),
+    [data?.categories],
+  );
 
-  // Merge live DB rows with rich static metadata (ingredients/allergens/nutrition)
+  // Merge live DB rows with rich static metadata (ingredients/allergens/nutrition).
+  // The merge touches every product and every size row, so it is kept out of the
+  // render path for unrelated state changes such as the category tab.
+  const items: MenuItem[] = useMemo(() => {
   const liveItems: MenuItem[] = (data?.products ?? []).map((p) => {
     const fallback = MENU_ITEMS.find((m) => m.id === p.slug);
     const ingredients = (p as { ingredients?: string[] | null }).ingredients ?? [];
