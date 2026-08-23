@@ -113,15 +113,17 @@ async function main() {
     record("footer link navigates to /contact", /\/contact$/.test(page.url()), page.url());
 
     // --- 2. Support form renders ---------------------------------------
-    const name = page.locator("#cf-name");
-    const email = page.locator("#cf-email");
-    const message = page.locator("#cf-message, textarea").first();
-    const submit = page.locator('form button[type="submit"]').first();
-    await name.waitFor({ state: "visible", timeout: 20000 });
+    // Name/email are taken from the signed-in account since the zone-based
+    // support rework, so the form fields are subject/category/message.
+    const subject = page.locator("#cf-subject");
+    const category = page.locator("#cf-category");
+    const message = page.locator("#cf-message");
+    const submit = page.locator('form[data-testid="support-form"] button[type="submit"]').first();
+    await subject.waitFor({ state: "visible", timeout: 20000 });
     record(
-      "support form renders name, email, message and submit",
-      (await name.count()) > 0 &&
-        (await email.count()) > 0 &&
+      "support form renders subject, category, message and submit",
+      (await subject.count()) > 0 &&
+        (await category.count()) > 0 &&
         (await message.count()) > 0 &&
         (await submit.count()) > 0,
     );
