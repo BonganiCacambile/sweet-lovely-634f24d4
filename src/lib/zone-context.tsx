@@ -1,7 +1,7 @@
 import * as React from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
-import { listActiveZones, type PublicZone } from "@/lib/zones.functions";
+import { zonesQueryOptions } from "@/lib/zones-query";
+import { type PublicZone } from "@/lib/zones.functions";
 import { setMySelectedZone, getMySelectedZone } from "@/lib/zone-selection.functions";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -20,12 +20,7 @@ interface ZoneContextValue {
 const ZoneContext = React.createContext<ZoneContextValue | null>(null);
 
 export function ZoneProvider({ children }: { children: React.ReactNode }) {
-  const fetchZones = useServerFn(listActiveZones);
-  const { data: zones = [], isLoading } = useQuery({
-    queryKey: ["zones", "active"],
-    queryFn: () => fetchZones(),
-    staleTime: 60_000,
-  });
+  const { data: zones = [], isLoading } = useQuery(zonesQueryOptions);
 
   const [selectedSlug, setSlug] = React.useState<string | null>(null);
   const [pickerOpen, setPickerOpen] = React.useState(false);
