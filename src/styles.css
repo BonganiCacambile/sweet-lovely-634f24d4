@@ -154,7 +154,7 @@
   display: none !important;
 }
 .framer-8x6WV.framer-4ztssu {
-  background-image: image-set(url(/logo-256.webp) type("image/webp"), url(/logo-transparent-256.png) type("image/png"));
+  background-image: image-set(url(/logo-256.webp) type("image/webp"), url(/logo-256.png) type("image/png"));
   background-size: contain;
   background-repeat: no-repeat;
   background-position: center;
