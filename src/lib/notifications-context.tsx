@@ -12,6 +12,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Bell } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { subscribeTable } from "@/lib/realtime/realtime-manager";
 import { useAuth } from "@/lib/auth-context";
 import { playNotificationPing, vibrate } from "@/lib/notification-sound";
 import { deliverLocally } from "@/lib/push/push-service";
@@ -98,109 +99,64 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
   }, [refresh]);
 
   // Realtime subscription for *this* user's notifications.
+  // Single filtered channel (user_id=eq.<id>) shared through the realtime
+  // manager, which also handles auth refresh, sign-out teardown, hidden-tab
+  // suspension and reconnect resync.
   useEffect(() => {
-    if (!user) return;
-    let channel: ReturnType<typeof supabase.channel> | null = null;
-    let cancelled = false;
+    if (!user) {
+      setRtStatus("idle");
+      return;
+    }
+    setRtStatus("connecting");
 
-    const subscribe = async () => {
-      setRtStatus("connecting");
-      const { data } = await supabase.auth.getSession();
-      const token = data.session?.access_token;
-      if (token) {
-        try {
-          supabase.realtime.setAuth(token);
-        } catch {
-          /* ignore */
-        }
-      }
-      if (cancelled) return;
-      const name = `rt:user-notifications:${user.id}:${Math.random().toString(36).slice(2, 8)}`;
-      channel = supabase
-        .channel(name)
-        .on(
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          "postgres_changes" as any,
-          { event: "INSERT", schema: "public", table: "notifications", filter: `user_id=eq.${user.id}` },
-          (payload: { new: NotificationRow }) => {
-            const row = payload.new;
-            // Update local state immediately.
-            setRecent((prev) => [row, ...prev].slice(0, 20));
-            if (!row.read) setUnread((n) => n + 1);
-            // Invalidate any queries reading notifications.
-            qc.invalidateQueries({ queryKey: ["my-notifications"] });
-            qc.invalidateQueries({ queryKey: ["account-overview"] });
-
-            // Alert (sound + vibrate + toast), filtered by user prefs.
-            const prefs = prefsRef.current;
-            if (!categoryAllowed(row.category, prefs)) return;
-            // Background/closed tab → real system notification (web channel).
-            void deliverLocally({ id: row.id, title: row.title, body: row.body, data: row.data ?? null });
-            if (prefs.sound) playNotificationPing();
-            if (prefs.vibration) {
-              const important = /deliver|out_for|ready|cancel|refund/i.test(
-                `${row.title} ${row.body ?? ""}`,
-              );
-              vibrate(important ? [40, 60, 40] : 30);
-            }
-            toast(row.title, {
-              description: row.body ?? undefined,
-              icon: <Bell className="h-4 w-4" />,
-              duration: 6000,
-            });
-          },
-        )
-        .on(
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          "postgres_changes" as any,
-          { event: "UPDATE", schema: "public", table: "notifications", filter: `user_id=eq.${user.id}` },
-          () => {
+    const unsub = subscribeTable(
+      "notifications",
+      {
+        onEvent: (payload) => {
+          if (payload.eventType !== "INSERT") {
             void refresh();
-          },
-        )
-        .on(
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          "postgres_changes" as any,
-          { event: "DELETE", schema: "public", table: "notifications", filter: `user_id=eq.${user.id}` },
-          () => {
-            void refresh();
-          },
-        )
-        .subscribe((status) => {
-          setRtStatus(status as Ctx["rtStatus"]);
-          // On (re)connect, resync to catch anything missed while offline.
-          if (status === "SUBSCRIBED") void refresh();
-        });
-    };
+            return;
+          }
+          const row = payload.new as unknown as NotificationRow;
+          // Update local state immediately.
+          setRecent((prev) => (prev.some((n) => n.id === row.id) ? prev : [row, ...prev].slice(0, 20)));
+          if (!row.read) setUnread((n) => n + 1);
+          // Invalidate any queries reading notifications.
+          qc.invalidateQueries({ queryKey: ["my-notifications"] });
+          qc.invalidateQueries({ queryKey: ["account-overview"] });
 
-    void subscribe();
-
-    const { data: authSub } = supabase.auth.onAuthStateChange((event) => {
-      if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
-        if (channel) {
-          void supabase.removeChannel(channel);
-          channel = null;
-        }
-        void subscribe();
-      }
-    });
-
-    // Resync on tab focus / network reconnect for offline-queue catch-up.
-    const onVisible = () => {
-      if (document.visibilityState === "visible") void refresh();
-    };
-    const onOnline = () => void refresh();
-    document.addEventListener("visibilitychange", onVisible);
-    window.addEventListener("online", onOnline);
+          // Alert (sound + vibrate + toast), filtered by user prefs.
+          const prefs = prefsRef.current;
+          if (!categoryAllowed(row.category, prefs)) return;
+          // Background/closed tab → real system notification (web channel).
+          void deliverLocally({ id: row.id, title: row.title, body: row.body, data: row.data ?? null });
+          if (prefs.sound) playNotificationPing();
+          if (prefs.vibration) {
+            const important = /deliver|out_for|ready|cancel|refund/i.test(
+              `${row.title} ${row.body ?? ""}`,
+            );
+            vibrate(important ? [40, 60, 40] : 30);
+          }
+          toast(row.title, {
+            description: row.body ?? undefined,
+            icon: <Bell className="h-4 w-4" />,
+            duration: 6000,
+          });
+        },
+        onResync: () => {
+          setRtStatus("SUBSCRIBED");
+          void refresh();
+        },
+      },
+      `user_id=eq.${user.id}`,
+    );
 
     return () => {
-      cancelled = true;
-      authSub.subscription.unsubscribe();
-      document.removeEventListener("visibilitychange", onVisible);
-      window.removeEventListener("online", onOnline);
-      if (channel) void supabase.removeChannel(channel);
+      unsub();
+      setRtStatus("idle");
     };
   }, [user, qc, refresh]);
+
 
   const markAllRead = useCallback(async () => {
     if (!user) return;

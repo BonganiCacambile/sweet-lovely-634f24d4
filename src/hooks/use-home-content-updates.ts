@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { supabase } from "@/integrations/supabase/client";
+import { subscribeTable } from "@/lib/realtime/realtime-manager";
 import { getHomeContentFingerprint } from "@/lib/home-content.functions";
 
 const HOME_TABLES = [
@@ -72,13 +72,11 @@ export function useHomeContentUpdates() {
     let cancelled = false;
     void check();
 
-    const channel = supabase.channel(`rt:home-content:${Math.random().toString(36).slice(2, 10)}`);
-    for (const table of HOME_TABLES) {
-      channel.on(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        "postgres_changes" as any,
-        { event: "*", schema: "public", table },
-        () => {
+    // One shared channel per table via the realtime manager (deduped with the
+    // menu page's products/categories subscriptions) — no per-component sockets.
+    const unsubs = HOME_TABLES.map((table) =>
+      subscribeTable(table, {
+        onEvent: () => {
           if (cancelled) return;
           // A row the visitor is allowed to see actually changed (new item,
           // edited title/price, …). The id-only fingerprint cannot see those
@@ -87,16 +85,14 @@ export function useHomeContentUpdates() {
           setUpdateAvailable(true);
           void check();
         },
-      );
-    }
-    channel.subscribe();
+        onResync: () => {
+          if (!cancelled) void check();
+        },
+      }),
+    );
 
-    const onVisible = () => {
-      if (document.visibilityState === "visible") void check();
-    };
-    document.addEventListener("visibilitychange", onVisible);
-    window.addEventListener("online", onVisible);
-
+    // Slow safety-net poll while the tab is visible: catches changes realtime
+    // cannot deliver (rows leaving the anon RLS scope).
     const timer = window.setInterval(() => {
       if (document.visibilityState === "visible") void check();
     }, CHECK_INTERVAL_MS);
@@ -104,11 +100,10 @@ export function useHomeContentUpdates() {
     return () => {
       cancelled = true;
       window.clearInterval(timer);
-      document.removeEventListener("visibilitychange", onVisible);
-      window.removeEventListener("online", onVisible);
-      void supabase.removeChannel(channel);
+      for (const u of unsubs) u();
     };
   }, [check]);
+
 
   return { updateAvailable, refresh, dismiss };
 }
