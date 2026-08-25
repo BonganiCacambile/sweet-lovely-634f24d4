@@ -1,35 +1,35 @@
 import { useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { subscribeTable } from "@/lib/realtime/realtime-manager";
 
 /**
  * Subscribe to Postgres changes on one or more tables and invalidate
  * the given React Query keys whenever any change is received.
- * Use on customer-facing pages so admin edits propagate instantly.
+ *
+ * Backed by the shared realtime manager: one channel per table across the
+ * whole app, cleaned up when the last subscriber unmounts, suspended while
+ * the tab is hidden and resynced on resume.
  */
 export function useRealtimeInvalidate(
   tables: ReadonlyArray<string>,
   queryKeys: ReadonlyArray<ReadonlyArray<unknown>>,
 ) {
   const qc = useQueryClient();
+  const keysJson = JSON.stringify(queryKeys);
+  const tablesKey = tables.join(",");
+
   useEffect(() => {
-    const channel = supabase.channel(`rt:${tables.join(",")}:${Math.random().toString(36).slice(2, 8)}`);
-    for (const table of tables) {
-      channel.on(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        "postgres_changes" as any,
-        { event: "*", schema: "public", table },
-        () => {
-          for (const key of queryKeys) {
-            qc.invalidateQueries({ queryKey: key as unknown[] });
-          }
-        },
-      );
-    }
-    channel.subscribe();
+    const keys = JSON.parse(keysJson) as unknown[][];
+    const invalidateAll = () => {
+      for (const key of keys) qc.invalidateQueries({ queryKey: key });
+    };
+    const unsubs = tablesKey
+      .split(",")
+      .filter(Boolean)
+      .map((table) => subscribeTable(table, { onEvent: invalidateAll, onResync: invalidateAll }));
     return () => {
-      void supabase.removeChannel(channel);
+      for (const u of unsubs) u();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tables.join(",")]);
+  }, [tablesKey, keysJson]);
 }

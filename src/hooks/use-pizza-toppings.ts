@@ -1,6 +1,6 @@
-import { useEffect } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useRealtimeTable } from "@/hooks/use-realtime-table";
 
 export interface PizzaTopping {
   id: string;
@@ -25,21 +25,7 @@ async function fetchToppings(): Promise<PizzaTopping[]> {
 
 /** Public list of pizza toppings with realtime updates from admin edits. */
 export function usePizzaToppings() {
-  const qc = useQueryClient();
   const q = useQuery({ queryKey: ["pizza_toppings"], queryFn: fetchToppings, staleTime: 60_000 });
-
-  useEffect(() => {
-    const ch = supabase
-      .channel(`rt:pizza_toppings:${Math.random().toString(36).slice(2, 8)}`)
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .on("postgres_changes" as any, { event: "*", schema: "public", table: "pizza_toppings" }, () => {
-        qc.invalidateQueries({ queryKey: ["pizza_toppings"] });
-      })
-      .subscribe();
-    return () => {
-      void supabase.removeChannel(ch);
-    };
-  }, [qc]);
-
+  useRealtimeTable("pizza_toppings", [["pizza_toppings"]]);
   return q;
 }
