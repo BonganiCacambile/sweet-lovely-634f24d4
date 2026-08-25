@@ -8,14 +8,20 @@ import { supabase } from "@/integrations/supabase/client";
  * and the storefront duplicated `delivery_zones` up to four times, each one
  * re-processing the same event and firing the same query invalidations.
  *
- * This module keeps ONE channel per (table, filter) pair, reference-counted
- * across all subscribers. It also:
+ * Design: subscriptions are grouped by row filter. All unfiltered subscriptions
+ * share ONE websocket channel with one `postgres_changes` binding per table
+ * (bindings are cheap, channel joins are rate-limited), and each distinct
+ * filter (e.g. `user_id=eq.<id>`) gets its own channel. Subscribers are
+ * reference-counted, so a table binding disappears when the last consumer
+ * unmounts.
+ *
+ * It also:
  *  - re-subscribes with the current access token on SIGNED_IN / TOKEN_REFRESHED
  *    so RLS is evaluated as the signed-in user,
  *  - tears every channel down on SIGNED_OUT (no stale authed sockets),
  *  - suspends channels while the tab/WebView has been hidden for a grace period
  *    and resumes + resyncs when it becomes visible again,
- *  - resyncs subscribers on reconnect so nothing is missed while suspended.
+ *  - resyncs subscribers on (re)connect so nothing is missed while suspended.
  */
 
 export type RealtimeEvent = {
@@ -30,29 +36,64 @@ type Subscriber = {
   onResync: () => void;
 };
 
-type Entry = {
-  table: string;
+type Group = {
   filter?: string;
-  subscribers: Set<Subscriber>;
+  /** table -> subscribers listening to it */
+  tables: Map<string, Set<Subscriber>>;
   channel: ReturnType<typeof supabase.channel> | null;
-  connecting: boolean;
+  /** tables the currently-open channel is bound to */
+  boundTables: string[];
+  rebuildTimer: ReturnType<typeof setTimeout> | null;
+  building: boolean;
 };
 
 /** How long the tab may stay hidden before we drop the websocket channels. */
 const HIDDEN_GRACE_MS = 60_000;
+/** Coalesce mount bursts so we join once instead of once per component. */
+const REBUILD_DEBOUNCE_MS = 40;
 
-const entries = new Map<string, Entry>();
+const groups = new Map<string, Group>();
 let suspended = false;
 let hideTimer: ReturnType<typeof setTimeout> | null = null;
 let listenersBound = false;
 
-function keyOf(table: string, filter?: string) {
-  return filter ? `${table}|${filter}` : table;
+const groupKey = (filter?: string) => filter ?? "__all__";
+
+function allSubscribers(group: Group): Subscriber[] {
+  const out = new Set<Subscriber>();
+  for (const set of group.tables.values()) for (const s of set) out.add(s);
+  return [...out];
 }
 
-async function openChannel(entry: Entry) {
-  if (entry.channel || entry.connecting || suspended || entry.subscribers.size === 0) return;
-  entry.connecting = true;
+function closeChannel(group: Group) {
+  if (group.channel) {
+    void supabase.removeChannel(group.channel);
+    group.channel = null;
+    group.boundTables = [];
+  }
+}
+
+function scheduleRebuild(group: Group) {
+  if (group.rebuildTimer) clearTimeout(group.rebuildTimer);
+  group.rebuildTimer = setTimeout(() => {
+    group.rebuildTimer = null;
+    void rebuild(group);
+  }, REBUILD_DEBOUNCE_MS);
+}
+
+async function rebuild(group: Group) {
+  if (group.building) {
+    scheduleRebuild(group);
+    return;
+  }
+  const wanted = [...group.tables.keys()].sort();
+  if (suspended || wanted.length === 0) {
+    closeChannel(group);
+    return;
+  }
+  if (group.channel && group.boundTables.join(",") === wanted.join(",")) return;
+
+  group.building = true;
   try {
     const { data } = await supabase.auth.getSession();
     const token = data.session?.access_token;
@@ -63,43 +104,46 @@ async function openChannel(entry: Entry) {
         /* older clients: ignore */
       }
     }
-    if (suspended || entry.subscribers.size === 0) return;
+    if (suspended) {
+      closeChannel(group);
+      return;
+    }
+    closeChannel(group);
 
-    const name = `rt:${keyOf(entry.table, entry.filter)}:${Math.random().toString(36).slice(2, 10)}`;
-    const channel = supabase.channel(name).on(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      "postgres_changes" as any,
-      {
-        event: "*",
-        schema: "public",
-        table: entry.table,
-        ...(entry.filter ? { filter: entry.filter } : {}),
-      },
-      (payload: RealtimeEvent) => {
-        for (const s of [...entry.subscribers]) s.onEvent({ ...payload, table: entry.table });
-      },
-    );
+    const name = `rt:${groupKey(group.filter)}:${Math.random().toString(36).slice(2, 10)}`;
+    let channel = supabase.channel(name);
+    for (const table of wanted) {
+      channel = channel.on(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        "postgres_changes" as any,
+        {
+          event: "*",
+          schema: "public",
+          table,
+          ...(group.filter ? { filter: group.filter } : {}),
+        },
+        (payload: RealtimeEvent) => {
+          const subs = group.tables.get(table);
+          if (!subs) return;
+          for (const s of [...subs]) s.onEvent({ ...payload, table });
+        },
+      );
+    }
     channel.subscribe((status) => {
       // Catch rows changed during the (re)connect handshake.
-      if (status === "SUBSCRIBED") for (const s of [...entry.subscribers]) s.onResync();
+      if (status === "SUBSCRIBED") for (const s of allSubscribers(group)) s.onResync();
     });
-    entry.channel = channel;
+    group.channel = channel;
+    group.boundTables = wanted;
   } finally {
-    entry.connecting = false;
-  }
-}
-
-function closeChannel(entry: Entry) {
-  if (entry.channel) {
-    void supabase.removeChannel(entry.channel);
-    entry.channel = null;
+    group.building = false;
   }
 }
 
 function reopenAll() {
-  for (const entry of entries.values()) {
-    closeChannel(entry);
-    void openChannel(entry);
+  for (const group of groups.values()) {
+    closeChannel(group);
+    scheduleRebuild(group);
   }
 }
 
@@ -111,7 +155,7 @@ function bindGlobalListeners() {
     if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
       reopenAll();
     } else if (event === "SIGNED_OUT") {
-      for (const entry of entries.values()) closeChannel(entry);
+      for (const group of groups.values()) closeChannel(group);
     }
   });
 
@@ -122,10 +166,10 @@ function bindGlobalListeners() {
     }
     if (!suspended) return;
     suspended = false;
-    for (const entry of entries.values()) {
-      void openChannel(entry);
-      // Resync immediately: data may have changed while we were offline.
-      for (const s of [...entry.subscribers]) s.onResync();
+    for (const group of groups.values()) {
+      scheduleRebuild(group);
+      // Resync immediately: data may have changed while we were suspended.
+      for (const s of allSubscribers(group)) s.onResync();
     }
   };
 
@@ -137,7 +181,7 @@ function bindGlobalListeners() {
     if (hideTimer) clearTimeout(hideTimer);
     hideTimer = setTimeout(() => {
       suspended = true;
-      for (const entry of entries.values()) closeChannel(entry);
+      for (const group of groups.values()) closeChannel(group);
     }, HIDDEN_GRACE_MS);
   };
 
@@ -147,29 +191,45 @@ function bindGlobalListeners() {
   window.addEventListener("focus", resume);
 }
 
-/** Subscribe to a table (optionally filtered). Returns an unsubscribe function. */
+/** Subscribe to a table (optionally row-filtered). Returns an unsubscribe fn. */
 export function subscribeTable(
   table: string,
   subscriber: Subscriber,
   filter?: string,
 ): () => void {
   bindGlobalListeners();
-  const key = keyOf(table, filter);
-  let entry = entries.get(key);
-  if (!entry) {
-    entry = { table, filter, subscribers: new Set(), channel: null, connecting: false };
-    entries.set(key, entry);
+  const key = groupKey(filter);
+  let group = groups.get(key);
+  if (!group) {
+    group = {
+      filter,
+      tables: new Map(),
+      channel: null,
+      boundTables: [],
+      rebuildTimer: null,
+      building: false,
+    };
+    groups.set(key, group);
   }
-  entry.subscribers.add(subscriber);
-  void openChannel(entry);
+  const set = group.tables.get(table) ?? new Set<Subscriber>();
+  set.add(subscriber);
+  group.tables.set(table, set);
+  scheduleRebuild(group);
 
   return () => {
-    const e = entries.get(key);
-    if (!e) return;
-    e.subscribers.delete(subscriber);
-    if (e.subscribers.size === 0) {
-      closeChannel(e);
-      entries.delete(key);
+    const g = groups.get(key);
+    if (!g) return;
+    const subs = g.tables.get(table);
+    if (!subs) return;
+    subs.delete(subscriber);
+    if (subs.size === 0) g.tables.delete(table);
+    if (g.tables.size === 0) {
+      if (g.rebuildTimer) clearTimeout(g.rebuildTimer);
+      g.rebuildTimer = null;
+      closeChannel(g);
+      groups.delete(key);
+    } else {
+      scheduleRebuild(g);
     }
   };
 }
@@ -177,7 +237,7 @@ export function subscribeTable(
 /** Number of live websocket channels — used by regression/perf tests. */
 export function activeChannelCount(): number {
   let n = 0;
-  for (const e of entries.values()) if (e.channel) n++;
+  for (const g of groups.values()) if (g.channel) n++;
   return n;
 }
 
@@ -185,10 +245,11 @@ export function activeChannelCount(): number {
 export function realtimeDebugSnapshot() {
   return {
     suspended,
-    channels: [...entries.entries()].map(([key, e]) => ({
+    channels: [...groups.entries()].map(([key, g]) => ({
       key,
-      subscribers: e.subscribers.size,
-      open: Boolean(e.channel),
+      tables: [...g.tables.keys()],
+      subscribers: allSubscribers(g).length,
+      open: Boolean(g.channel),
     })),
   };
 }
