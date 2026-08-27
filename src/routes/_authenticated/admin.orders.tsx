@@ -52,7 +52,7 @@ function OrdersPage() {
 
   useRealtimeTable("orders", [["admin","orders","list"], ["admin","orders","stats"]], (e) => {
     if (e.eventType === "INSERT") toast.success("New order received");
-  });
+  }, undefined, { keepAlive: true });
   // Belt-and-braces: order_items inserts often immediately follow the order
   // INSERT; refetch on those too so the list never lags behind the DB.
   useRealtimeTable("order_items", [["admin","orders","list"], ["admin","orders","stats"]]);
