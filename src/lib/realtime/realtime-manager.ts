@@ -34,6 +34,12 @@ export type RealtimeEvent = {
 type Subscriber = {
   onEvent: (e: RealtimeEvent) => void;
   onResync: () => void;
+  /**
+   * Keep this subscription's channel open while the tab is hidden. Used for
+   * alerting consumers (new-order toasts, customer push/sound notifications)
+   * that must fire even when the app is in the background.
+   */
+  keepAlive?: boolean;
 };
 
 type Group = {
@@ -65,6 +71,11 @@ function allSubscribers(group: Group): Subscriber[] {
   return [...out];
 }
 
+function hasKeepAlive(group: Group): boolean {
+  for (const set of group.tables.values()) for (const s of set) if (s.keepAlive) return true;
+  return false;
+}
+
 function closeChannel(group: Group) {
   if (group.channel) {
     void supabase.removeChannel(group.channel);
@@ -87,7 +98,7 @@ async function rebuild(group: Group) {
     return;
   }
   const wanted = [...group.tables.keys()].sort();
-  if (suspended || wanted.length === 0) {
+  if (wanted.length === 0 || (suspended && !hasKeepAlive(group))) {
     closeChannel(group);
     return;
   }
@@ -104,7 +115,7 @@ async function rebuild(group: Group) {
         /* older clients: ignore */
       }
     }
-    if (suspended) {
+    if (suspended && !hasKeepAlive(group)) {
       closeChannel(group);
       return;
     }
@@ -181,7 +192,9 @@ function bindGlobalListeners() {
     if (hideTimer) clearTimeout(hideTimer);
     hideTimer = setTimeout(() => {
       suspended = true;
-      for (const group of groups.values()) closeChannel(group);
+      // Groups with a keep-alive subscriber stay connected so background
+      // alerts (new orders, notifications) still arrive.
+      for (const group of groups.values()) if (!hasKeepAlive(group)) closeChannel(group);
     }, HIDDEN_GRACE_MS);
   };
 
