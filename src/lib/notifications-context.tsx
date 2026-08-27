@@ -143,6 +143,7 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
             duration: 6000,
           });
         },
+        keepAlive: true,
         onResync: () => {
           setRtStatus("SUBSCRIBED");
           void refresh();

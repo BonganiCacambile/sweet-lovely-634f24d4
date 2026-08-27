@@ -15,6 +15,7 @@ export function useRealtimeTable(
   invalidateKeys: ReadonlyArray<ReadonlyArray<unknown>>,
   onEvent?: (e: { eventType: string }) => void,
   filter?: string,
+  options?: { keepAlive?: boolean },
 ) {
   const qc = useQueryClient();
   const keysRef = useRef(invalidateKeys);
@@ -37,9 +38,10 @@ export function useRealtimeTable(
           onEventRef.current?.(payload);
         },
         onResync: invalidateAll,
+        keepAlive: options?.keepAlive,
       },
       filter,
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [table, filter]);
+  }, [table, filter, options?.keepAlive]);
 }
