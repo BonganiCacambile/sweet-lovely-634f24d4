@@ -41,6 +41,17 @@ export function parseZoneConfig(value: unknown): ZoneEmailConfig {
   };
 }
 
+/**
+ * Addresses no email provider will accept (Resend rejects them with a 422 and
+ * drops the WHOLE send). These come from regression/test accounts that end up
+ * in the admin role table, so we filter them out of every recipient list.
+ */
+const UNROUTABLE = /@(?:.+\.)?(?:example\.(?:com|org|net)|test|invalid|localhost)$/i;
+
+export function isRoutableEmail(email: string): boolean {
+  return /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email) && !UNROUTABLE.test(email);
+}
+
 /** Candidate admins for a zone: every main admin plus that zone's zone-admins. */
 export async function listCandidateAdmins(
   zoneId: string | null,
@@ -64,7 +75,7 @@ export async function listCandidateAdmins(
   const emails = await findEmailsByUserIds(Array.from(map.keys()));
   return Array.from(map.entries())
     .map(([userId, flags]) => ({ userId, email: emails[userId] ?? "", ...flags }))
-    .filter((r) => r.email)
+    .filter((r) => r.email && isRoutableEmail(r.email))
     .sort((a, b) => a.email.localeCompare(b.email));
 }
 
@@ -104,5 +115,5 @@ export async function resolveSupportRecipients(zoneId: string | null): Promise<s
     const trimmed = e.trim().toLowerCase();
     if (trimmed) out.add(trimmed);
   }
-  return Array.from(out);
+  return Array.from(out).filter(isRoutableEmail);
 }
