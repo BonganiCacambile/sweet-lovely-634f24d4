@@ -4,7 +4,8 @@ import { requireMainAdminGuard } from "@/lib/admin/route-guards";
 import { MainAdminGuard } from "@/components/admin/main-admin-guard";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Tags, Plus, X, Pencil, Trash2, ArrowUp, ArrowDown } from "lucide-react";
+import { Tags, Plus, X, Pencil, Trash2, ArrowUp, ArrowDown, ToggleLeft, ToggleRight } from "lucide-react";
+import { StatusBadge } from "@/components/admin/status-badge";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/admin/page-header";
 import { Card, EmptyState, ErrorPanel, LoadingRows } from "@/components/admin/data-shell";
@@ -27,6 +28,7 @@ function CategoriesPage() {
   const qc = useQueryClient();
   const listFn = useServerFn(listCategories);
   const reorderFn = useServerFn(reorderCategories);
+  const updateFn = useServerFn(updateCategory);
   const { data, isLoading, error, refetch } = useQuery({ queryKey: ["admin","categories","list"], queryFn: () => listFn() });
 
   const reorder = useMutation({
@@ -44,11 +46,19 @@ function CategoriesPage() {
     reorder.mutate(next.map((c) => c.slug));
   };
 
+  const toggleActive = useMutation({
+    mutationFn: ({ slug, is_active }: { slug: string; is_active: boolean }) =>
+      updateFn({ data: { original_slug: slug, patch: { is_active } } }),
+    onSuccess: (_r, v) => { qc.invalidateQueries({ queryKey: ["admin","categories"] }); toast.success(v.is_active ? "Category activated" : "Category deactivated"); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const exportCols = useMemo(() => ([
     { key: "slug", label: "Slug" },
     { key: "label", label: "Label" },
     { key: "product_count", label: "Products" },
     { key: "sort_order", label: "Order" },
+    { key: "is_active", label: "Active" },
   ]), []);
 
   return (
@@ -77,6 +87,7 @@ function CategoriesPage() {
                     <th className="px-3 py-2 font-medium">Category</th>
                     <th className="px-3 py-2 font-medium">Slug</th>
                     <th className="px-3 py-2 font-medium">Products</th>
+                    <th className="px-3 py-2 font-medium">Status</th>
                     <th className="px-3 py-2 font-medium text-right">Actions</th>
                   </tr>
                 </thead>
@@ -98,8 +109,20 @@ function CategoriesPage() {
                       </td>
                       <td className="px-3 py-3 text-xs text-neutral-500">{c.slug}</td>
                       <td className="px-3 py-3 tabular-nums">{c.product_count}</td>
+                      <td className="px-3 py-3">
+                        <StatusBadge status={c.is_active ? "active" : "inactive"} />
+                      </td>
                       <td className="px-3 py-3 text-right">
-                        <button onClick={() => setEditing(c)} className="inline-flex items-center gap-1 rounded-full border border-neutral-200 bg-white px-2.5 py-1 text-xs hover:bg-neutral-50"><Pencil className="h-3 w-3" /> Edit</button>
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            onClick={() => toggleActive.mutate({ slug: c.slug, is_active: !c.is_active })}
+                            disabled={toggleActive.isPending}
+                            className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-medium disabled:opacity-60 ${c.is_active ? "border-neutral-200 bg-white text-neutral-700 hover:bg-neutral-50" : "border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"}`}
+                          >
+                            {c.is_active ? <><ToggleRight className="h-3.5 w-3.5" /> Deactivate</> : <><ToggleLeft className="h-3.5 w-3.5" /> Activate</>}
+                          </button>
+                          <button onClick={() => setEditing(c)} className="inline-flex items-center gap-1 rounded-full border border-neutral-200 bg-white px-2.5 py-1 text-xs hover:bg-neutral-50"><Pencil className="h-3 w-3" /> Edit</button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -119,7 +142,7 @@ function CategoryForm({ initial, onClose }: { initial: CatRow | null; onClose: (
   const createFn = useServerFn(createCategory);
   const updateFn = useServerFn(updateCategory);
   const deleteFn = useServerFn(deleteCategory);
-  const [form, setForm] = useState({ slug: initial?.slug ?? "", label: initial?.label ?? "", image: initial?.image ?? "", intro: initial?.intro ?? "", sort_order: initial?.sort_order ?? 0 });
+  const [form, setForm] = useState({ slug: initial?.slug ?? "", label: initial?.label ?? "", image: initial?.image ?? "", intro: initial?.intro ?? "", sort_order: initial?.sort_order ?? 0, is_active: initial?.is_active ?? true });
 
   const save = useMutation({
     mutationFn: async () => {
@@ -153,6 +176,22 @@ function CategoryForm({ initial, onClose }: { initial: CatRow | null; onClose: (
           <label className="block"><span className="mb-1 block text-xs font-medium text-neutral-600">Image URL</span><input value={form.image ?? ""} onChange={(e) => setForm({ ...form, image: e.target.value })} className="w-full rounded-xl border border-neutral-200 px-3 py-2" /></label>
           <label className="block"><span className="mb-1 block text-xs font-medium text-neutral-600">Intro</span><textarea rows={3} value={form.intro ?? ""} onChange={(e) => setForm({ ...form, intro: e.target.value })} className="w-full rounded-xl border border-neutral-200 px-3 py-2" /></label>
           <label className="block"><span className="mb-1 block text-xs font-medium text-neutral-600">Sort order</span><input type="number" value={form.sort_order} onChange={(e) => setForm({ ...form, sort_order: Number(e.target.value) })} className="w-full rounded-xl border border-neutral-200 px-3 py-2" /></label>
+          <div className="flex items-center justify-between gap-3 rounded-xl border border-neutral-200 px-3 py-2.5">
+            <div>
+              <span className="block text-xs font-medium text-neutral-700">{form.is_active ? "Active" : "Inactive"}</span>
+              <span className="block text-[11px] text-neutral-500">{form.is_active ? "Visible to customers on the menu." : "Hidden from customers, nothing is deleted."}</span>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={form.is_active}
+              aria-label="Category active"
+              onClick={() => setForm({ ...form, is_active: !form.is_active })}
+              className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${form.is_active ? "bg-emerald-500" : "bg-neutral-300"}`}
+            >
+              <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${form.is_active ? "left-[22px]" : "left-0.5"}`} />
+            </button>
+          </div>
           <div className="flex items-center justify-between gap-2 pt-2">
             {initial ? (
               <button type="button" onClick={() => { if (confirm("Delete this category? Products must be re-assigned first.")) remove.mutate(); }} disabled={remove.isPending} className="inline-flex items-center gap-1.5 rounded-full border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-medium text-rose-700 hover:bg-rose-100"><Trash2 className="h-3.5 w-3.5" /> Delete</button>

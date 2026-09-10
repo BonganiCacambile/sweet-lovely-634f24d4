@@ -6,6 +6,7 @@ export const getPublicMenu = createServerFn({ method: "GET" }).handler(async () 
     supabaseAdmin
       .from("categories")
       .select("slug, label, image, intro, sort_order")
+      .eq("is_active", true)
       .order("sort_order", { ascending: true }),
     supabaseAdmin
       .from("products")

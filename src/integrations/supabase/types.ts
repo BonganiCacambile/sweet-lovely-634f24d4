@@ -148,6 +148,7 @@ export type Database = {
           created_at: string
           image: string | null
           intro: string | null
+          is_active: boolean
           label: string
           slug: string
           sort_order: number
@@ -157,6 +158,7 @@ export type Database = {
           created_at?: string
           image?: string | null
           intro?: string | null
+          is_active?: boolean
           label: string
           slug: string
           sort_order?: number
@@ -166,6 +168,7 @@ export type Database = {
           created_at?: string
           image?: string | null
           intro?: string | null
+          is_active?: boolean
           label?: string
           slug?: string
           sort_order?: number
