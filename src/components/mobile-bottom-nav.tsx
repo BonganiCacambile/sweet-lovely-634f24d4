@@ -1,7 +1,8 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Home, UtensilsCrossed, MapPin, ShoppingBag, User, Plus } from "lucide-react";
+import { Home, UtensilsCrossed, MapPin, ShoppingBag, User } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useCart } from "@/lib/cart-context";
+import { LogoImage } from "@/components/logo";
 
 const HIDE_PREFIXES = ["/admin", "/auth", "/loading", "/checkout"];
 
@@ -76,14 +77,14 @@ export function MobileBottomNav() {
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
       <div className="relative mx-3 mb-3">
-        {/* Floating center action (Cart) */}
+        {/* Floating center action (Cart) — shows the Sweet & Lovely logo */}
         <button
           type="button"
           onClick={open}
           aria-label="Cart"
-          className="absolute left-1/2 -top-6 z-10 grid h-14 w-14 -translate-x-1/2 place-items-center rounded-full bg-primary text-primary-foreground shadow-[0_12px_28px_-8px_color-mix(in_oklab,var(--primary)_60%,transparent)] ring-4 ring-background transition-transform active:scale-95"
+          className="absolute left-1/2 -top-7 z-10 grid h-16 w-16 -translate-x-1/2 place-items-center rounded-full bg-background shadow-[0_12px_28px_-8px_rgba(0,0,0,0.35)] ring-4 ring-background transition-transform active:scale-95 overflow-hidden"
         >
-          <Plus className="h-7 w-7" strokeWidth={2.6} />
+          <LogoImage height={56} loading="eager" />
           <AnimatePresence>
             {count > 0 ? (
               <motion.span
@@ -92,7 +93,7 @@ export function MobileBottomNav() {
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.5, opacity: 0 }}
                 transition={{ type: "spring", stiffness: 500, damping: 25 }}
-                className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-background px-1 text-[11px] font-bold leading-none text-primary shadow"
+                className="absolute -right-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-[11px] font-bold leading-none text-primary-foreground shadow ring-2 ring-background"
               >
                 {count > 9 ? "9+" : count}
               </motion.span>
