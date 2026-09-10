@@ -27,6 +27,7 @@ function CategoriesPage() {
   const qc = useQueryClient();
   const listFn = useServerFn(listCategories);
   const reorderFn = useServerFn(reorderCategories);
+  const updateFn = useServerFn(updateCategory);
   const { data, isLoading, error, refetch } = useQuery({ queryKey: ["admin","categories","list"], queryFn: () => listFn() });
 
   const reorder = useMutation({
