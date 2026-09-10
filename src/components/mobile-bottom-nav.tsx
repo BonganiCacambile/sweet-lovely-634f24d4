@@ -1,7 +1,8 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Home, UtensilsCrossed, MapPin, ShoppingBag, User, Plus } from "lucide-react";
+import { Home, UtensilsCrossed, MapPin, ShoppingBag, User } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useCart } from "@/lib/cart-context";
+import { LogoImage } from "@/components/logo";
 
 const HIDE_PREFIXES = ["/admin", "/auth", "/loading", "/checkout"];
 
