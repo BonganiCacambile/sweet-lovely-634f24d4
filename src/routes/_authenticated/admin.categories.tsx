@@ -45,11 +45,19 @@ function CategoriesPage() {
     reorder.mutate(next.map((c) => c.slug));
   };
 
+  const toggleActive = useMutation({
+    mutationFn: ({ slug, is_active }: { slug: string; is_active: boolean }) =>
+      updateFn({ data: { original_slug: slug, patch: { is_active } } }),
+    onSuccess: (_r, v) => { qc.invalidateQueries({ queryKey: ["admin","categories"] }); toast.success(v.is_active ? "Category activated" : "Category deactivated"); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const exportCols = useMemo(() => ([
     { key: "slug", label: "Slug" },
     { key: "label", label: "Label" },
     { key: "product_count", label: "Products" },
     { key: "sort_order", label: "Order" },
+    { key: "is_active", label: "Active" },
   ]), []);
 
   return (
