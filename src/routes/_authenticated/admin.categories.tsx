@@ -86,6 +86,7 @@ function CategoriesPage() {
                     <th className="px-3 py-2 font-medium">Category</th>
                     <th className="px-3 py-2 font-medium">Slug</th>
                     <th className="px-3 py-2 font-medium">Products</th>
+                    <th className="px-3 py-2 font-medium">Status</th>
                     <th className="px-3 py-2 font-medium text-right">Actions</th>
                   </tr>
                 </thead>
