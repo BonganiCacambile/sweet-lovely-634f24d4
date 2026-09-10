@@ -82,9 +82,9 @@ export function MobileBottomNav() {
           type="button"
           onClick={open}
           aria-label="Cart"
-          className="absolute left-1/2 -top-7 z-10 grid h-16 w-16 -translate-x-1/2 place-items-center rounded-full bg-background shadow-[0_12px_28px_-8px_rgba(0,0,0,0.35)] ring-4 ring-background transition-transform active:scale-95 overflow-hidden"
+          className="absolute left-1/2 -top-7 z-10 h-16 w-16 -translate-x-1/2 overflow-hidden rounded-full p-0 ring-4 ring-background transition-transform active:scale-95"
         >
-          <LogoImage height={56} loading="eager" />
+          <LogoImage height={64} loading="eager" className="block h-16 w-16 rounded-full object-cover" />
           <AnimatePresence>
             {count > 0 ? (
               <motion.span
