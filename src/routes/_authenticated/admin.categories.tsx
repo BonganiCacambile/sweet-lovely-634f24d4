@@ -108,8 +108,20 @@ function CategoriesPage() {
                       </td>
                       <td className="px-3 py-3 text-xs text-neutral-500">{c.slug}</td>
                       <td className="px-3 py-3 tabular-nums">{c.product_count}</td>
+                      <td className="px-3 py-3">
+                        <StatusBadge status={c.is_active ? "active" : "inactive"} />
+                      </td>
                       <td className="px-3 py-3 text-right">
-                        <button onClick={() => setEditing(c)} className="inline-flex items-center gap-1 rounded-full border border-neutral-200 bg-white px-2.5 py-1 text-xs hover:bg-neutral-50"><Pencil className="h-3 w-3" /> Edit</button>
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            onClick={() => toggleActive.mutate({ slug: c.slug, is_active: !c.is_active })}
+                            disabled={toggleActive.isPending}
+                            className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-medium disabled:opacity-60 ${c.is_active ? "border-neutral-200 bg-white text-neutral-700 hover:bg-neutral-50" : "border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"}`}
+                          >
+                            {c.is_active ? <><ToggleRight className="h-3.5 w-3.5" /> Deactivate</> : <><ToggleLeft className="h-3.5 w-3.5" /> Activate</>}
+                          </button>
+                          <button onClick={() => setEditing(c)} className="inline-flex items-center gap-1 rounded-full border border-neutral-200 bg-white px-2.5 py-1 text-xs hover:bg-neutral-50"><Pencil className="h-3 w-3" /> Edit</button>
+                        </div>
                       </td>
                     </tr>
                   ))}
