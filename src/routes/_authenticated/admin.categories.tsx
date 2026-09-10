@@ -142,7 +142,7 @@ function CategoryForm({ initial, onClose }: { initial: CatRow | null; onClose: (
   const createFn = useServerFn(createCategory);
   const updateFn = useServerFn(updateCategory);
   const deleteFn = useServerFn(deleteCategory);
-  const [form, setForm] = useState({ slug: initial?.slug ?? "", label: initial?.label ?? "", image: initial?.image ?? "", intro: initial?.intro ?? "", sort_order: initial?.sort_order ?? 0 });
+  const [form, setForm] = useState({ slug: initial?.slug ?? "", label: initial?.label ?? "", image: initial?.image ?? "", intro: initial?.intro ?? "", sort_order: initial?.sort_order ?? 0, is_active: initial?.is_active ?? true });
 
   const save = useMutation({
     mutationFn: async () => {
@@ -176,6 +176,22 @@ function CategoryForm({ initial, onClose }: { initial: CatRow | null; onClose: (
           <label className="block"><span className="mb-1 block text-xs font-medium text-neutral-600">Image URL</span><input value={form.image ?? ""} onChange={(e) => setForm({ ...form, image: e.target.value })} className="w-full rounded-xl border border-neutral-200 px-3 py-2" /></label>
           <label className="block"><span className="mb-1 block text-xs font-medium text-neutral-600">Intro</span><textarea rows={3} value={form.intro ?? ""} onChange={(e) => setForm({ ...form, intro: e.target.value })} className="w-full rounded-xl border border-neutral-200 px-3 py-2" /></label>
           <label className="block"><span className="mb-1 block text-xs font-medium text-neutral-600">Sort order</span><input type="number" value={form.sort_order} onChange={(e) => setForm({ ...form, sort_order: Number(e.target.value) })} className="w-full rounded-xl border border-neutral-200 px-3 py-2" /></label>
+          <div className="flex items-center justify-between gap-3 rounded-xl border border-neutral-200 px-3 py-2.5">
+            <div>
+              <span className="block text-xs font-medium text-neutral-700">{form.is_active ? "Active" : "Inactive"}</span>
+              <span className="block text-[11px] text-neutral-500">{form.is_active ? "Visible to customers on the menu." : "Hidden from customers, nothing is deleted."}</span>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={form.is_active}
+              aria-label="Category active"
+              onClick={() => setForm({ ...form, is_active: !form.is_active })}
+              className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${form.is_active ? "bg-emerald-500" : "bg-neutral-300"}`}
+            >
+              <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${form.is_active ? "left-[22px]" : "left-0.5"}`} />
+            </button>
+          </div>
           <div className="flex items-center justify-between gap-2 pt-2">
             {initial ? (
               <button type="button" onClick={() => { if (confirm("Delete this category? Products must be re-assigned first.")) remove.mutate(); }} disabled={remove.isPending} className="inline-flex items-center gap-1.5 rounded-full border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-medium text-rose-700 hover:bg-rose-100"><Trash2 className="h-3.5 w-3.5" /> Delete</button>
