@@ -9,6 +9,7 @@ const payload = z.object({
   image: z.string().max(2000).optional().nullable(),
   intro: z.string().max(2000).optional().nullable(),
   sort_order: z.number().int().optional().default(0),
+  is_active: z.boolean().optional().default(true),
 });
 
 export const listCategories = createServerFn({ method: "GET" })
@@ -17,7 +18,7 @@ export const listCategories = createServerFn({ method: "GET" })
     await requireAdmin(context.supabase, context.userId);
     const { data: cats, error } = await context.supabase
       .from("categories")
-      .select("slug, label, image, intro, sort_order, created_at, updated_at")
+      .select("slug, label, image, intro, sort_order, is_active, created_at, updated_at")
       .order("sort_order", { ascending: true });
     if (error) throw new Error(error.message);
     const { data: counts, error: e2 } = await context.supabase
